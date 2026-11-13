@@ -129,8 +129,9 @@ export const mouvements = (page) => page.evaluate(() => {
 });
 
 // ---------- L'accent vert, à sa place (v12, spec §5.3, §5.5 et §5.6 ; point de vigilance 3) ----------
-// Trois contrôles, qui lisent les styles calculés de l'écran affiché, pseudo-éléments ::before et ::after compris, et rendent
-// leurs fautes. `accents` : les valeurs calculées de l'accent du thème (--accent et --accent-texte de la racine, « rgb(r, g, b) »).
+// Trois contrôles (et, depuis la v12.0.1, celui des couleurs des familles, plus bas), qui lisent les styles calculés de l'écran
+// affiché, pseudo-éléments ::before et ::after compris, et rendent leurs fautes. `accents` : les valeurs calculées de l'accent
+// du thème (--accent et --accent-texte de la racine, « rgb(r, g, b) »).
 // Un seul page.evaluate, sans code fabriqué dans la page (la CSP refuse eval) : `quoi` choisit le contrôle.
 const controlerAccent = (page, quoi, accents, surface2 = null) => page.evaluate(([q, acc, gris]) => {
   // « rgb(r, g, b) » d'une couleur calculée opaque ; null pour une couleur transparente ou à demi.
@@ -192,6 +193,16 @@ const controlerAccent = (page, quoi, accents, surface2 = null) => page.evaluate(
         }
       }
     }
+  } else if (q === 'familles') {
+    // v12.0.1 : les couleurs des 7 familles ne vont qu'aux agrégats de l'Analyse et à Réglages › Émotions (spec §5.6, CLAUDE.md).
+    // Ici, `acc` porte les valeurs calculées de leurs six rôles (hors de celles qu'une zone partage) : tout élément visible de
+    // l'écran qui en est peint, pseudo-éléments compris (texte, fond, bord, contour, ombre, remplissage, trait).
+    const deFamille = (c) => acc.includes(opaque(c));
+    for (const el of document.querySelectorAll('body *')) {
+      for (const [pseudo, s] of pseudos(el)) {
+        for (const [prop, c] of peintes(s)) if (deFamille(c)) fautes.push(`${nom(el, pseudo)} : ${prop} à la couleur d'une famille`);
+      }
+    }
   } else {
     // Un lien vert (un texte à --accent-texte) ne se pose jamais sur --surface-2 en clair (spec §5.3 : 4,49:1, sous 4,5). Le
     // fond est celui du premier ancêtre opaque.
@@ -214,6 +225,9 @@ export const rondsAccent = (page, accents) => controlerAccent(page, 'ronds', acc
 export const accentHorsDeSaPlace = (page, accents) => controlerAccent(page, 'lieux', accents);
 // `lien` : la couleur calculée de --accent-texte ; `surface2` : celle de --surface-2.
 export const liensSurSurface2 = (page, lien, surface2) => controlerAccent(page, 'liens', [lien], surface2);
+// v12.0.1 : `familles`, les couleurs calculées des rôles des 7 familles du thème (« rgb(r, g, b) ») ; v7-controle.spec.js les
+// tire de tokens.css. Le même passage que l'accent, pour ne lire qu'une fois les styles de la même façon.
+export const couleursDeFamille = (page, familles) => controlerAccent(page, 'familles', familles);
 
 // Le plan et les données du contrôle global (v7-controle.spec.js, déplacés ici en v12 : la hauteur de la page du soir,
 // v12-design.spec.js, se mesure sur les mêmes).

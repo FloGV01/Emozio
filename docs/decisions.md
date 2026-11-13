@@ -1891,8 +1891,6 @@ Ce sont les choix de la spec, non les siens :
 - **La forme d'un morceau** : si « Morceau dans sa playlist » enchaîne sur Détente au Diagnostic, une version suivante pourra la prendre par défaut.
 - **Installer la v12** : une page de la v11 encore ouverte dans Safari n'a pas le correctif ; fermer l'onglet puis rouvrir l'adresse.
 - **`--danger`** rouge, et les autres appels du concepteur (plus haut), à relire.
-- **`CLAUDE.md`** : relire la ligne nouvelle « Une seule couleur d'accent, le vert (v12) », sous « Règles qui priment sur tout », et l'exception réseau étendue (« Changer de playlist », « Mettre à jour la liste », le jeton en mémoire 10 min au plus), écrites d'après le plan v12 (tâche 9) : la spec §8 ne prévoyait que l'exception réseau et le jeton. Elles ne restent qu'avec son accord (comme la ligne du vocabulaire de la roue, en v7).
-- **Les barres « Émotions » d'En consultation** (`#/consultation/<id>`, carte « 30 derniers jours ») sont aux 7 couleurs des familles, comme depuis la v7 : c'est le même composant que l'Analyse (`BarresFamilles`), et c'est une donnée d'émotion. Mais la règle écrite (spec §5.6 et `CLAUDE.md`) ne réserve les familles qu'aux agrégats de l'Analyse et à Réglages › Émotions. À trancher, l'écran reste tel quel d'ici là (relecture finale) : soit les garder, et ajouter « En consultation » à la liste des lieux des familles, ici et dans `CLAUDE.md` avec son accord ; soit les passer à l'encre `--donnee*`, comme les autres comptes hors de l'Analyse. Dans les deux cas, un contrôle dans `v7-controle.spec.js` pourra épingler les écrans où les familles sont permises.
 - **Les textes nouveaux** (plus bas) sont des propositions, à relire après la publication.
 - **Les points de la v10 et de la v11 restent ouverts** (spec §3) : le ▶ d'un favori, l'épingle du Programme, le très grand texte des écrans hérités (la liste `HERITES`), et les autres points de l'entrée v11.0.0.
 - **Hors de la v12** (spec §3) : la confiance et l'estime de soi, jouer la musique dans Emozio ou commander Spotify, les pochettes, un réglage de couleur d'accent, l'export PDF et la page A4 (palette claire, B3), ce qui touche à une commercialisation, les pistes créatives écartées.
@@ -1911,3 +1909,23 @@ Le détail, à cocher, est dans `docs/recette-iphone.md`, « v12 ».
 - **Le Diagnostic** (`ui/ecrans/diagnostic.js`, `domain/refuges.js`) : « Ouvrir un morceau », « Morceau seul », « Morceau dans sa playlist », « Le premier morceau de Mes refuges. À noter : où ça s'ouvre, si la lecture démarre, ce qui joue ensuite, où on revient. », « Aucun morceau noté dans Mes refuges. ».
 - **L'Aide iPhone** (`ui/ecrans/aide-iphone.js`) : « Dans Safari, ferme l'onglet d'Emozio s'il est ouvert, puis rouvre l'adresse : la page se met à jour. Ensuite, Partager › Sur l'écran d'accueil. Le nom, « Emozio », reste modifiable dans l'aperçu. Si l'aperçu montre la nouvelle icône, Ajouter. Sinon, annule et recommence. ».
 - **Aujourd'hui** (`ui/composants/entete-jour.js`) : la date en capitales au-dessus du grand titre, et pour un autre jour, « Mercredi 14 » sous le mois.
+
+## 2026-11-13 : v12.0.1, les barres « Émotions » d'En consultation à l'encre des données
+
+Source : ses réponses du 13/11 à deux points de la relecture finale laissés « En attente de l'utilisateur » dans l'entrée v12.0.0. **Version 12.0.1**, un correctif : ni le format de sauvegarde (`FORMAT_VERSION` 9) ni la base (`DB_VERSION` 6) ne changent.
+
+### Décisions de l'utilisateur (13/11)
+
+- **Les barres « Émotions » d'En consultation** (`#/consultation/<id>`, carte « 30 derniers jours ») passent à l'encre des données (`--donnee`), comme les autres comptes hors de l'Analyse. Elles étaient aux 7 couleurs des familles depuis la v7, par le même composant que l'Analyse. La règle de `CLAUDE.md` reste telle quelle : les 7 familles ne colorent que les agrégats de l'Analyse et Réglages › Émotions.
+- **`CLAUDE.md`** : « oui, on garde ». La ligne « Une seule couleur d'accent, le vert (v12) », sous « Règles qui priment sur tout », et l'exception réseau étendue (« Changer de playlist », « Mettre à jour la liste », le jeton en mémoire 10 min au plus), écrites d'après le plan v12 (tâche 9), sont validées telles quelles. `CLAUDE.md` ne change pas.
+
+### Ce qui change
+
+- **`BarresFamilles`** (`ui/ecrans/analyse.js`) prend `encre` : En consultation l'appelle avec, ses barres sont des `.g-barre` (`--donnee`) et ses lignes n'ont plus de classe `.emo-*`. Une seule encre : le nom de la famille, écrit devant chaque barre, et son nombre, derrière, les distinguent, dans l'ordre de la roue. « Tes émotions », dans Ma semaine de l'Analyse, garde les couleurs des familles ; Réglages › Émotions ne change pas.
+- **Le contrôle global** (`v7-controle.spec.js`, en clair et en sombre) épingle les écrans du parcours où une couleur des familles est peinte, `ECRANS_FAMILLES` : 10 écrans de l'Analyse, de Comprendre et de Réglages › Émotions, et eux seuls, dans l'ordre du parcours. Les couleurs cherchées sont les six rôles des 7 familles, lus dans `tokens.css`, hors de ceux qu'une zone partage (une zone dit un relevé, et a sa place ailleurs) : texte, fond, bord, contour, ombre, remplissage et trait, pseudo-éléments compris. Un écran qui en peint hors de la liste, ou un écran de la liste qui n'en montre plus, fait échouer le test ; seul un écran de l'Analyse, de Comprendre ou de Réglages › Émotions peut y entrer. Sur le code de la v12.0.0, il échoue sur « En consultation » seul, en clair comme en sombre (`rect.g-emo`, remplie à la couleur d'une famille). La Vue soignants dessine les familles dans sa page A4 (canvas, B3), que ce contrôle des styles ne lit pas.
+- **Captures** d'En consultation, dans WebKit à 390 × 844, en clair et en sombre, gardées hors du dépôt : les barres à l'encre, nettes sur la carte, sans couleur de famille, de zone ni d'accent.
+- **Version 12.0.1** (package.json, precache).
+
+### En attente de l'utilisateur
+
+- Les autres points de l'entrée v12.0.0 restent ouverts : la recette de l'iPhone « v12 », `--danger` rouge et les appels du concepteur, les textes nouveaux.

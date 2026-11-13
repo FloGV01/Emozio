@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '../aides/gardes.js';
 import { viderBase, aller, appPrete, groupe } from '../aides/saisie.js';
-import { canaux, contraste, jetons } from '../aides/couleurs.js';
+import { canaux, contraste, jetons, FAMILLES_ROUE, ZONES_ROUE, ROLES } from '../aides/couleurs.js';
 import { vueMoment, toucherMot, noter, continuer, terminer } from '../aides/emotion.js';
 import { installerParole, cacher, montrer } from '../aides/lecteur.js';
 import { stabiliser, contrastesFaibles, ciblesPetites, motsInterdits, ecouterMouvements, mouvements, verserControle as verser, rondsAccent, accentHorsDeSaPlace,
-  liensSurSurface2 } from '../aides/controle.js';
+  liensSurSurface2, couleursDeFamille } from '../aides/controle.js';
 
 // v7 (9/9) · Contrôle global (plan v6.2, tâches 6 et 7) : on parcourt les écrans principaux, avec des données inventées,
 // en clair et en sombre.
@@ -524,24 +524,54 @@ test.beforeEach(async ({ page }) => {
   await viderBase(page);
 });
 
+// v12.0.1 : les écrans du parcours où les couleurs des 7 familles sont permises, et vues : l'Analyse (Comprendre compris, où
+// mènent ses portes) et Réglages › Émotions, seulement (spec v12 §5.6, CLAUDE.md ; docs/decisions.md, entrée v12.0.1). Une
+// couleur de famille peinte ailleurs fait échouer le contrôle, comme les barres « Émotions » d'En consultation jusqu'à la
+// v12.0.0. La liste est exacte, dans l'ordre du parcours : un écran qui n'en montre plus doit en sortir ; et seul un écran de
+// l'Analyse, de Comprendre ou de Réglages › Émotions peut y entrer (y mettre un autre écran, c'est changer la règle, avec son
+// accord). Comprendre › Explosions et le tableau d'« Émotions selon ce que je faisais » n'en peignent pas. La Vue soignants
+// dessine les siennes dans sa page A4 (canvas, B3), que ce contrôle des styles ne lit pas.
+const ECRANS_FAMILLES = [
+  'Analyse', 'Analyse, un jour de Mes jours touché', 'Analyse, Tes zones en tableau', 'Comprendre, Énergie', 'Comprendre, Rythmes',
+  'Comprendre, Mes nuits en tableau', 'Analyse, Tes gratitudes ouvert', 'Réglages › Émotions', 'Réglages › Émotions, un sens corrigé',
+  'Réglages › Émotions, Mes mots',
+];
+// Les couleurs calculées des six rôles des 7 familles d'un thème, hors de celles qu'une zone partage (en clair, la teinte 2 de
+// la Colère est celle de la zone rouge) : une zone, qui dit un relevé, a sa place sur bien d'autres écrans.
+const couleursFamilles = (t) => {
+  const zones = new Set(ZONES_ROUE.flatMap((z) => ROLES.map((r) => rgb(t[`c-zone-${z}${r}`]))));
+  return [...new Set(FAMILLES_ROUE.flatMap((f) => ROLES.map((r) => rgb(t[`c-emo-${f}${r}`]))))].filter((c) => !zones.has(c));
+};
+
 // v12 (5/9) : sur chaque écran, l'accent vert reste à sa place (spec §5.3, §5.5 et §5.6). La règle de forme : aucun rond sans
 // texte ni icône ne l'a pour fond ou pour contour ; le point de vigilance 3 : aucune trace de lui dans les graphiques, sur les
 // écrans de l'émotion ni sur « Réveil la nuit » ; et, en clair, aucun lien vert sur --surface-2 (tests/aides/controle.js).
+// v12.0.1 : les couleurs des familles aussi restent à leur place (ECRANS_FAMILLES).
 for (const schema of ['light', 'dark']) {
-  test(`contraste ${schema === 'light' ? 'en clair' : 'en sombre'} : tout texte visible des écrans principaux a au moins 4,5:1 sur son fond ; ni tirets, ni choix fait sans coche ; l'accent vert à sa place`, async ({ page }) => {
+  test(`contraste ${schema === 'light' ? 'en clair' : 'en sombre'} : tout texte visible des écrans principaux a au moins 4,5:1 sur son fond ; ni tirets, ni choix fait sans coche ; l'accent vert à sa place ; les couleurs des familles dans l'Analyse et Réglages › Émotions seulement`, async ({ page }) => {
     test.setTimeout(240000);
     const t = schema === 'light' ? clair : sombre;
     const accents = [rgb(t.accent), rgb(t['accent-texte'])];
-    const fautes = await parcourir(page, schema, async (nom) => [
-      ...await contrastesFaibles(page, nom.startsWith('Confirmation') ? '.boite-confirmation' : 'body'),
-      ...await epinglesFaibles(page),
-      ...(await tirets(page)).map((x) => `tirets : ${x}`),
-      ...(await sansCoche(page)).map((x) => `choix fait sans coche : ${x}`),
-      ...(await rondsAccent(page, accents)).map((x) => `rond à l'accent : ${x}`),
-      ...(await accentHorsDeSaPlace(page, accents)).map((x) => `accent hors de sa place : ${x}`),
-      ...(schema === 'light' ? await liensSurSurface2(page, rgb(t['accent-texte']), rgb(t['surface-2'])) : []),
-    ]);
+    expect(ECRANS_FAMILLES.filter((nom) => !/^(Analyse|Comprendre|Réglages › Émotions)(,|$)/.test(nom)), 'les familles hors de l\'Analyse et de Réglages › Émotions').toEqual([]);
+    const familles = couleursFamilles(t);
+    expect(familles.length, 'les couleurs des familles, hors de celles des zones').toBeGreaterThan(30);
+    const avecFamilles = [];
+    const fautes = await parcourir(page, schema, async (nom) => {
+      const peints = await couleursDeFamille(page, familles);
+      if (peints.length) avecFamilles.push(nom);
+      return [
+        ...await contrastesFaibles(page, nom.startsWith('Confirmation') ? '.boite-confirmation' : 'body'),
+        ...await epinglesFaibles(page),
+        ...(await tirets(page)).map((x) => `tirets : ${x}`),
+        ...(await sansCoche(page)).map((x) => `choix fait sans coche : ${x}`),
+        ...(await rondsAccent(page, accents)).map((x) => `rond à l'accent : ${x}`),
+        ...(await accentHorsDeSaPlace(page, accents)).map((x) => `accent hors de sa place : ${x}`),
+        ...(schema === 'light' ? await liensSurSurface2(page, rgb(t['accent-texte']), rgb(t['surface-2'])) : []),
+        ...(ECRANS_FAMILLES.includes(nom) ? [] : peints.slice(0, 6).map((x) => `famille hors de sa place : ${x}`)),
+      ];
+    });
     expect(fautes).toEqual({});
+    expect(avecFamilles, 'les écrans aux couleurs des familles').toEqual(ECRANS_FAMILLES);
   });
 }
 

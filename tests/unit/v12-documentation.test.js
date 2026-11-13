@@ -6,10 +6,14 @@ import { jetons, contraste } from '../aides/couleurs.js';
 
 // v12 (9/9) · Ce que la v12 laisse écrit (plan v12, tâche 9 ; spec §8) : la règle « Zéro réseau » de CLAUDE.md et son exception
 // étendue, le jeton jamais écrit, la ligne de l'accent ; l'entrée v12.0.0 de docs/decisions.md et ses règles levées, annotées
-// dans leurs entrées d'origine ; les deux journaux de version ; la recette de l'iPhone ; la version 12.0.0.
+// dans leurs entrées d'origine ; les deux journaux de version ; la recette de l'iPhone. v12.0.1 (13/11) : son entrée, ses deux
+// réponses à ce que la relecture finale laissait en attente, et la version 12.0.1.
 const doc = (...p) => lire(join(RACINE, ...p));
 const entrees = () => doc('docs', 'decisions.md').split(/^(?=## )/m);
 const entreeV12 = () => entrees().find((e) => e.startsWith('## 2026-11-09 : v12.0.0'));
+// v12.0.1 (13/11) : ses réponses aux deux points de la relecture finale laissés en attente.
+const TITRE_V1201 = '## 2026-11-13 : v12.0.1, les barres « Émotions » d\'En consultation à l\'encre des données';
+const entreeV1201 = () => entrees().find((e) => e.startsWith(`${TITRE_V1201}\n`));
 const section = (entree, titre) => {
   const i = entree.indexOf(`### ${titre}\n`);
   assert.ok(i > 0, `${titre} absent`);
@@ -38,11 +42,12 @@ test('CLAUDE.md : « Zéro réseau » dit « Mettre à jour la liste », les mor
 test('docs/decisions.md : l\'entrée v12.0.0, la liste de la spec §8, ses écarts, le contrôle global et ce qui attend l\'utilisateur', () => {
   const v12 = entreeV12();
   assert.ok(v12, 'entrée v12.0.0 absente');
-  // Une seule entrée de version 12.0.0, la dernière, juste après celle de la v11.
+  // Une seule entrée de version 12.0.0, juste après celle de la v11 ; celle de la v12.0.1 la suit, la dernière (13/11).
   assert.deepEqual(entrees().filter((x) => x.includes('**Version 12.0.0**')).map((x) => x.split('\n', 1)[0]), ['## 2026-11-09 : v12.0.0, la musique de Détente et un design simple']);
   const titres = entrees().map((e) => e.split('\n', 1)[0]);
-  assert.equal(titres.at(-1), '## 2026-11-09 : v12.0.0, la musique de Détente et un design simple');
-  assert.equal(titres.at(-2), '## 2026-11-08 : v11.0.0, six retours après la v10');
+  assert.equal(titres.at(-1), TITRE_V1201);
+  assert.equal(titres.at(-2), '## 2026-11-09 : v12.0.0, la musique de Détente et un design simple');
+  assert.equal(titres.at(-3), '## 2026-11-08 : v11.0.0, six retours après la v10');
   for (const x of ['docs/superpowers/specs/2026-11-09-emozio-v12-design.md', 'docs/superpowers/plans/2026-11-09-emozio-v12.md', '`FORMAT_VERSION` 9']) assert.ok(v12.includes(x), x);
   assert.match(v12, /`DB_VERSION` 6, confirmé/);
   // La spec §8 : les décisions du §2, les jetons, l'accent B et son sens, les graphiques, les icônes pleines (B1), la coche, les
@@ -169,30 +174,53 @@ test('docs/recette-iphone.md, « v12 » : les huit points de la spec §8, et leu
   for (const r of [recette, cochee, suivie]) assert.equal((sectionV12(r).match(/^- \[[ xX]\] /gm) || []).length, 8);
 });
 
-// Relecture finale de la v12 : le bandeau « Nouvelle version prête » n'existe pas dans Safari (spec §7) ; les lignes de CLAUDE.md
-// écrites d'après le plan, et les barres « Émotions » d'En consultation aux couleurs des familles, attendent sa décision ; la
-// lecture de l'en-tête d'Aujourd'hui par VoiceOver, vérifiée dans Chromium seulement (tâche 4), est à la recette.
-test('relecture finale : l\'entrée v12 ne place pas le bandeau dans Safari ; ce qui attend l\'utilisateur dit les lignes de CLAUDE.md écrites d\'après le plan et les barres d\'En consultation ; la recette fait lire l\'en-tête par VoiceOver', () => {
+// Relecture finale de la v12 : le bandeau « Nouvelle version prête » n'existe pas dans Safari (spec §7) ; la lecture de l'en-tête
+// d'Aujourd'hui par VoiceOver, vérifiée dans Chromium seulement (tâche 4), est à la recette. Les lignes de CLAUDE.md écrites
+// d'après le plan, et les barres « Émotions » d'En consultation aux couleurs des familles, qui attendaient sa décision, sont
+// tranchées le 13/11 (v12.0.1, test suivant) : elles ne sont plus en attente.
+test('relecture finale : l\'entrée v12 ne place pas le bandeau dans Safari ; ce qui attend l\'utilisateur ne dit plus les lignes de CLAUDE.md ni les barres d\'En consultation ; la recette fait lire l\'en-tête par VoiceOver', () => {
   const v12 = entreeV12();
   const decisions = section(v12, 'Décisions de l\'utilisateur (spec §2, 08 et 09/11)');
   assert.doesNotMatch(decisions, /dans Safari, il a fallu toucher « Nouvelle version prête »/);
   assert.ok(decisions.includes('Safari gardait l\'ancienne version ; il a fallu toucher « Nouvelle version prête » (le bandeau de l\'app installée, qui n\'existe pas dans Safari)'));
   const attente = section(v12, 'En attente de l\'utilisateur').split('\n');
-  const claude = attente.find((l) => l.startsWith('- **`CLAUDE.md`**'));
-  assert.ok(claude, 'CLAUDE.md absent de « En attente de l\'utilisateur »');
-  for (const x of ['« Une seule couleur d\'accent, le vert (v12) »', '« Règles qui priment sur tout »', '« Changer de playlist »', '« Mettre à jour la liste »',
-    'd\'après le plan v12 (tâche 9)', 'la spec §8 ne prévoyait que l\'exception réseau et le jeton', 'avec son accord']) {
-    assert.ok(claude.includes(x), `CLAUDE.md, en attente : ${x}`);
-  }
-  const consultation = attente.find((l) => l.startsWith('- **Les barres « Émotions » d\'En consultation**'));
-  assert.ok(consultation, 'En consultation absent de « En attente de l\'utilisateur »');
-  for (const x of ['7 couleurs des familles', '`BarresFamilles`', 'À trancher, l\'écran reste tel quel', '`--donnee*`', 'avec son accord']) {
-    assert.ok(consultation.includes(x), `En consultation, en attente : ${x}`);
-  }
+  assert.equal(attente.find((l) => l.includes('CLAUDE.md')), undefined, 'CLAUDE.md encore en attente');
+  assert.equal(attente.find((l) => /consultation/i.test(l)), undefined, 'En consultation encore en attente');
+  assert.ok(attente.some((l) => l.startsWith('- **`--danger`** rouge')), '--danger, toujours à relire');
   const soir = sectionV12(doc('docs', 'recette-iphone.md')).split('\n').find((l) => /^- \[[ xX]\] \*\*La page du soir\*\*/.test(l));
   for (const x of ['Avec VoiceOver', '« Aujourd\'hui, Jeudi 15 octobre »', '« Mercredi 14 octobre »', 'sans épeler les capitales du sur-titre']) {
     assert.ok(soir.includes(x), `recette, la page du soir : ${x}`);
   }
+});
+
+// v12.0.1 (13/11) : les barres « Émotions » d'En consultation passent à l'encre des données, la règle de CLAUDE.md restant telle
+// quelle ; les deux lignes de CLAUDE.md écrites d'après le plan v12 sont gardées (« oui, on garde »), et CLAUDE.md ne change pas.
+test('docs/decisions.md, l\'entrée v12.0.1 : les barres d\'En consultation à l\'encre, les lignes de CLAUDE.md gardées, le contrôle des familles', () => {
+  const v1201 = entreeV1201();
+  assert.ok(v1201, 'entrée v12.0.1 absente');
+  assert.deepEqual(entrees().filter((x) => x.includes('**Version 12.0.1**')).map((x) => x.split('\n', 1)[0]), [TITRE_V1201]);
+  const decisions = section(v1201, 'Décisions de l\'utilisateur (13/11)').split('\n');
+  const consultation = decisions.find((l) => l.startsWith('- **Les barres « Émotions » d\'En consultation**'));
+  assert.ok(consultation, 'En consultation absent des décisions');
+  for (const x of ['`#/consultation/<id>`', 'l\'encre des données (`--donnee`)', '7 couleurs des familles', 'La règle de `CLAUDE.md` reste telle quelle',
+    'les agrégats de l\'Analyse et Réglages › Émotions']) {
+    assert.ok(consultation.includes(x), `En consultation : ${x}`);
+  }
+  const claude = decisions.find((l) => l.startsWith('- **`CLAUDE.md`**'));
+  assert.ok(claude, 'CLAUDE.md absent des décisions');
+  for (const x of ['« oui, on garde »', '« Une seule couleur d\'accent, le vert (v12) »', '« Règles qui priment sur tout »', '« Changer de playlist »',
+    '« Mettre à jour la liste »', 'd\'après le plan v12 (tâche 9)', 'validées telles quelles', '`CLAUDE.md` ne change pas']) {
+    assert.ok(claude.includes(x), `CLAUDE.md : ${x}`);
+  }
+  const change = section(v1201, 'Ce qui change');
+  for (const x of ['`BarresFamilles`', '`encre`', '`.g-barre`', 'Une seule encre', '`ECRANS_FAMILLES`', '`v7-controle.spec.js`', 'Sur le code de la v12.0.0, il échoue',
+    '**Version 12.0.1**']) {
+    assert.ok(change.includes(x), `ce qui change : ${x}`);
+  }
+  // La règle de CLAUDE.md, telle quelle : les familles réservées aux agrégats de l'Analyse et à Réglages › Émotions, sans En consultation.
+  const accent = doc('CLAUDE.md').split('\n').find((l) => l.startsWith('- **Une seule couleur d\'accent, le vert (v12).**'));
+  assert.ok(accent.includes('dans les agrégats de l\'Analyse et Réglages › Émotions'), accent);
+  assert.doesNotMatch(accent, /consultation/i);
 });
 
 // Relecture finale : le contraste d'un lien vert sur --surface-2 en clair, calculé depuis les jetons, est celui que donnent les
@@ -218,7 +246,7 @@ test('le lien vert sur --surface-2 en clair : 4,49:1, calculé depuis les jetons
   assert.ok(doc('public', 'css', 'composants.css').includes(`/* Carte : --surface sans bordure, rayon ${rayon} (--r-carte) ;`));
 });
 
-test('la version 12.0.0 : package.json et js/version.js (écrit par npm run precache)', () => {
-  assert.equal(JSON.parse(doc('package.json')).version, '12.0.0');
-  assert.match(doc('public', 'js', 'version.js'), /^export const VERSION_APP = '12\.0\.0';$/m);
+test('la version 12.0.1 : package.json et js/version.js (écrit par npm run precache)', () => {
+  assert.equal(JSON.parse(doc('package.json')).version, '12.0.1');
+  assert.match(doc('public', 'js', 'version.js'), /^export const VERSION_APP = '12\.0\.1';$/m);
 });
