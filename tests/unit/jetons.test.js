@@ -303,7 +303,7 @@ test('v12 : pas d\'accent dans .moment-plein ni dans .ecran-noir : l\'accent y e
       assert.notEqual(t[n], t.accent);
     }
   }
-  // La nuit : des valeurs, sans var() (un var(--accent) y serait lu avant d'être redéclaré, sur la racine, en vert).
+  // La nuit : des valeurs, sans var() (un var(--accent) y serait lu avant d'être redéclaré, sur la racine, au pétrole de l'accent).
   for (const sel of ['.ecran-noir', '.parcours.ecran-noir']) {
     const d = declare(sel);
     for (const n of ACCENTS) if (d[n] !== undefined) neutre(d[n], `${sel} --${n}`);

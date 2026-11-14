@@ -677,3 +677,14 @@ Version 12.0.0, construite du 09 au 13/11 en 9 tâches sur la branche `dev`. Ell
 - la base reste en `DB_VERSION` 6 ; la sauvegarde passe au format 9 (les morceaux de la playlist suivie) ; l'Export PSY et la vue soignants ne changent pas.
 
 Le détail, les appels du concepteur, ce qui attend l'utilisateur et les textes à relire sont dans `docs/decisions.md`, à l'entrée du 09/11.
+
+## 21. v12.1 (14/11)
+
+Version 12.1.0, construite le 14/11 en 3 tâches sur la branche `dev`, sur la v12.0.1. Elle a sa propre spécification, `docs/superpowers/specs/2026-11-14-emozio-v12-1-design.md`, qui fait foi là où elle s'écarte de celle-ci et de celles des v7 à v12 :
+- **la palette « 3a » de Claude Design** : une base presque blanche aux surfaces teintées d'un bleu pétrole pâle (en sombre, un fond presque noir et des surfaces pétrole profond) ; la seule couleur d'accent devient le bleu pétrole, avec le même sens (« choisi » ou « agir », jamais une valeur, un choix fait garde sa coche) ; le vert ne dit plus qu'une émotion ;
+- l'en-tête d'Aujourd'hui en bandeau teinté jusqu'en haut de l'écran, un grand titre plus gros, les rubriques du soir à plat séparées d'un filet, des pilules pour tout ce qui se touche ;
+- sous « Aujourd'hui », plus de ligne du jour (ni points des zones, ni résumé, ni « Enregistré » à l'écran ; « Enregistré » reste annoncé à VoiceOver) ;
+- sur la carte des émotions, le mot choisi reste un disque agrandi, sans la double capsule ;
+- ni la base (`DB_VERSION` 6) ni la sauvegarde (format 9) ne changent.
+
+Le détail, les écarts au retour de Claude Design et ce qui attend l'utilisateur sont dans `docs/decisions.md`, à l'entrée du 14/11.

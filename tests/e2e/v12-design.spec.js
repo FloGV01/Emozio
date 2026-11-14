@@ -13,7 +13,7 @@ import { installerParole } from '../aides/lecteur.js';
 // v12.1. Rien ne change de taille au toucher. La roue, l'interrupteur et les champs passent au même système. Les
 // écrans de l'émotion et « Réveil la nuit » n'ont pas d'accent. Tâche 4 : Aujourd'hui façon Apple (l'en-tête, les cartes sans
 // carré coloré, la bande du bas, les onglets), sans couleur de rubrique, et la page du soir qui ne grandit pas de plus de
-// 120 px. Tâche 5 : les autres écrans et les graphiques ; l'accent vert reste à sa place (la règle de forme et le point de
+// 120 px. Tâche 5 : les autres écrans et les graphiques ; l'accent reste à sa place (la règle de forme et le point de
 // vigilance 3 sont contrôlés sur tous les écrans du contrôle, v7-controle.spec.js ; ici, leurs contrôles eux-mêmes), les
 // graphiques sont à l'encre, une seule action en aplat par vue. v12.1 (spec 2026-11-14, tâche A) : les jetons « 3a » (base
 // presque blanche, surfaces teintées de bleu pétrole, accent pétrole), le bandeau d'Aujourd'hui, les rubriques à plat, les
@@ -152,7 +152,7 @@ test('v12 (3/9) · l\'interrupteur, comme sur iOS : allumé, un rail d\'accent e
 });
 
 // Le point de vigilance 3, pour les jetons : l'accent, lu sur l'écran rendu, est l'encre des écrans de l'émotion et le gris
-// de la nuit, jamais le vert (la tâche 5 lit chaque élément de ces écrans).
+// de la nuit, jamais l'accent de la racine (la tâche 5 lit chaque élément de ces écrans).
 test('v12 (3/9) · pas d\'accent sur les écrans de l\'émotion ni sur « Réveil la nuit » : l\'accent y est l\'encre, en clair et en sombre', async ({ page }) => {
   const lire = (loc) => loc.evaluate((e) => ['--accent', '--sur-accent', '--accent-texte', '--action', '--action-on'].map((n) => getComputedStyle(e).getPropertyValue(n).trim().toLowerCase()));
   for (const [schema, t] of THEMES) {
@@ -175,7 +175,7 @@ test('v12 (3/9) · pas d\'accent sur les écrans de l\'émotion ni sur « Révei
 // Relecture de la tâche 3 : en annulant --contour dans les écrans de l'émotion, la carte « Pour récupérer, je… » de l'écran 3
 // perdait le cercle de sa respiration (un rond pâle sur la carte, à 1,16:1) et la forme de « Arrêter » (fond de la carte, sans
 // contour : un mot seul). Comme en v11, sans accent : le cercle est cerclé à l'encre, et « Arrêter » a le fond --surface-2.
-test('v12 (3/9) · l\'écran 3 de l\'émotion, carte « Pour récupérer, je… » : le cercle de la respiration cerclé à l\'encre (3:1 au moins sur la carte, jamais vert), « Arrêter » garde sa forme, en clair et en sombre', async ({ page }) => {
+test('v12 (3/9) · l\'écran 3 de l\'émotion, carte « Pour récupérer, je… » : le cercle de la respiration cerclé à l\'encre (3:1 au moins sur la carte, jamais à l\'accent), « Arrêter » garde sa forme, en clair et en sombre', async ({ page }) => {
   for (const [schema, t] of THEMES) {
     await page.emulateMedia({ colorScheme: schema });
     await viderBase(page);
@@ -770,7 +770,7 @@ const rangees = (loc) => loc.evaluate((ul) => [...ul.querySelectorAll('.ligne-ca
 
 // Spec §5.4 : une seule action en aplat par vue, « Reprendre » dans Bien-être et « Commencer » dans Moment difficile ; les petits
 // ▶ des favoris et des listes deviennent une icône d'accent sans fond. Les rangées qui ouvrent quelque chose ont leur icône à
-// l'accent, sans carré, et leur chevron en --contour. « Faite le… » du Programme est à l'encre (§5.3 : jamais un « fait » vert).
+// l'accent, sans carré, et leur chevron en --contour. « Faite le… » du Programme est à l'encre (§5.3 : jamais un « fait » à l'accent).
 test('v12 (5/9) · une seule action en aplat par vue : « Reprendre » dans Bien-être, « Commencer » dans Moment difficile ; les ▶ des favoris et des listes, une icône d\'accent sans fond ; les entrées à l\'icône d\'accent ; « Faite le… » à l\'encre, en clair et en sombre', async ({ page }) => {
   await verserControle(page);
   await page.evaluate(async () => {

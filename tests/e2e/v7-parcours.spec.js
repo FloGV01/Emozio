@@ -149,7 +149,7 @@ test('repère d\'étape en points, jamais une barre : faites et en cours à l\'e
         expect(x.taille, quoi).toBe('9×9');
         expect(x.rond, quoi).toBe(true);
       }
-      // v12 (3/9, spec §5.3) : les repères faits et en cours sont à l'encre ; un point vert dirait « fait ».
+      // v12 (3/9, spec §5.3) : les repères faits et en cours sont à l'encre ; un point à l'accent dirait « fait ».
       expect(p[0].fond, `${quoi} : faite`).toBe(rgb(t.text));
       expect(p[0].anneau, `${quoi} : faite, sans anneau`).toBe('none');
       expect(p[1].fond, `${quoi} : en cours`).toBe(rgb(t.text));

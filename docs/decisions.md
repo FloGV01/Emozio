@@ -1930,3 +1930,88 @@ Source : ses réponses du 13/11 à deux points de la relecture finale laissés �
 
 - **Les huit points d'attente de l'entrée v12.0.0 restent ouverts**, tels qu'ils y sont écrits : la recette de l'iPhone « v12 » ; Spotify (l'accord que sa page peut redemander, et Détente si elle n'est pas à lui) ; la forme d'un morceau ; « Installer la v12 » ; `--danger` rouge et les appels du concepteur ; les textes nouveaux ; les points de la v10 et de la v11, dont le très grand texte des écrans hérités (`HERITES`) ; « Hors de la v12 ».
 - **En consultation, en très grand texte** (un écran de `HERITES`, qui déborde à partir de 40 px) : à 47 et 53 px, le nom de la famille (5,6em) et son nombre (2,2em) prennent toute la largeur de la ligne, et la barre « Émotions », entre eux, tombe à zéro de large ; le nom et le nombre restent lisibles. À 53 px, les chiffres du dessus se chevauchent aussi. C'est ainsi depuis la v7 (la grille `.barres-familles` de `ecrans.css`, que la v12.0.1 ne touche pas), en clair comme en sombre. À reprendre avec le très grand texte des écrans hérités : par exemple, à partir de 40 px, la barre sur sa propre ligne, pleine largeur, sous le nom et le nombre, et les chiffres sur deux colonnes.
+
+## 2026-11-14 : v12.1.0, la palette « 3a » : le bleu pétrole, le bandeau et les pilules
+
+Source : ses retours sur les couleurs de la v12 (l'accent vert, le fond gris et blanc, « un ensemble triste »), le retour de Claude Design (`docs/design/retour-claude-design-v3/`, demandé avec `docs/design/prompt-claude-design-v3.md` et les captures `docs/design/v12-captures/`) et ses réponses du 14/11. Spec : `docs/superpowers/specs/2026-11-14-emozio-v12-1-design.md`, qui fait foi ; celle de la v12 vaut encore là où elle ne la contredit pas. Trois tâches, une par commit, chacune relue puis corrigée : A (les jetons et les formes), B (la ligne du jour et le mot choisi), C (la documentation et la version). **Version 12.1.0**, construite sur la v12.0.1 (non publiée), à publier en une fois, avec l'accord explicite de l'utilisateur. Ni le format de sauvegarde (`FORMAT_VERSION` 9) ni la base (`DB_VERSION` 6) ne changent ; les vocabulaires figés et les 144 couleurs de la carte non plus.
+
+### Décisions de l'utilisateur (spec §2, 14/11)
+
+- **Tout 3a**, « Bandeau, tout en rondeur », parmi trois palettes puis quatre variantes : une base presque blanche, des surfaces teintées d'un bleu pétrole pâle, un seul accent pétrole, des formes plus douces. Ses changements de structure sont pris avec : l'en-tête d'Aujourd'hui en bandeau teinté, les rubriques à plat séparées d'un filet (plus de cartes), des pilules pour tout ce qui se touche, un grand titre plus gros. C'est le seul changement de structure décidé ; aucun autre sans son accord.
+- **Sous « Aujourd'hui », la ligne du jour disparaît** (« enlève le résumé sous "Aujourd'hui" ») : les points de couleur des zones, le résumé de la journée (« Bureau · nuit moyen · 7 h 30 … ») et « Enregistré ». Restent « Encore jeudi jusqu'à 4 h. » avant 4 h et le message d'échec d'écriture : on ne perd jamais une saisie sans le savoir. « Enregistré » reste annoncé aux lecteurs d'écran (une région `role="status"`, masquée à l'écran), puisqu'il n'a plus de retour visuel.
+- **Carte des émotions** (« laisse en bulle grossie, enlève la forme bizarre ») : le mot choisi reste un **disque agrandi**, plus gros que ses voisines, son libellé dessus. Plus de « double capsule » (deux demi-disques qui devenaient un rectangle arrondi de 156 pt). La lentille (voisines à 120 puis 108 pt) et le centrage sur le mot choisi restent.
+- **Tout dans la v12.1**, sur la v12.0.1 ; publier seulement avec son accord explicite.
+
+### Les jetons 3a (spec §3.1, tâche A)
+
+Reportés à l'identique de `tokens-3a.css` dans `public/css/tokens.css` (clair / sombre) :
+- **La base** : `--bg` #f8f9fa / #080b0d, `--surface` #e8f1f4 / #10252c (les cartes, le bandeau, le fond d'un choix non fait), `--surface-2` #dae8ed / #19353f, `--barre` #f1f6f8 / #0c181d, `--line` #c3d6dd / #24434e, `--contour` #627a83 / #6c8c97, `--text` #0a1c22 / #f3f8f9, `--text-2` #40535a / #9fb7bf, `--desactive` #b7c9d0 / #33505a.
+- **La roue et les ronds** : `--piste` #e8f1f4 / #10252c, `--fenetre` #ffffff / #2f5563, `--rond` #ffffff / #19353f.
+- **L'accent** : `--accent` #2e7f99 / #62cbe8, `--sur-accent` #ffffff / #04161c, `--accent-texte` #1f6c85 / #62cbe8. `--action` et `--action-on` restent ses alias.
+- **Les graphiques** : `--donnee` #3c525c / #a8bec6, `--donnee-1` #bdcfd6 / #2b4751, `--donnee-2` #657e87 / #7a939c, `--donnee-3` #1f343c / #e2edf0.
+- **`--fond-choix`** vaut `--surface` (transparent en v12) : sur une carte, un choix non fait a la couleur de la carte, seul son contour le détache ; c'est voulu. `.ecran-noir` garde `transparent`.
+- **Les écrans de l'émotion** : l'encre et le voile des `--moment-*` suivent la nouvelle base, dans les deux thèmes. En sombre, la carte du bas prend `--moment-carte-bas` (#19353f), et `FOND_CARTE_DU_BAS` (`ui/carte-geometrie.js`) le suit, pour que le mot de la carte du bas garde 4,5:1.
+- **Les formes** : `--r-carte` 24 (16 en v12) ; le grand titre `min(2.35rem, 48px)` / `min(2.75rem, 58px)`, soit 40/47 en 700 (34/41 en v12).
+- `theme-color` : #f8f9fa en clair, #080b0d en sombre ; le manifest prend le clair.
+- **Inchangés** : les 4 zones, les 7 familles, `--danger` (#9E3B2F / #E8A195), la typographie hors du grand titre, les espacements, les cibles (44 pt au moins), `.ecran-noir`.
+
+**Les contrastes**, recalculés depuis `tokens.css` par `jetons.test.js` (WCAG, clair / sombre), sont ceux du README :
+- `--text` : 16,57:1 / 18,43:1 sur le fond, 15,24:1 / 14,82:1 sur `--surface`.
+- `--text-2` : 7,65:1 / 9,40:1 sur le fond, 7,04:1 / 7,56:1 sur `--surface`, 6,43:1 / 6,16:1 sur `--surface-2`.
+- `--sur-accent` sur `--accent` : **4,55:1** / 9,88:1. En clair, juste au-dessus de 4,5 : ne jamais éclaircir `--accent` sans passer `--sur-accent` au foncé.
+- `--accent-texte` : 5,62:1 / 10,55:1 sur le fond, 5,17:1 / 8,49:1 sur `--surface`, 4,73:1 / 6,92:1 sur `--surface-2`, 5,44:1 / 9,64:1 sur la barre. Un lien sur `--surface-2` en clair tient donc 4,5:1 (4,49:1 en v12) ; la règle « jamais sur `--surface-2` » est gardée, par prudence, et le contrôle global la vérifie encore.
+- `--contour` (3:1 au moins pour un choix non fait) : 4,30:1 / 5,48:1 sur le fond, 3,96:1 / 4,41:1 sur `--surface`, 3,62:1 / 3,60:1 sur `--surface-2`.
+- `--donnee-2` sur `--surface` : 3,75:1 / 4,90:1.
+- L'aplat `--accent` n'a que 4,32:1 sur le fond clair (3,97:1 sur `--surface`) : il ne porte jamais de texte posé sur le fond. Un texte d'action (« Retour », « Fermer », « Modifier », « + Ajouter », les liens, `a`) passe de `--action` à `--accent-texte`.
+
+### Les règles de sens (spec §3.2, inchangées)
+
+- Un seul accent, le bleu pétrole : « choisi » ou « agir », jamais une valeur, jamais « fait ». Jamais un rond ni un point sans icône : ronds et bulles appartiennent aux émotions ; seul un bouton rond qui porte une icône, comme le ▶ du lecteur, peut le porter.
+- Pas d'accent sur les écrans de l'émotion ni sur « Réveil la nuit ». En v12.1, un mot sans zone peindrait sinon ses activités choisies d'un bleu voisin de la zone bleue.
+- Les graphiques sont à l'encre (`--donnee*`), jamais à l'accent. Un choix fait garde sa coche ; un choix non fait garde son contour.
+- Les couleurs des zones et des familles ne servent qu'aux émotions (les familles : les agrégats de l'Analyse et Réglages › Émotions) ; `--danger`, à ce qui détruit.
+- **`CLAUDE.md`** : la ligne « Une seule couleur d'accent, le vert (v12) » devient « Une seule couleur d'accent, le bleu pétrole (v12.1) » ; le reste de la ligne, et du fichier, ne change pas.
+
+### Les formes (spec §3.1, tâche A)
+
+- **Le bandeau d'Aujourd'hui** (`.entete-jour`) : fond `--surface`, bord à bord et jusqu'en haut de l'écran, barre d'état comprise (marges négatives : la zone sûre du haut, et `--marge` sur les côtés), marges intérieures zone sûre + 10 / `--marge` / 18, coins du bas à 30, 8 sous lui. La date (`.sur-titre`) en capsule `--bg` (5 × 12, rayon 999, capitales 13/600, interlettrage .03em), 6 au-dessus du grand titre ; ‹ › gardent leurs ronds `--rond`. Avec « ‹ Retour », la barre de retour est dans le bandeau ; sous le bandeau « Nouvelle version prête » (qui prend la zone sûre), il part juste sous lui. En très grand texte, ‹ › passent à la ligne comme en v12, et la capsule de la date sur deux lignes.
+- **Les rubriques du soir** (`.carte-champ`) : plus de carte, ni fond ni rayon ; 14 au-dessus, 8 dessous, rien sur les côtés ; un filet `--line` de 1 au-dessus (`box-shadow`, sans hauteur), sauf la première sous le bandeau (6 au-dessus) ; le titre de rubrique en 700. Contact et Sport restent côte à côte, et « Détail › » s'arrête au bord de sa rubrique, qui n'a plus de marge sur les côtés.
+- **Les pilules** : `.btn`, `.fab`, `.action-bande`, `.roue-choix` et sa fenêtre, `.puce-reglage select` au rayon 999 ; la pilule est posée aussi là où une règle plus forte la défaisait (la bande du bas, le segmenté « petit »), comme sur la planche de référence. Les pastilles et les boutons de segmenté ont un rayon de 26 (la moitié de `--cible-bouton`), pas 999 : voir « Écarts au retour de Claude Design ». Les tuiles de l'Analyse gardent leur rayon (`--r-bouton`, 12) ; les cartes des autres écrans prennent `--r-carte` (24).
+- **Les choix** : non fait, fond `--surface`, contour `inset 0 0 0 1px var(--contour)`, texte 400 ; fait, aplat `--accent`, texte et coche `--sur-accent`, 600 (700 pour un chiffre). Rien ne change de taille.
+- **Moment difficile** : les exercices courts (`.exercice-court`) en pilules `--surface` au contour, grille 2 × 2 inchangée ; la respiration (`.carte-respiration`) dans un bandeau `--surface` bord à bord, rayon 34, marges 18 × 32, cercle de 176, « Commencer » en pilule d'accent sur toute la largeur ; « Une chose à la fois » et « Mon plan » sans fond, au contour `--line`, rayon 24.
+- **Les autres écrans** (Émotion, Épisode, Analyse et ceux que la planche ne dessine pas) n'ont pas de règle propre : ils prennent les jetons, les cartes de 24 et les pilules. Les bulles de l'émotion et leur texte noir ne changent pas.
+
+### La ligne du jour et le mot choisi (spec §2 points 2 et 3, §3.3, tâche B)
+
+- **Sous le titre d'Aujourd'hui** (`ui/composants/entete-jour.js`) : plus rien, sauf « Encore jeudi jusqu'à 4 h. » avant 4 h (`veille`), ou le message d'échec d'écriture, qui prend sa place, visible, dans le bandeau. La ligne n'a plus de place gardée : quand le message paraît, les rubriques descendent de sa hauteur, le temps de la panne. La région `role="status"` (`aria-live="polite"`) est toujours là, masquée (`.visuellement-cache`) : elle porte « Enregistré » après une écriture réussie, pour VoiceOver, et devient elle-même la ligne visible après un échec. Aujourd'hui ne calcule plus ni le résumé ni les zones du jour ; `PointsZones` perd sa variante lue, et `zonesDuJour` son libellé, qui ne servaient qu'à elle. L'Historique et l'Après coup gardent leurs points de zone. « J'ai fini pour ce soir » replie toujours la soirée, sa phrase n'est plus reprise sous le titre.
+- **Le mot choisi de la carte** (`.bulle-mot`, `ui/carte-geometrie.js`, `ui/composants/carte-emotions.js`) : la bulle elle-même est un disque à la couleur de sa case, agrandi à 156 pt par la lentille (× 1,625), plus gros que ses voisines (120 puis 108), à 4 pt d'elles, son libellé noir ajusté au disque. Plus de demi-disques ni de transition de forme : seules la place et la taille changent. Le même en clair et en sombre, et avec « Réduire les animations ». La lentille, le centrage, la garde de 350 ms, `aria-pressed`, la cible et le nom accessible ne changent pas.
+
+### Ce qui disparaît
+
+- Le vert de l'accent : #1C7D36 et #30D158 n'apparaissent plus nulle part dans `public/` ; le vert n'y dit plus que la zone verte ou la famille Joie.
+- Le fond gris (#F2F2F7) et les cartes blanches de la v12, et les cartes des rubriques du soir.
+- Sous « Aujourd'hui », les points des zones, le résumé de la journée et « Enregistré » à l'écran.
+- La double capsule du mot choisi de la carte des émotions.
+
+### Écarts au retour de Claude Design
+
+- **Les pastilles et les boutons de segmenté** : rayon `calc(var(--cible-bouton) / 2)`, soit 26, au lieu du 999 de `formes-3a.css`. À 44, 48 ou 52 de haut, le rayon est borné par la moitié de la hauteur : la même pilule, au pixel près, au texte par défaut (Aujourd'hui, Analyse, Réglages, en clair et en sombre). Passés sur deux lignes en très grand texte, ce sont des rectangles arrondis : « Congé / repos » garde son texte dedans à 47 et à 53 px, à 390 comme à 375, quand l'ovale du rayon 999 coupait le « / ». `.btn`, `.fab`, `.action-bande` et les autres restent à 999.
+- **Le texte d'action à `--accent-texte`** au lieu de `--action` (l'aplat, 4,32:1 sur le fond clair) : le README le demande pour les liens ; il vaut ici pour tout texte d'action posé sur le fond ou une surface.
+- **« Mémo vocal » et « Arrêter »** (`.btn-memo`, `.btn-arreter`) gardent leur rayon (12 et 8) : la planche ne les nomme pas parmi les pilules.
+
+### Contrôle et mesures (tâches A, B et C)
+
+- **La page du soir**, remplie comme le contrôle global, à 390 × 844 au texte par défaut, dans WebKit : **1729 px**, en clair comme en sombre (1716 en v12, 1611 en v11 : +118, sous la cible de +120 de la spec v12 §5.4) ; **2033 px** avec « Sport en détail » ouvert (+118 sur 1915), ses 7 types d'activité sur 3 rangées. Le bandeau et le grand titre de 40 l'allongeaient de 35 px (1751, +140, à la fin de la tâche A) ; la ligne du jour retirée lui rend 22 px. Le test (`v12-design.spec.js`) n'a pas été desserré. Rien n'a changé de place ; les 30 s restent à vérifier sur l'iPhone (recette v12.1).
+- **Le contrôle global** (`v7-controle.spec.js`), en clair et en sombre, sur tout le parcours : contraste 4,5:1, aucun choix fait sans coche (le mot choisi de la carte n'en est exempté que s'il est le plus gros disque de la carte), l'accent à sa place, les couleurs des familles dans l'Analyse et Réglages › Émotions seulement, aucune violation de la CSP ; le débordement de côté, du texte par défaut à 53 px. La liste `HERITES` ne change pas : la v12.1 n'ajoute aucun débordement.
+- **Les tests nouveaux** : les valeurs et les contrastes 3a, les formes fondues et leurs rayons, le fond des choix non faits (`jetons.test.js`) ; les formes 3a d'Aujourd'hui et de Moment difficile, « Congé / repos » de 17 à 53 px à 390 et à 375, la ligne disparue et « Enregistré » annoncé, le disque du mot choisi (`v12-design.spec.js`). Ceux du résumé, d'« Enregistré » sous le titre et de la double capsule sont adaptés.
+- **Captures**, dans WebKit à 390 × 844, en clair et en sombre, gardées hors du dépôt : Aujourd'hui (le bandeau, les rubriques à plat, les pilules), en très grand texte aussi, Moment difficile, la carte des émotions et son mot choisi.
+- **Version 12.1.0** (package.json, precache).
+
+### En attente de l'utilisateur
+
+- **La recette de l'iPhone**, « v12.1 » (`docs/recette-iphone.md`) : les couleurs au soleil et la nuit, le bandeau, les pilules, la page du soir en moins de 30 s, le mot choisi, plus rien sous le titre, « Enregistré » annoncé par VoiceOver.
+- **Publier la v12.1** : seulement avec son accord explicite (spec §2 point 4). Elle emporte la v12.0.1, jamais publiée.
+- **Le rayon 26 des pastilles et des segmentés**, au lieu du 999 de la planche (« Écarts au retour de Claude Design ») : le même rendu sur une ligne, à valider.
+- **« Mémo vocal » et « Arrêter »** en pilule ou non : ils gardent leur rayon (12 et 8) tant qu'il n'a pas tranché. Sur la page du soir, « Mémo vocal » garde ses angles au milieu des pilules.
+- **Le disque de 156 n'est pas propre au mot choisi** (relecture de la tâche B) : c'est le centre de la lentille, qui suit le glissement (v10, spec §4.1). Sans la double capsule, la taille seule distingue le mot choisi : à l'ouverture sans mot choisi, après un glissement, ou une fois le mot choisi effacé, une bulle non choisie a l'air choisie ; seule la carte du bas dit alors le mot choisi. Pas avec « Réduire les animations », où seul le mot choisi est agrandi. Le corriger changerait un comportement de la v10 qu'il a validé : rien n'est changé sans son accord.
+- **Les points d'attente des entrées v12.0.0 et v12.0.1 restent ouverts**, tels qu'ils y sont écrits.
