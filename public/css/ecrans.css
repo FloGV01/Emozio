@@ -993,7 +993,12 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    agrandi par la lentille à 156 pt (× 1,625, carte-geometrie.js), plus gros que ses voisines (120 puis 108), à 4 pt
    d'elles, au-dessus d'elles le temps d'une transition (v12.1, spec §2 point 3 : la « double capsule » de How We Feel,
    deux capsules de 78 × 156 au rayon 24 × 1,625, n'existe plus) ; le même en clair et en sombre. Place et taille par
-   transform (carte-emotions.js) ; seules elles changent, jamais la forme. */
+   transform (carte-emotions.js) ; seules elles changent, jamais la forme.
+   Ce disque de 156 n'est pas propre au mot choisi : c'est le centre de la lentille, qui suit le glissement (v10, spec
+   §4.1). Le mot du milieu, choisi ou non, a 156 : à l'ouverture sans mot choisi, après un glissement, et le mot choisi
+   retouché pour l'effacer, qui reste au centre ; le mot choisi ailleurs a la taille qu'elle lui donne. Là, seule la carte
+   du bas dit le mot choisi (pas avec « Réduire les animations », où seul le mot choisi est agrandi). Réserve de la v12.1,
+   à trancher par l'utilisateur (relecture de la tâche B) : rien n'est changé sans son accord. */
 .bulle-mot {
   position: absolute; left: 0; top: 0; width: 96px; height: 96px; padding: 0; border: 0; border-radius: 50%; background: var(--c); color: #000;
   transform-origin: 48px 48px; transition: transform .45s cubic-bezier(.2, .8, .2, 1);

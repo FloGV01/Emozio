@@ -103,8 +103,11 @@ const tirets = (page) => page.evaluate(() => [...document.querySelectorAll('body
 
 // Les choix faits visibles sans leur coche (jamais la couleur seule). Une question cochée a sa propre case ; le mot choisi
 // de la carte des émotions (v9) a sa taille : la double capsule de 156 jusqu'à la v12 ; depuis la v12.1, un disque de 156,
-// le plus gros de la carte, au lieu d'un disque de 96 (visuel §2.4 ; spec v12.1 §2 point 3) ; la couleur
-// choisie d'un mot à soi (v9, les quatre bulles en petit), son anneau autour du disque (blanc sur le noir du relevé, foncé
+// le plus gros de la carte, au lieu d'un disque de 96 (visuel §2.4 ; spec v12.1 §2 point 3). Ce contrôle ne voit que les
+// choix faits (aria-pressed="true"), et le parcours ne fait jamais glisser la carte : il voit le mot choisi au repos, la
+// lentille sur lui. Une bulle non choisie à 156 (le mot du milieu à l'ouverture sans mot choisi, après un glissement, ou le
+// mot choisi effacé) n'y est pas cherchée : réserve de la v12.1, à trancher par l'utilisateur (relecture de la tâche B).
+// La couleur choisie d'un mot à soi (v9, les quatre bulles en petit), son anneau autour du disque (blanc sur le noir du relevé, foncé
 // sur son gris clair en clair depuis la v11, couleur du texte dans Réglages). Relecture de la tâche 8 : cet anneau ne vaut coche que s'il se voit, un contour plein
 // d'au moins 2 px, à 2 px au moins du disque, à 3:1 au moins sur son fond (le premier ancêtre opaque, comme plus haut).
 // L'épingle allumée (v10) a sa forme aussi : son dessin se remplit ; sa couleur est mesurée par `epinglesFaibles`. La valeur

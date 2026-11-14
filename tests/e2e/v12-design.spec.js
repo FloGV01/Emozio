@@ -589,6 +589,9 @@ test('v12.1 (B) · sous le titre d\'Aujourd\'hui, plus de ligne : ni points des 
 // hauteur, rayon = la moitié, la bulle seule et son libellé, rien de peint dans les coins de sa boîte), plus gros que toutes
 // ses voisines (156 contre 120 au plus), à 3,5 pt au moins d'elles, dans l'écran ; plus de double capsule. Le même en clair
 // et en sombre, et avec « Réduire les animations » ; au milieu de la carte (Calme) comme dans son coin (Enragé, rouge).
+// Mesuré au repos, la lentille posée sur lui. Après un glissement, la lentille suit le milieu (v10) : le mot du milieu,
+// choisi ou non, a 156, et le mot choisi ailleurs la taille qu'elle lui donne (v10-carte.spec.js) ; réserve de la v12.1, à
+// trancher par l'utilisateur (relecture de la tâche B).
 test('v12.1 (B) · le mot choisi reste un disque agrandi, son libellé noir dessus, plus gros que ses voisines sans les recouvrir, au milieu de la carte comme à son bord ; le même en clair et en sombre, avec et sans « Réduire les animations »', async ({ page }) => {
   test.setTimeout(90000);
   const vus = {};

@@ -11,6 +11,11 @@
 //   bulles. Glisser n'écrit rien : ni .choisi, ni aria-pressed, ni relevé. Le mot choisi prend, comme les autres, la
 //   taille que la lentille lui donne (la carte du bas le dit toujours). Avec « Réduire les animations », rien n'est
 //   branché : seul le mot choisi a sa lentille, comme en v9.
+//   v12.1 : sans la double capsule, la taille seule distingue le mot choisi, et le centre de la lentille a la même, choisi
+//   ou non (156). À l'ouverture sans mot choisi, après un glissement, ou une fois le mot choisi effacé, une bulle non
+//   choisie a donc l'air choisie (pas avec « Réduire les animations », où seul le mot choisi est agrandi) ; seule la carte
+//   du bas dit le mot choisi. Réserve de la v12.1, à trancher par l'utilisateur (relecture de la tâche B) : rien n'est
+//   changé ici sans son accord.
 // - Toucher un mot appelle `surMot(id)`, qui écrit (le mot, ou rien s'il était déjà choisi). Pendant la garde (`enGarde`,
 //   350 ms après un changement de vue ou un mot choisi), la carte ignore les touchers et est aria-disabled. Les bulles
 //   peuvent bouger sous un doigt posé (la lentille, de 36 à 48 pt) : seul compte le mot sous le doigt quand il se pose, et
