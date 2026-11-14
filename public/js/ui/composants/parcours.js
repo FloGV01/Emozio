@@ -16,7 +16,7 @@ export function usePleinEcran() {
 // En 2b : le nom suit « Fermer » ; le repère d'étapes est fait de points, jamais d'une barre : à venir, un contour de 1,5 px
 // en --text-2, sans fond (v8 : --surface-2, puis --line, ne se voyaient pas assez en clair). v12 (spec §5.3 et §5.4) : les
 // parcours n'ont plus de couleur à eux. Le petit carré de couleur devant le nom est retiré ; les étapes faites et en cours
-// sont à l'encre, jamais en vert (un point vert, et un « fait » vert), l'étape en cours avec un anneau --contour. `icone`
+// sont à l'encre, jamais à l'accent (un point d'accent, et un « fait » d'accent), l'étape en cours avec un anneau --contour. `icone`
 // (v7, le lecteur de Bien-être) met le titre en grand en tête du corps, avec son icône en --text-2, au lieu du nom dans la
 // barre. v9 : l'Émotion du moment, qui portait la puce de droite et le panneau des réponses collé en bas, a ses propres
 // écrans pleins (ui/ecrans/moment.js).

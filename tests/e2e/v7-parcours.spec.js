@@ -127,7 +127,7 @@ const points = (vue) => vue.locator('.reperes').evaluate((r) => [...r.children].
 
 // v8 (8/9, Q29) : les étapes à venir passent de --surface-2 (invisible sur le fond clair) à un contour en --text-2, sans
 // fond (README 2b : « contour (2a) »), à 3:1 au moins sur le fond (relecture : --line restait sous 3:1).
-test('repère d\'étape en points, jamais une barre : faites et en cours à l\'encre (v12, jamais en vert), l\'étape en cours cerclée, à venir en contour', async ({ page }) => {
+test('repère d\'étape en points, jamais une barre : faites et en cours à l\'encre (v12, jamais à l\'accent), l\'étape en cours cerclée, à venir en contour', async ({ page }) => {
   const id = await creerEpisode(page, { date: '2026-10-14', heure: '18:42', emotion: 'emotion:colere', declencheur: 'declencheur:conflit', intensite: 7 });
   for (const schema of ['light', 'dark']) {
     const t = schema === 'dark' ? sombre : clair;
@@ -162,14 +162,14 @@ test('repère d\'étape en points, jamais une barre : faites et en cours à l\'e
       expect(p[2].fond, `${quoi} : à venir, sans fond`).toBe('rgba(0, 0, 0, 0)');
       expect(p[2].contour, `${quoi} : à venir, en contour`).toBe(rgb(t['text-2']));
       expect(p[0].contour, `${quoi} : faite, pleine`).toBe(p[0].fond);
-      // En-tête : « Fermer » (600, action), puis le nom, sans « · », et sans le petit carré qui le précédait (v12, spec §5.4 :
-      // `.point-teinte` est retiré).
+      // En-tête : « Fermer » (600, le texte de l'action : --accent-texte depuis la v12.1), puis le nom, sans « · », et sans le
+      // petit carré qui le précédait (v12, spec §5.4 : `.point-teinte` est retiré).
       const tete = await vue.locator('.parcours-tete').evaluate((h) => {
         const f = h.querySelector('.fermer');
         return { fermer: [getComputedStyle(f).fontWeight, getComputedStyle(f).color], nom: h.querySelector('.nom').textContent,
           enfants: h.querySelector('.nom').children.length };
       });
-      expect(tete, quoi).toEqual({ fermer: ['600', rgb(t.action)], nom, enfants: 0 });
+      expect(tete, quoi).toEqual({ fermer: ['600', rgb(t['accent-texte'])], nom, enfants: 0 });
       await vue.getByRole('button', { name: 'Fermer', exact: true }).click();
     }
     // Rouvert : le récapitulatif, toutes les étapes faites, aucune en cours.
@@ -267,8 +267,8 @@ test('v12 : les parcours n\'ont plus de couleur : leurs choix faits en accent, l
       return { fond: s.backgroundColor, rayon: s.borderTopLeftRadius, texte: s.color, terme: [getComputedStyle(v).color, getComputedStyle(v).fontWeight], mots: p.textContent };
     });
     expect(rappel.mots).toBe('Ça a démarré avec Conflit, ça ressemblait à colère, intensité 7.');
-    // v12 (4/9, spec §5.2) : les cartes ont un rayon de 16.
-    expect([rappel.fond, rappel.rayon, rappel.terme], schema).toEqual([rgb(t.surface), '16px', [rgb(t.text), '600']]);
+    // v12 (4/9, spec §5.2) : les cartes ont un rayon de 16 ; 24 depuis la v12.1 (3a).
+    expect([rappel.fond, rappel.rayon, rappel.terme], schema).toEqual([rgb(t.surface), '24px', [rgb(t.text), '600']]);
     expect(contraste(rappel.terme[0], rappel.fond), `${schema} · terme`).toBeGreaterThanOrEqual(4.5);
     expect(contraste(rappel.texte, rappel.fond), `${schema} · rappel`).toBeGreaterThanOrEqual(4.5);
     await fiche.getByRole('button', { name: 'Fermer', exact: true }).click();
@@ -370,7 +370,7 @@ const ouvrirDifficile = async (page) => {
 };
 const puce = (vue, nom) => vue.getByRole('combobox', { name: nom, exact: true });
 
-test('Moment difficile : les exercices courts en tête (v10), la respiration dans une carte (cercle neutre, « Commencer » en accent, AA ; v12), « Une chose à la fois › », Mon plan ; le corps défile, le pied reste', async ({ page }) => {
+test('Moment difficile : les exercices courts en tête (v10), la respiration dans une carte (cercle neutre, « Commencer » en accent, AA ; v12 ; en bandeau en v12.1), « Une chose à la fois › », Mon plan ; le corps défile, le pied reste', async ({ page }) => {
   await ecrireMeta(page, 'monPlan', PLAN);
   for (const schema of ['light', 'dark']) {
     const t = schema === 'dark' ? sombre : clair;
@@ -401,9 +401,10 @@ test('Moment difficile : les exercices courts en tête (v10), la respiration dan
         nom: [v.querySelector('.parcours-tete .nom').textContent, v.querySelectorAll('.parcours-tete .nom *').length],
       };
     });
-    for (const c of s.cartes) expect(c, schema).toEqual([rgb(t.surface), '16px']);
-    expect(s.cercle.taille).toBeGreaterThanOrEqual(140);
-    expect(s.cercle.taille).toBeLessThanOrEqual(164);
+    // v12.1 (3a) : la respiration dans un bandeau --surface de rayon 34 ; « Une chose à la fois » et Mon plan sans fond, rayon 24
+    // (leur contour : v12-design.spec.js) ; le cercle de 176.
+    expect(s.cartes, schema).toEqual([[rgb(t.surface), '34px'], ['rgba(0, 0, 0, 0)', '24px'], ['rgba(0, 0, 0, 0)', '24px']]);
+    expect(Math.round(s.cercle.taille)).toBe(176);
     expect(s.cercle, schema).toMatchObject({ fond: rgb(t['surface-2']), bord: '2px', couleurBord: rgb(t.contour), disque: rgb(t.surface) });
     expect([s.commencer.fond, s.commencer.texte, s.commencer.graisse], schema).toEqual([rgb(t.accent), rgb(t['sur-accent']), '600']);
     expect(s.commencer.hauteur).toBeGreaterThanOrEqual(52);
@@ -429,15 +430,16 @@ test('Moment difficile : les exercices courts en tête (v10), la respiration dan
     for (const [nom, texte] of [['Durée', '5 minutes'], ['Rythme', '5 s · 5 s']]) {
       const p = await puce(vue, nom).evaluate((x) => ({ texte: x.selectedOptions[0].textContent.replace(/ /g, ' '), hauteur: x.getBoundingClientRect().height,
         fond: getComputedStyle(x).backgroundColor, couleur: getComputedStyle(x).color, chevron: Boolean(x.parentElement.querySelector('svg')) }));
-      // v12 : transparente sur la carte, avec son contour.
-      expect(p, `${schema} · ${nom}`).toEqual({ texte, hauteur: 44, fond: 'rgba(0, 0, 0, 0)', couleur: rgb(t.text), chevron: true });
+      // v12 : transparente sur la carte, avec son contour ; v12.1 : le fond d'un choix non fait, --surface (celui du bandeau de la
+      // respiration), en pilule.
+      expect(p, `${schema} · ${nom}`).toEqual({ texte, hauteur: 44, fond: rgb(t.surface), couleur: rgb(t.text), chevron: true });
       expect(contraste(p.couleur, rgb(t.surface))).toBeGreaterThanOrEqual(4.5);
     }
     // « Une chose à la fois › » et « Modifier » (couleur action, 600), l'icône de Mon plan en --text-2, sans carré (v12).
     const acces = vue.getByRole('button', { name: 'Une chose à la fois', exact: true });
     expect(await acces.evaluate((b) => [getComputedStyle(b).fontWeight, Boolean(b.querySelector('svg')), b.getBoundingClientRect().height >= 44])).toEqual(['600', true, true]);
     const modifier = vue.getByRole('link', { name: 'Modifier mon plan', exact: true });
-    expect(await modifier.evaluate((a) => [a.textContent, getComputedStyle(a).fontWeight, getComputedStyle(a).color])).toEqual(['Modifier', '600', rgb(t.action)]);
+    expect(await modifier.evaluate((a) => [a.textContent, getComputedStyle(a).fontWeight, getComputedStyle(a).color])).toEqual(['Modifier', '600', rgb(t['accent-texte'])]);
     expect(await vue.locator('.icone-plan').evaluate((c) => [getComputedStyle(c).backgroundColor, getComputedStyle(c.querySelector('svg')).color]))
       .toEqual(['rgba(0, 0, 0, 0)', rgb(t['text-2'])]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);

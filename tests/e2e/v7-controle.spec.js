@@ -45,9 +45,9 @@ import { stabiliser, contrastesFaibles, ciblesPetites, motsInterdits, ecouterMou
 // v12 (6/9) : Mes refuges, une simple liste : vide, puis plein avec ses morceaux et « La suite est dans Spotify. » ; ses
 // réglages (la saisie de la v11) ; en très grand texte, un titre de morceau de 70 signes sans espace. v12 (7/9) : Moment
 // difficile avec ses morceaux, après Mon plan ; le Diagnostic et « Ouvrir un morceau ».
-// v12 (5/9) : sur chaque écran du parcours, l'accent vert reste à sa place (spec §5.3, §5.5 et §5.6) : aucun rond sans texte ni
+// v12 (5/9) : sur chaque écran du parcours, l'accent (vert en v12, bleu pétrole en v12.1) reste à sa place (spec §5.3, §5.5 et §5.6) : aucun rond sans texte ni
 // icône ne l'a pour fond ou pour contour, aucun graphique, écran de l'émotion ni « Réveil la nuit » n'en a de trace, et en clair,
-// aucun lien vert ne se pose sur --surface-2. Le parcours passe aussi par un jour de Mes jours touché, son détail ouvert.
+// aucun lien d'accent ne se pose sur --surface-2. Le parcours passe aussi par un jour de Mes jours touché, son détail ouvert.
 // Réglages et Le soir ont des icônes sans carré. v12 (9/9) : le débordement de côté, sur le parcours entier, en clair et en
 // sombre, jusqu'au très grand texte (33 à 53), hors des écrans hérités de la v11 (HERITES), à partir de leur taille d'alors.
 // Horloge : jeudi 15 octobre 2026, 21:00.
@@ -543,12 +543,12 @@ const couleursFamilles = (t) => {
   return [...new Set(FAMILLES_ROUE.flatMap((f) => ROLES.map((r) => rgb(t[`c-emo-${f}${r}`]))))].filter((c) => !zones.has(c));
 };
 
-// v12 (5/9) : sur chaque écran, l'accent vert reste à sa place (spec §5.3, §5.5 et §5.6). La règle de forme : aucun rond sans
+// v12 (5/9) : sur chaque écran, l'accent (vert en v12, bleu pétrole en v12.1) reste à sa place (spec §5.3, §5.5 et §5.6). La règle de forme : aucun rond sans
 // texte ni icône ne l'a pour fond ou pour contour ; le point de vigilance 3 : aucune trace de lui dans les graphiques, sur les
-// écrans de l'émotion ni sur « Réveil la nuit » ; et, en clair, aucun lien vert sur --surface-2 (tests/aides/controle.js).
+// écrans de l'émotion ni sur « Réveil la nuit » ; et, en clair, aucun lien d'accent sur --surface-2 (tests/aides/controle.js).
 // v12.0.1 : les couleurs des familles aussi restent à leur place (ECRANS_FAMILLES).
 for (const schema of ['light', 'dark']) {
-  test(`contraste ${schema === 'light' ? 'en clair' : 'en sombre'} : tout texte visible des écrans principaux a au moins 4,5:1 sur son fond ; ni tirets, ni choix fait sans coche ; l'accent vert à sa place ; les couleurs des familles dans l'Analyse et Réglages › Émotions seulement`, async ({ page }) => {
+  test(`contraste ${schema === 'light' ? 'en clair' : 'en sombre'} : tout texte visible des écrans principaux a au moins 4,5:1 sur son fond ; ni tirets, ni choix fait sans coche ; l'accent à sa place ; les couleurs des familles dans l'Analyse et Réglages › Émotions seulement`, async ({ page }) => {
     test.setTimeout(240000);
     const t = schema === 'light' ? clair : sombre;
     const accents = [rgb(t.accent), rgb(t['accent-texte'])];

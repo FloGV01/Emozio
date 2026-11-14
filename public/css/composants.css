@@ -21,7 +21,7 @@
 .barre-retour { display: flex; align-items: center; justify-content: space-between; min-height: var(--cible); margin: 0 -8px; }
 .retour {
   display: inline-flex; align-items: center; gap: 2px; padding: 0 8px 0 2px; min-height: var(--cible);
-  border: 0; background: none; color: var(--action); font-weight: 400; font-size: var(--t-corps);
+  border: 0; background: none; color: var(--accent-texte); font-weight: 400; font-size: var(--t-corps);
 }
 .retour svg { width: 22px; height: 22px; }
 /* Le témoin de la taille du texte (geste-retour.js, useDebordeDeCote) : 1em de large, hors flux, caché. Il ne déborde
@@ -29,7 +29,8 @@
 .temoin-texte { position: absolute; width: 1em; height: 0; visibility: hidden; pointer-events: none; }
 
 /* ---------- Cartes et listes ---------- */
-/* Carte : --surface sans bordure, rayon 16 (--r-carte) ; un choix non fait y est transparent, avec son contour (v12), comme sur le fond. */
+/* Carte : --surface sans bordure, rayon 24 (--r-carte) ; un choix non fait y a la couleur de la carte (--fond-choix, v12.1),
+   seul son contour le détache, comme sur le fond. */
 .carte { background: var(--surface); border-radius: var(--r-carte); padding: 14px 16px; }
 .carte-groupe { padding: 0; overflow: hidden; }
 .carte-entete { display: flex; align-items: baseline; justify-content: space-between; gap: var(--esp-2); margin-bottom: 8px; }
@@ -51,17 +52,18 @@
 .ligne-carte svg { width: 20px; height: 20px; color: var(--text-2); flex: none; }
 /* Le chevron (ou la sortie) au bout d'une rangée : en --contour (v12, spec §5.4), 3:1 sur la carte. */
 .ligne-carte > svg:last-child:not(:first-child) { color: var(--contour); }
-.ligne-carte.action { color: var(--action); padding: 0 16px; }
+.ligne-carte.action { color: var(--accent-texte); padding: 0 16px; }
 .ligne-carte.action svg { color: currentColor; }
 .ligne-carte[disabled] { color: var(--text-2); }
 .ligne-info { display: flex; align-items: center; justify-content: space-between; min-height: var(--cible); padding: 0 16px; font-size: var(--t-sous); }
 .ligne-info > span:last-child { color: var(--text-2); }
 
 /* ---------- Boutons ---------- */
-/* Bouton neutre (v12) : rayon 12, transparent avec son contour (--contour, sans bordure : box-shadow), comme un choix non
-   fait. L'action (Terminer, Commencer…) est en --action, l'accent : jamais une couleur de rubrique. */
+/* Bouton neutre (v12) : le fond d'un choix non fait (--fond-choix) avec son contour (--contour, sans bordure : box-shadow).
+   v12.1 (3a) : en pilule, comme tout ce qui se touche. L'action (Terminer, Commencer…) est en --action, l'accent : jamais
+   une couleur de rubrique. */
 .btn {
-  min-height: var(--cible-bouton); padding: 0 16px; border-radius: var(--r-bouton);
+  min-height: var(--cible-bouton); padding: 0 16px; border-radius: 999px;
   border: 0; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
   font-size: var(--t-corps); font-weight: 400;
   display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
@@ -72,14 +74,14 @@
 .btn-effacer[disabled] { background: var(--surface-2); color: var(--text-2); opacity: 1; }
 .btn[disabled] { opacity: 0.45; cursor: default; }
 .btn-lien {
-  border: 0; background: none; color: var(--action); min-height: var(--cible); padding: 0;
+  border: 0; background: none; color: var(--accent-texte); min-height: var(--cible); padding: 0;
   font-weight: 400; font-size: var(--t-corps); text-align: left; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
 }
 .btn-lien.action { font-weight: 600; }
 .btn-lien.action svg { width: 18px; height: 18px; stroke-width: 2; }
 .btn-lien[disabled] { color: var(--line); cursor: default; }
 .lien-discret { color: var(--text-2); text-decoration: underline; border: 0; background: none; font-size: var(--t-sous); min-height: var(--cible); padding: 0; }
-.lien { color: var(--action); text-decoration: none; min-height: var(--cible); display: inline-flex; align-items: center; font-weight: 600; font-size: var(--t-sous); }
+.lien { color: var(--accent-texte); text-decoration: none; min-height: var(--cible); display: inline-flex; align-items: center; font-weight: 600; font-size: var(--t-sous); }
 .pilule {
   display: inline-flex; align-items: center; gap: 6px; min-height: var(--cible); padding: 0 16px 0 12px;
   border-radius: var(--r-bouton); border: 0; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
@@ -137,7 +139,7 @@ html:has(.actions-flottantes) .onglets { box-shadow: none; }
    les deux boutons côte à côte dessous (67 de haut, au lieu de 90 quand « Recharger » passait seul à la ligne). */
 .bandeau { row-gap: 0; }
 .bandeau > span:first-child { flex: 1 0 100%; text-align: center; padding-top: 4px; line-height: 1.25; }
-.bandeau button { border: 0; background: none; color: var(--action); font-weight: 600; font-size: inherit; padding: 0 6px; min-height: var(--cible); }
+.bandeau button { border: 0; background: none; color: var(--accent-texte); font-weight: 600; font-size: inherit; padding: 0 6px; min-height: var(--cible); }
 .bandeau button[disabled] { color: var(--text-2); }
 /* Le bandeau prend la zone sûre du haut (sous l'encoche) : l'écran qui le suit ne la compte pas une seconde fois (v8,
    Q27 ; avec 47 px simulés, le soir perdait 47 px sous le bandeau). */
@@ -189,7 +191,7 @@ html:has(.actions-flottantes) .onglets { box-shadow: none; }
    les fait passer à la ligne : chaque action tient en un mot (Annuler, Revenir, Supprimer, Effacer, Arrêter). Le filet
    entre eux est le fond du pied, vu dans l'écart d'un pixel, sur une ligne comme sur deux. */
 .boite-pied { display: flex; flex-wrap: wrap; gap: 1px; border-top: 1px solid var(--line); background: var(--line); }
-.boite-pied button { flex: 1 1 calc(50% - .5px); min-height: 48px; border: 0; background: var(--surface); color: var(--action); font-size: var(--t-corps); }
+.boite-pied button { flex: 1 1 calc(50% - .5px); min-height: 48px; border: 0; background: var(--surface); color: var(--accent-texte); font-size: var(--t-corps); }
 .boite-pied .boite-action { font-weight: 600; }
 
 /* ---------- Rubriques ---------- */
@@ -203,7 +205,8 @@ html:has(.actions-flottantes) .onglets { box-shadow: none; }
 .etiquette-icone svg { width: 18px; height: 18px; color: var(--text-2); flex: none; }
 .facultatif { color: var(--text-2); font-size: var(--t-note); }
 .deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--esp-3); }
-/* Champs (v12) : transparents, avec le contour (--contour, sans bordure : box-shadow) ; au focus, un anneau d'accent. */
+/* Champs (v12) : le fond d'un choix non fait (--fond-choix : --surface depuis la v12.1, transparent en v12), avec le contour
+   (--contour, sans bordure : box-shadow) ; au focus, un anneau d'accent. */
 .champ-texte {
   width: 100%; min-height: 46px; padding: 9px 14px; border-radius: var(--r-moyen);
   border: 1px solid transparent; background: var(--fond-choix); box-shadow: inset 0 0 0 1px var(--contour); resize: none; line-height: 1.35; display: block;
@@ -232,7 +235,8 @@ textarea.champ-texte[data-lignes="1"] { --lignes: 1; min-height: max(var(--cible
 input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 
 /* Sélection commune à tous les choix : pastilles, grilles, choix multiples, segmentés, Oui / Non, période (v12, spec §5.4).
-   Non choisi : transparent (--fond-choix), avec le contour (--contour, en box-shadow : sans bordure), rayon 12, en 400.
+   Non choisi : le fond --fond-choix (--surface depuis la v12.1, transparent en v12), avec le contour (--contour, en
+   box-shadow : sans bordure), en pilule (v12.1, 3a : rayon 999 ; 12 en v12), en 400.
    Choisi : un aplat d'accent, le texte en --sur-accent, graisse 600 (700 pour un chiffre) et une coche ✓ devant le libellé,
    jamais la couleur seule. Dans une famille d'émotions ou une zone (.emo-*, .zone-*), l'aplat prend leur couleur (-fill,
    -on). Rien ne change de taille au toucher. */
@@ -263,7 +267,7 @@ input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 .pastilles.souples { display: flex; flex-wrap: wrap; gap: var(--ecart); }
 .pastilles.souples .pastille { min-height: var(--cible); padding: 4px 12px; font-size: var(--t-sous); }
 .pastille {
-  min-height: var(--cible-grille); padding: 4px 6px; border-radius: var(--r-moyen);
+  min-height: var(--cible-grille); padding: 4px 6px; border-radius: 999px;
   border: 0; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
   display: flex; align-items: center; justify-content: center; gap: 6px;
   font-size: var(--t-corps); line-height: 1.15; text-align: center;
@@ -278,7 +282,7 @@ input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 .pastilles.grille-choix .pastille { min-height: 52px; justify-content: flex-start; text-align: left; gap: 8px; padding: 8px 12px; }
 .pastilles.grille-choix.chiffres .pastille { justify-content: center; }
 /* « + Ajouter » à la suite des choix : une action (couleur action, 600), sans fond ni tirets (2b). */
-.pastille-ajout { color: var(--action); background: none; border: 0; box-shadow: none; font-weight: 600; }
+.pastille-ajout { color: var(--accent-texte); background: none; border: 0; box-shadow: none; font-weight: 600; }
 .ajout-pastille { grid-column: 1 / -1; display: flex; gap: var(--esp-2); }
 .ajout-pastille input { flex: 1; }
 
@@ -288,7 +292,7 @@ input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 .segmente button {
   flex: 1; min-height: var(--cible-grille); min-width: 56px; padding: 0 var(--esp-3);
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  border: 0; border-radius: var(--r-moyen); background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
+  border: 0; border-radius: 999px; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
   font-size: var(--t-corps); transition: background var(--duree), color var(--duree);
 }
 .segmente button[aria-pressed="true"] { background: var(--c-fill, var(--action)); color: var(--c-on, var(--action-on)); box-shadow: none; font-weight: 600; }
@@ -298,9 +302,9 @@ input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 .segmente.large button { --demi-coche: 9.5px; min-width: min-content; min-height: var(--cible); padding: 0 6px; gap: 4px; font-size: var(--t-sous); }
 .segmente.large .coche svg { width: 15px; height: 15px; }
 /* « petit » (v7, Comprendre : période, mesure, avant ou après) : de petites pastilles à la largeur de leur libellé, qui
-   passent à la ligne, en accent une fois choisies ; cibles de 44. */
+   passent à la ligne, en accent une fois choisies ; cibles de 44. En pilule, comme les autres segments (v12.1). */
 .segmente.petit { flex-wrap: wrap; }
-.segmente.petit button { --demi-coche: 9.5px; flex: 0 0 auto; min-width: 0; min-height: var(--cible); padding: 0 12px; gap: 4px; border-radius: var(--r-petit); font-size: var(--t-petit); }
+.segmente.petit button { --demi-coche: 9.5px; flex: 0 0 auto; min-width: 0; min-height: var(--cible); padding: 0 12px; gap: 4px; font-size: var(--t-petit); }
 .segmente.petit .coche svg { width: 15px; height: 15px; }
 
 /* Dicter */
@@ -333,15 +337,15 @@ button.effacer svg { width: 18px; height: 18px; }
    visibles d'un toucher, qui gardent leurs 4,5:1 (comme la maquette, où seules les secondes voisines s'effaçaient) : il
    finit au bord extérieur des voisines (50 % moins une valeur et demie), sur 25 % de la bande au plus. Avec des valeurs
    larges (119 px à 390 et à 375), il n'y en a pas ; en paysage, il n'efface que les valeurs lointaines. La bande garde
-   son fond. */
+   son fond. v12.1 (3a) : la piste et sa fenêtre en pilule (rayon 999). */
 .roue-choix {
   --l-valeur: 4em; --l-roue: min(var(--l-valeur), 100%);
-  position: relative; min-width: 0; border-radius: var(--r-moyen); background: var(--piste); box-shadow: inset 0 0 0 1px var(--contour);
+  position: relative; min-width: 0; border-radius: 999px; background: var(--piste); box-shadow: inset 0 0 0 1px var(--contour);
   font-size: var(--t-corps); line-height: 1.15;
 }
 .roue-choix::before {
   content: ""; position: absolute; top: 3px; bottom: 3px; left: 50%; width: calc(var(--l-roue) - 6px); transform: translateX(-50%);
-  border-radius: 9px; background: var(--fenetre); box-shadow: var(--fenetre-ombre);
+  border-radius: 999px; background: var(--fenetre); box-shadow: var(--fenetre-ombre);
 }
 .roue-choix.notee::before { background: var(--accent); box-shadow: none; }
 .roue-defile {
@@ -426,9 +430,10 @@ button.effacer svg { width: 18px; height: 18px; }
 .puce-texte { font-size: var(--t-sous); font-variant-numeric: tabular-nums; padding-right: 2px; }
 
 /* ---------- Bouton flottant ---------- */
+/* En pilule (v12.1, 3a). */
 .fab {
   position: fixed; right: calc(var(--marge) + var(--zone-droite)); bottom: calc(57px + var(--zone-bas)); z-index: 9;
-  display: inline-flex; align-items: center; gap: 6px; min-height: var(--cible); padding: 0 18px 0 14px; border-radius: var(--r-bouton);
+  display: inline-flex; align-items: center; gap: 6px; min-height: var(--cible); padding: 0 18px 0 14px; border-radius: 999px;
   background: var(--action); color: var(--action-on); font-weight: 600; font-size: var(--t-corps); text-decoration: none;
   box-shadow: 0 2px 10px rgba(0, 0, 0, .16);
 }
@@ -449,14 +454,14 @@ button.effacer svg { width: 18px; height: 18px; }
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 0 8px; min-height: 48px;
   container: tete / inline-size; anchor-name: --tete-parcours;
 }
-.parcours-tete .fermer { display: inline-flex; align-items: center; gap: 6px; padding: 0 6px; min-height: var(--cible); border: 0; background: none; color: var(--action); font-size: var(--t-corps); font-weight: 600; }
+.parcours-tete .fermer { display: inline-flex; align-items: center; gap: 6px; padding: 0 6px; min-height: var(--cible); border: 0; background: none; color: var(--accent-texte); font-size: var(--t-corps); font-weight: 600; }
 .parcours-tete .fermer svg { width: 20px; height: 20px; }
 .parcours-tete .nom { min-width: 0; margin-left: 10px; font-weight: 600; font-size: var(--t-corps); color: var(--text); }
 .reperes { margin-left: auto; flex: none; display: flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 10px 0 8px; }
 /* À venir (v8, Q29) : un contour de 1,5 en --text-2, sans fond (README 2b : « contour (2a) »), au moins 3:1 sur le fond
    (5,6:1 en clair, 7,3:1 en sombre) ; --surface-2 ne se voyait pas sur le fond clair (1:1), et --line restait sous 3:1
    (relecture). Faites et en cours : pleines, le contour à la même couleur, de même taille ; à l'encre (v12, spec §5.3), jamais
-   en vert : un point vert, et un « fait » vert. L'étape en cours a en plus un anneau --contour (3:1 sur le fond), qui seul la
+   à l'accent : un point d'accent, et un « fait » d'accent. L'étape en cours a en plus un anneau --contour (3:1 sur le fond), qui seul la
    distingue des étapes faites. « Réveil la nuit » les éteint (--c, .parcours.ecran-noir, ecrans.css). */
 .reperes i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--text-2); background: none; }
 .reperes i.fait, .reperes i.en-cours { background: var(--c, var(--text)); border-color: var(--c, var(--text)); }

@@ -8,7 +8,8 @@ import {
 import { DEFINITIONS } from '../../public/js/domain/definitions-roue.js';
 import { energieDe, motsDeLaCarte } from '../../public/js/domain/carte-roue.js';
 import { couleurCase, couleurLisible } from '../../public/js/ui/carte-geometrie.js';
-import { canaux } from '../aides/couleurs.js';
+import { canaux, jetons } from '../aides/couleurs.js';
+import { readFileSync } from 'node:fs';
 
 // v9 (4/8) · L'émotion comme How We Feel, en plein écran (spec §4.1, §4.2, §5 et §7 ; visuel-hwf.md §1, §2 et §4) :
 // l'écran 1 (quatre bulles, « Maintenant ▾ ») et l'écran 2 (la carte de 144 mots, la carte du bas, la flèche). Toucher
@@ -23,6 +24,14 @@ const MOTS_CARTE = motsDeLaCarte(null);
 const caseDe = (libelle) => { const m = MOTS_CARTE.find((x) => x.libelle === libelle); return couleurCase(m.col, m.rang); };
 const rgb = (hex) => `rgb(${canaux(hex).join(', ')})`;
 const rgbCase = (libelle) => rgb(caseDe(libelle));
+// Les couleurs des écrans de l'émotion, lues dans les jetons (--moment-*) : le noir et le blanc de How We Feel en sombre, le
+// gris clair d'Aujourd'hui et le noir en clair jusqu'à la v12 ; la base 3a en v12.1 (fond #080b0d et encre #f3f8f9 en sombre,
+// fond #f8f9fa et encre #0a1c22 en clair). Le texte des bulles reste noir dans les deux thèmes.
+const J = jetons(readFileSync(new URL('../../public/css/tokens.css', import.meta.url), 'utf8'));
+const MOMENT = {
+  dark: { fond: rgb(J.sombre.bg), encre: rgb(J.sombre['moment-texte']), verre: rgb(J.sombre['moment-verre']), bas: rgb(J.sombre['moment-carte-bas']), focus: rgb(J.sombre['moment-focus']) },
+  light: { fond: rgb(J.clair.bg), encre: rgb(J.clair['moment-texte']), bas: rgb(J.clair['moment-carte-bas']), focus: rgb(J.clair['moment-focus']) },
+};
 const ouvrir = async (page) => {
   await aller(page, '#/moment');
   const vue = vueMoment(page);
@@ -168,7 +177,7 @@ test('plein écran, fond noir en sombre et gris clair en clair, des bulles à l\
       entete: document.querySelectorAll('.parcours, .parcours-tete').length, couvre: [r.top, r.left, r.width, r.height],
       deCote: document.documentElement.scrollWidth > innerWidth || scrollX !== 0 };
   });
-  const FONDS = { dark: 'rgb(0, 0, 0)', light: 'rgb(242, 242, 247)' };
+  const FONDS = { dark: MOMENT.dark.fond, light: MOMENT.light.fond };
   for (const schema of ['light', 'dark']) {
     await page.emulateMedia({ colorScheme: schema });
     const attendu = { fond: FONDS[schema], onglets: 0, entete: 0, couvre: [0, 0, 390, 844], deCote: false };
@@ -217,9 +226,9 @@ test('l\'écran 1 aux mesures de How We Feel (visuel §1) : ✕ en verre de 48 �
     };
   });
   expect(m.fermer).toEqual([16, 47.3, 48, 44]);
-  expect(m.fondFermer).toBe('rgb(27, 27, 27)');
+  expect(m.fondFermer).toBe(MOMENT.dark.verre);
   expect(m.titre[1]).toBe(121);
-  expect(m.police).toEqual(['700', 'rgb(255, 255, 255)']);
+  expect(m.police).toEqual(['700', MOMENT.dark.encre]);
   // Les faces : 145 de diamètre, à leurs places mesurées (à 2 pt près), sur une grille carrée.
   const attendues = [[39.1, 306.3], [205.5, 306.1], [39.1, 472.8], [205.5, 473.1]];
   m.faces.forEach(([x, y, l, h], i) => {
@@ -242,7 +251,7 @@ test('l\'écran 1 aux mesures de How We Feel (visuel §1) : ✕ en verre de 48 �
       fermer: [verre.getBoundingClientRect().left, verre.getBoundingClientRect().top].map((x) => Math.round(x * 10) / 10), titre: Math.round(titre.getBoundingClientRect().top),
       faceFond: [...v.querySelectorAll('.bulle-zone .face')].map((f) => getComputedStyle(f).backgroundColor) };
   });
-  expect(clair).toEqual({ fondFermer: 'rgba(255, 255, 255, 0.78)', police: ['700', 'rgb(0, 0, 0)'], fermer: [16, 47.3], titre: 121, faceFond: m.faceFond });
+  expect(clair).toEqual({ fondFermer: 'rgba(255, 255, 255, 0.78)', police: ['700', MOMENT.light.encre], fermer: [16, 47.3], titre: 121, faceFond: m.faceFond });
 });
 
 test('la carte s\'ouvre sur le milieu de la zone touchée, ses 144 mots, et le focus sur cette zone ; elle défile dans les deux sens', async ({ page }) => {
@@ -369,7 +378,7 @@ test('AA : le texte noir de chaque bulle sur sa couleur rendue (les quatre de l\
       expect(contraste(m.texte, m.fond), `${schema} ${m.nom}`).toBeGreaterThanOrEqual(4.5);
     }
     // Les cases les plus profondes de chaque zone, et une claire : en sombre, le mot, éclairci si besoin, et la définition,
-    // blanche, sur #2c2c2e ; en clair (v11), le mot en noir sur sa capsule (la couleur de sa case) et la définition foncée,
+    // à l'encre, sur --moment-carte-bas (#2c2c2e jusqu'à la v12) ; en clair (v11), le mot en noir sur sa capsule (la couleur de sa case) et la définition foncée,
     // sur une carte blanche.
     for (const n of ['Enragé', 'Sans valeur', 'Extasié', 'Serein', 'Calme']) {
       await toucherMot(vue, n);
@@ -379,15 +388,15 @@ test('AA : le texte noir de chaque bulle sur sa couleur rendue (les quatre de l\
         return [getComputedStyle(e).backgroundColor, getComputedStyle(m).color, getComputedStyle(m).backgroundColor, getComputedStyle(d).color];
       });
       if (schema === 'dark') {
-        expect(fond).toBe('rgb(44, 44, 46)');
+        expect(fond).toBe(MOMENT.dark.bas);
         expect(motFond).toBe('rgba(0, 0, 0, 0)');
         expect(contraste(motCouleur, fond), `${schema} ${n}`).toBeGreaterThanOrEqual(4.5);
-        expect(def).toBe('rgb(255, 255, 255)');
+        expect(def).toBe(MOMENT.dark.encre);
       } else {
-        expect(fond).toBe('rgb(255, 255, 255)');
+        expect(fond).toBe(MOMENT.light.bas);
         expect([motCouleur, motFond], n).toEqual(['rgb(0, 0, 0)', rgbCase(n)]);
         expect(contraste(motCouleur, motFond), `${schema} ${n}`).toBeGreaterThanOrEqual(4.5);
-        expect(def).toBe('rgb(0, 0, 0)');
+        expect(def).toBe(MOMENT.light.encre);
       }
       expect(contraste(def, fond), `${schema} ${n} : définition`).toBeGreaterThanOrEqual(4.5);
     }
@@ -418,7 +427,7 @@ test('AA : le texte noir de chaque bulle sur sa couleur rendue (les quatre de l\
     });
     // Le fond de chaque texte posé sur l'écran : son noir en sombre, comme avant ; le gris clair en clair ; le mot, sur sa
     // capsule en clair.
-    expect([textes.titre[1], textes.mot[1]], schema).toEqual(schema === 'dark' ? ['rgb(0, 0, 0)', 'rgb(0, 0, 0)'] : ['rgb(242, 242, 247)', rgbCase('Calme')]);
+    expect([textes.titre[1], textes.mot[1]], schema).toEqual(schema === 'dark' ? [MOMENT.dark.fond, MOMENT.dark.fond] : [MOMENT.light.fond, rgbCase('Calme')]);
     for (const [nom, [texte, fond]] of Object.entries(textes)) expect(contraste(texte, fond), `${schema} écran 3, ${nom}`).toBeGreaterThanOrEqual(4.5);
     await terminer(vue).click();
   }
@@ -1088,13 +1097,13 @@ test('relecture finale : au clavier, le contour d\'une bulle de l\'écran 1 pass
     const s = getComputedStyle(b);
     return [b.matches(':focus-visible'), s.outlineStyle, s.outlineWidth, s.outlineColor, s.outlineOffset, s.zIndex];
   });
-  expect(f).toEqual([true, 'solid', '2px', 'rgb(255, 255, 255)', '16px', '1']);
+  expect(f).toEqual([true, 'solid', '2px', MOMENT.dark.focus, '16px', '1']);
   // En clair, focus gardé : le même contour, foncé.
   await page.emulateMedia({ colorScheme: 'light' });
   expect(await bulle(vue, 'jaune').evaluate((b) => {
     const s = getComputedStyle(b);
     return [b.matches(':focus-visible'), s.outlineStyle, s.outlineWidth, s.outlineColor, s.outlineOffset, s.zIndex];
-  })).toEqual([true, 'solid', '2px', 'rgb(0, 0, 0)', '16px', '1']);
+  })).toEqual([true, 'solid', '2px', MOMENT.light.focus, '16px', '1']);
   // Les halos tournent sur une orbite de 12 pt (le décalage de leur centre, lu sur leur transform) et débordent la face de
   // 0,4 : le contour, à 16, est au-delà.
   const ecart = await bulle(vue, 'jaune').evaluate((b) => Math.max(...[...b.querySelectorAll('.halo')].map((h) => {

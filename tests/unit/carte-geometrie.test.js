@@ -36,7 +36,10 @@ test('couleurs : un mot à soi, hors du carré, a la couleur de la case du bord 
   assert.equal(couleurCase(15, 7), couleurCase(12, 7));
 });
 
-test('AA : le texte noir sur chaque case (144 et les colonnes des mots à soi) ; le mot de la carte du bas sur #2c2c2e', () => {
+test('AA : le texte noir sur chaque case (144 et les colonnes des mots à soi) ; le mot de la carte du bas sur son fond, --moment-carte-bas en sombre (v12.1 : #19353f)', () => {
+  // Le fond de la carte du bas en sombre, tel que tokens.css le déclare : couleurLisible éclaircit le mot pour ce fond-là.
+  const { sombre } = jetons(lire(join(RACINE, 'public', 'css', 'tokens.css')));
+  assert.equal(FOND_CARTE_DU_BAS, sombre['moment-carte-bas']);
   for (let col = -2; col <= 15; col++) {
     for (let rang = 1; rang <= 12; rang++) {
       const c = couleurCase(col, rang);

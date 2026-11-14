@@ -225,24 +225,33 @@ test('docs/decisions.md, l\'entrée v12.0.1 : les barres d\'En consultation à l
 
 // Relecture finale : le contraste d'un lien vert sur --surface-2 en clair, calculé depuis les jetons, est celui que donnent les
 // jetons, le contrôle et la documentation (la spec dit « environ 4,48 ») ; le commentaire de la carte dit son rayon, --r-carte.
-test('le lien vert sur --surface-2 en clair : 4,49:1, calculé depuis les jetons, partout où il est écrit ; le commentaire de la carte dit le rayon de --r-carte', () => {
+// v12.1 (tâche A) : les jetons 3a le portent à 4,73:1 (le lien, --accent-texte, plus foncé que l'accent) ; les jetons et le
+// contrôle disent la valeur d'aujourd'hui, l'entrée v12.0.0 et la section v12 de integration.md gardent celle de la v12, 4,49:1.
+test('le lien sur --surface-2 en clair : 4,73:1 (v12.1), calculé depuis les jetons, écrit dans les jetons et le contrôle ; 4,49:1 (v12) reste dans l\'histoire de la v12 ; le commentaire de la carte dit le rayon de --r-carte', () => {
   const css = doc('public', 'css', 'tokens.css');
   const { clair } = jetons(css);
   const ecrit = `${contraste(clair['accent-texte'], clair['surface-2']).toFixed(2).replace('.', ',')}:1`;
-  assert.equal(ecrit, '4,49:1');
+  assert.equal(ecrit, '4,73:1');
   const lieux = {
     'public/css/tokens.css': css,
     'tests/aides/controle.js': doc('tests', 'aides', 'controle.js'),
-    'docs/decisions.md, entrée v12.0.0': entreeV12(),
-    'docs/design/integration.md': doc('docs', 'design', 'integration.md'),
   };
   for (const [nom, texte] of Object.entries(lieux)) {
     const plat = texte.replace(/\s+/g, ' ');
     assert.ok(plat.includes(ecrit), `${nom} : ${ecrit} absent`);
     assert.doesNotMatch(plat, /4,48:1/, nom);
   }
+  const histoire = {
+    'docs/decisions.md, entrée v12.0.0': entreeV12(),
+    'docs/design/integration.md': doc('docs', 'design', 'integration.md'),
+  };
+  for (const [nom, texte] of Object.entries(histoire)) {
+    const plat = texte.replace(/\s+/g, ' ');
+    assert.ok(plat.includes('4,49:1'), `${nom} : 4,49:1 absent`);
+    assert.doesNotMatch(plat, /4,48:1/, nom);
+  }
   const rayon = /--r-carte:\s*(\d+)px;/.exec(css)[1];
-  assert.equal(rayon, '16');
+  assert.equal(rayon, '24');
   assert.ok(doc('public', 'css', 'composants.css').includes(`/* Carte : --surface sans bordure, rayon ${rayon} (--r-carte) ;`));
 });
 

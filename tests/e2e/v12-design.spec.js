@@ -1,25 +1,33 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '../aides/gardes.js';
-import { toucher, groupe, viderBase, aller, appPrete } from '../aides/saisie.js';
+import { toucher, groupe, viderBase, aller, appPrete, simulerZonesSures } from '../aides/saisie.js';
 import { canaux, contraste, jetons, oklch } from '../aides/couleurs.js';
 import { vueMoment, noter, continuer, faisais } from '../aides/emotion.js';
 import { stabiliser, verserControle, ciblesPetites, rondsAccent, accentHorsDeSaPlace, liensSurSurface2 } from '../aides/controle.js';
 import { installerParole } from '../aides/lecteur.js';
 
 // v12 · Le design simple façon Apple (spec docs/superpowers/specs/2026-11-09-emozio-v12-design.md, §5).
-// Tâche 3 : les jetons, l'accent vert B et les choix. Un choix fait est un aplat d'accent, son texte et sa coche ✓ en
-// --sur-accent, en 600 : la coche reste, dans les deux thèmes (jamais la couleur seule). Un choix non fait est transparent,
-// avec son contour. Rien ne change de taille au toucher. La roue, l'interrupteur et les champs passent au même système. Les
+// Tâche 3 : les jetons, l'accent (le vert B en v12, le bleu pétrole en v12.1) et les choix. Un choix fait est un aplat
+// d'accent, son texte et sa coche ✓ en --sur-accent, en 600 : la coche reste, dans les deux thèmes (jamais la couleur seule).
+// Un choix non fait a le fond --fond-choix (transparent en v12, --surface en v12.1), avec son contour, en pilule depuis la
+// v12.1. Rien ne change de taille au toucher. La roue, l'interrupteur et les champs passent au même système. Les
 // écrans de l'émotion et « Réveil la nuit » n'ont pas d'accent. Tâche 4 : Aujourd'hui façon Apple (l'en-tête, les cartes sans
 // carré coloré, la bande du bas, les onglets), sans couleur de rubrique, et la page du soir qui ne grandit pas de plus de
 // 120 px. Tâche 5 : les autres écrans et les graphiques ; l'accent vert reste à sa place (la règle de forme et le point de
 // vigilance 3 sont contrôlés sur tous les écrans du contrôle, v7-controle.spec.js ; ici, leurs contrôles eux-mêmes), les
-// graphiques sont à l'encre, une seule action en aplat par vue. Données inventées. Horloge : jeudi 15 octobre 2026, 21:00 (390 × 844).
+// graphiques sont à l'encre, une seule action en aplat par vue. v12.1 (spec 2026-11-14, tâche A) : les jetons « 3a » (base
+// presque blanche, surfaces teintées de bleu pétrole, accent pétrole), le bandeau d'Aujourd'hui, les rubriques à plat, les
+// pilules, le grand titre de 40. Données inventées. Horloge : jeudi 15 octobre 2026, 21:00 (390 × 844).
 const { clair, sombre } = jetons(readFileSync(new URL('../../public/css/tokens.css', import.meta.url), 'utf8'));
 const THEMES = [['light', clair], ['dark', sombre]];
 const rgb = (hex) => `rgb(${canaux(hex).join(', ')})`;
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 const contourDe = (t) => `${rgb(t.contour)} 0px 0px 0px 1px inset`;
+// v12.1 : un gris, ou une teinte de la base pétrole (teinte de 215 à 230°, saturation sous 0,05) : la base et l'encre des
+// graphiques, jamais l'accent (0,08 au moins).
+const dePetrole = (c) => { const o = oklch(c); return o.C < 0.02 || (o.C < 0.05 && o.H >= 215 && o.H <= 230); };
+const NOMS_BASE = ['bg', 'surface', 'surface-2', 'barre', 'line', 'contour', 'text', 'text-2', 'desactive', 'piste', 'fenetre', 'rond',
+  'donnee', 'donnee-1', 'donnee-2', 'donnee-3'];
 
 test.beforeEach(async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 9, 15, 21, 0) });
@@ -27,8 +35,13 @@ test.beforeEach(async ({ page }) => {
   await viderBase(page);
 });
 
-// Chaque bouton d'un groupe : sa boîte, son style, sa coche (montrée ou non, sa taille, sa couleur) et ce qui bouge.
+// Chaque bouton d'un groupe : sa boîte, son style, son rayon vu (999px, borné par la moitié de la plus petite dimension), sa
+// coche (montrée ou non, sa taille, sa couleur) et ce qui bouge.
 const choixDe = (loc) => loc.evaluate(async (g) => {
+  const rayonVu = (b) => {
+    const r = b.getBoundingClientRect();
+    return `${Math.min(parseFloat(getComputedStyle(b).borderTopLeftRadius), Math.round(r.width * 2) / 4, Math.round(r.height * 2) / 4)}px`;
+  };
   await Promise.all(g.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => {})));
   return [...g.querySelectorAll('button')].map((b) => {
     const s = getComputedStyle(b);
@@ -38,14 +51,14 @@ const choixDe = (loc) => loc.evaluate(async (g) => {
     const vue = Boolean(coche) && getComputedStyle(coche).display !== 'none';
     return {
       nom: b.textContent.trim(), presse: b.getAttribute('aria-pressed'), boite: [r.left, r.top, r.width, r.height].map((x) => Math.round(x * 2) / 2),
-      fond: s.backgroundColor, texte: s.color, graisse: s.fontWeight, contour: s.boxShadow, transform: s.transform,
+      fond: s.backgroundColor, texte: s.color, graisse: s.fontWeight, contour: s.boxShadow, transform: s.transform, rayon: rayonVu(b),
       coche: vue && { taille: Math.round(svg.getBoundingClientRect().width), trait: svg.getAttribute('stroke'), couleur: getComputedStyle(svg).color,
         cachee: coche.getAttribute('aria-hidden') },
     };
   });
 });
 
-test('v12 (3/9) · un choix fait garde sa coche, en clair et en sombre : un aplat d\'accent, le texte et la coche en --sur-accent, en 600 ; non fait, transparent avec son contour ; rien ne change de taille', async ({ page }) => {
+test('v12 (3/9) · un choix fait garde sa coche, en clair et en sombre : un aplat d\'accent, le texte et la coche en --sur-accent, en 600 ; non fait, le fond --surface (v12.1) avec son contour, en pilule ; rien ne change de taille', async ({ page }) => {
   for (const [schema, t] of THEMES) {
     await page.emulateMedia({ colorScheme: schema });
     await viderBase(page);
@@ -55,7 +68,8 @@ test('v12 (3/9) · un choix fait garde sa coche, en clair et en sombre : un apla
       const avant = await choixDe(groupe(page, nom));
       for (const b of avant) {
         expect(b.presse, `${quoi} : ${b.nom}`).toBe('false');
-        expect([b.fond, b.contour, b.graisse, b.coche], `${quoi} : ${b.nom}, non fait`).toEqual([TRANSPARENT, contourDe(t), '400', false]);
+        expect([b.fond, b.contour, b.graisse, b.coche], `${quoi} : ${b.nom}, non fait`).toEqual([rgb(t.surface), contourDe(t), '400', false]);
+        expect(b.rayon, `${quoi} : ${b.nom}, en pilule`).toBe(`${b.boite[3] / 2}px`);
       }
       await toucher(page, nom, choix);
       const apres = await choixDe(groupe(page, nom));
@@ -68,7 +82,7 @@ test('v12 (3/9) · un choix fait garde sa coche, en clair et en sombre : un apla
       // Rien ne change de taille ni de place : ni le choix fait, ni ses voisins, et aucun rebond.
       expect(apres.map((b) => b.boite), quoi).toEqual(avant.map((b) => b.boite));
       expect(apres.map((b) => b.transform), quoi).toEqual(apres.map(() => 'none'));
-      for (const b of apres.filter((x) => x.presse === 'false')) expect([b.fond, b.coche], `${quoi} : ${b.nom}`).toEqual([TRANSPARENT, false]);
+      for (const b of apres.filter((x) => x.presse === 'false')) expect([b.fond, b.coche], `${quoi} : ${b.nom}`).toEqual([rgb(t.surface), false]);
     }
   }
 });
@@ -96,15 +110,16 @@ test('v12 (3/9) · dans un parcours, un chiffre choisi garde sa coche, en 700, s
   expect(s).toEqual([rgb(clair.accent), '700', true]);
 });
 
-test('v12 (3/9) · la roue : une piste au contour, une fenêtre neutre ; notée, un aplat d\'accent ; les champs, transparents au contour, un anneau d\'accent au focus, le micro en accent', async ({ page }) => {
+test('v12 (3/9) · la roue : une piste au contour, une fenêtre neutre, en pilules (v12.1) ; notée, un aplat d\'accent ; les champs, au fond --surface (v12.1) et au contour, un anneau d\'accent au focus, le micro en accent', async ({ page }) => {
   const roue = groupe(page, 'Durée de la nuit');
   for (const [schema, t] of THEMES) {
     await page.emulateMedia({ colorScheme: schema });
-    const piste = await roue.evaluate((g) => [getComputedStyle(g).backgroundColor, getComputedStyle(g).boxShadow, getComputedStyle(g, '::before').backgroundColor]);
-    expect(piste, schema).toEqual([rgb(t.piste), contourDe(t), rgb(t.fenetre)]);
-    // Le champ des points positifs, transparent au contour ; au focus, l'anneau d'accent ; le micro en accent.
+    const piste = await roue.evaluate((g) => [getComputedStyle(g).backgroundColor, getComputedStyle(g).boxShadow, getComputedStyle(g, '::before').backgroundColor,
+      getComputedStyle(g).borderTopLeftRadius, getComputedStyle(g, '::before').borderTopLeftRadius]);
+    expect(piste, schema).toEqual([rgb(t.piste), contourDe(t), rgb(t.fenetre), '999px', '999px']);
+    // Le champ des points positifs, au fond --surface et au contour ; au focus, l'anneau d'accent ; le micro en accent.
     const champ = page.locator('#points-positifs');
-    expect(await champ.evaluate((c) => [getComputedStyle(c).backgroundColor, getComputedStyle(c).boxShadow]), schema).toEqual([TRANSPARENT, contourDe(t)]);
+    expect(await champ.evaluate((c) => [getComputedStyle(c).backgroundColor, getComputedStyle(c).boxShadow]), schema).toEqual([rgb(t.surface), contourDe(t)]);
     await champ.focus();
     expect(await champ.evaluate((c) => [getComputedStyle(c).borderTopColor, getComputedStyle(c).boxShadow]), schema)
       .toEqual([rgb(t.accent), `${rgb(t.accent)} 0px 0px 0px 1px`]);
@@ -267,9 +282,10 @@ test('v12 (4/9) · le nom accessible de l\'en-tête ne change pas : « Aujourd\'
 });
 
 // La couleur ne dit qu'une émotion (spec §5.1 et §5.6) : sur Aujourd'hui, bande du bas et onglets compris, chaque couleur
-// peinte (texte, fond, bord, ombre, remplissage et trait d'une icône) est un gris, ou l'accent (choisi, agir, onglet actif,
-// liens). Seuls les repères des émotions (.zone-*, les points du jour) ont leur couleur.
-test('v12 (4/9) · aucune couleur de rubrique sur Aujourd\'hui : hors des zones des émotions, chaque couleur peinte est un gris ou l\'accent, en clair et en sombre', async ({ page }) => {
+// peinte (texte, fond, bord, ombre, remplissage et trait d'une icône) est un gris, une couleur de la base (v12.1 : teintée de
+// pétrole, les jetons eux-mêmes), ou l'accent (choisi, agir, onglet actif, liens). Seuls les repères des émotions (.zone-*,
+// les points du jour) ont leur couleur.
+test('v12 (4/9) · aucune couleur de rubrique sur Aujourd\'hui : hors des zones des émotions, chaque couleur peinte est un gris, une couleur de la base ou l\'accent, en clair et en sombre', async ({ page }) => {
   await verserControle(page);
   await page.evaluate(async () => {
     const r = window.__carnet.repo;
@@ -304,8 +320,9 @@ test('v12 (4/9) · aucune couleur de rubrique sur Aujourd\'hui : hors des zones 
       return res;
     });
     const accent = new Set([rgb(t.accent), rgb(t['sur-accent']), rgb(t['accent-texte'])]);
+    const base = new Set(NOMS_BASE.map((n) => rgb(t[n])));
     const alpha = (c) => { const m = c.match(/[\d.]+/g); return m.length > 3 ? Number(m[3]) : 1; };
-    const fautes = peintes.filter(([, , c]) => alpha(c) > 0 && oklch(c).C >= 0.02 && !accent.has(`rgb(${canaux(c).join(', ')})`));
+    const fautes = peintes.filter(([, , c]) => alpha(c) > 0 && oklch(c).C >= 0.02 && !accent.has(`rgb(${canaux(c).join(', ')})`) && !base.has(`rgb(${canaux(c).join(', ')})`));
     expect(fautes, schema).toEqual([]);
     // L'accent sert bien : un choix fait, l'onglet actif, Émotion.
     expect(peintes.some(([n, p, c]) => n.startsWith('a.action-bande.moment') && p === 'background' && c === rgb(t.accent)), schema).toBe(true);
@@ -366,7 +383,7 @@ test('v12 (4/9) · point de vigilance 4 : en très grand texte (17 à 53, 390 et
             deCote: document.documentElement.scrollWidth > innerWidth };
         });
         expect(m.fautes, quoi).toEqual([]);
-        expect(m.grand, quoi).toBe(Math.min(2 * px, 48));
+        expect(m.grand, quoi).toBeCloseTo(Math.min(2.35 * px, 48), 1);
         expect(m.coche, `${quoi} : la coche de « Congé / repos »`).toBe(true);
         expect(m.navs, `${quoi} : ‹ et › ensemble, à droite`).toEqual({ rangee: true, ordre: true, bord: true });
         // Un jour passé n'a pas d'Émotion : « Moment difficile » et « + Épisode ».
@@ -381,13 +398,122 @@ test('v12 (4/9) · point de vigilance 4 : en très grand texte (17 à 53, 390 et
 });
 
 
+// ---------- v12.1 (tâche A) : les formes « 3a » (docs/design/retour-claude-design-v3/formes-3a.css) ----------
+
+// Aujourd'hui, avec les zones sûres de l'iPhone (47 en haut) : l'en-tête est un bandeau --surface, bord à bord et jusqu'en haut
+// de l'écran (sa marge intérieure du haut, la zone sûre + 10), coins du bas à 30 ; la date en capsule --bg, en pilule ; le grand
+// titre en 40/47, 700. Les rubriques sont à plat (ni fond ni rayon, rien sur les côtés), un filet --line au-dessus, sauf la
+// première sous le bandeau ; leur titre en 700. Une carte (les replis) a le rayon 24 ; la bande du bas, ses boutons en pilule.
+// Avec « ‹ Retour », puis sous le bandeau « Nouvelle version prête », le bandeau tient : bord à bord, sous la barre ou le bandeau.
+test('v12.1 (A) · Aujourd\'hui : l\'en-tête en bandeau bord à bord jusqu\'en haut, la date en capsule, le grand titre de 40, les rubriques à plat séparées d\'un filet, les cartes de 24, la bande en pilules ; avec « ‹ Retour » et sous « Nouvelle version prête », en clair et en sombre', async ({ page }) => {
+  await simulerZonesSures(page);
+  await verserControle(page);
+  const mesure = () => page.evaluate(() => {
+    const s = (e, p) => getComputedStyle(e, p);
+    const rayons = (e) => ['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'].map((c) => s(e)[`border${c}Radius`]).join(' ');
+    const entete = document.querySelector('.entete-jour');
+    const r = entete.getBoundingClientRect();
+    const sur = document.querySelector('.sur-titre');
+    const grand = document.querySelector('.grand-titre');
+    const rubriques = [...document.querySelectorAll('.aujourdhui .carte-champ')].map((c) => {
+      const b = c.getBoundingClientRect();
+      return { fond: s(c).backgroundColor, rayon: rayons(c), filet: s(c).boxShadow, padding: [s(c).paddingTop, s(c).paddingRight, s(c).paddingBottom, s(c).paddingLeft].join(' '),
+        gauche: Math.round(b.left), droite: Math.round(b.right), titre: s(c.querySelector('.titre-rubrique')).fontWeight };
+    });
+    const bandeau = document.querySelector('.bandeau');
+    return {
+      fond: s(entete).backgroundColor, rayon: rayons(entete), boite: [r.left, r.right, Math.round(r.top)], largeur: innerWidth,
+      paddingHaut: s(entete).paddingTop, sousBandeau: bandeau ? Math.round(bandeau.getBoundingClientRect().bottom) : 0,
+      // L'interlettrage, en em de sa taille (.03em de 13 px, --t-note).
+      capsule: [s(sur).backgroundColor, s(sur).borderTopLeftRadius, s(sur).paddingTop, s(sur).paddingLeft, (parseFloat(s(sur).letterSpacing) / parseFloat(s(sur).fontSize)).toFixed(3)],
+      grand: [Math.round(parseFloat(s(grand).fontSize) * 100) / 100, Math.round(parseFloat(s(grand).lineHeight) * 100) / 100, s(grand).fontWeight],
+      rubriques, premiere: document.querySelector('.entete-jour + .carte-champ') === document.querySelector('.aujourdhui .carte-champ'),
+      carte: s(document.querySelector('.replis.carte')).borderTopLeftRadius,
+      bande: [...document.querySelectorAll('.actions-flottantes > a')].map((a) => s(a).borderTopLeftRadius),
+    };
+  });
+  for (const [schema, t] of THEMES) {
+    await page.emulateMedia({ colorScheme: schema });
+    for (const [cas, aller_, bandeauMaj] of [['aujourd\'hui', '#/aujourdhui', false], ['« ‹ Retour »', '#/historique/jour/2026-10-14', false], ['« ‹ Retour » et « Nouvelle version prête »', '#/historique/jour/2026-10-14', true]]) {
+      await page.reload();
+      await appPrete(page);
+      if (bandeauMaj) await page.evaluate(() => window.__carnet.etatApp.maj({ majDisponible: true }));
+      await aller(page, '#/aujourdhui');
+      await aller(page, aller_);
+      if (aller_ !== '#/aujourdhui') await expect(page.locator('.entete-jour .barre-retour')).toBeVisible();
+      if (bandeauMaj) await expect(page.locator('.bandeau')).toBeVisible();
+      await expect(page.locator('.aujourdhui .ligne-rdv, .aujourdhui .ligne-evenement').first()).toBeVisible();
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await stabiliser(page);
+      const m = await mesure();
+      const quoi = `${schema} · ${cas}`;
+      expect([m.fond, m.rayon], quoi).toEqual([rgb(t.surface), '0px 0px 30px 30px']);
+      // Bord à bord, et jusqu'en haut de l'écran (sous le bandeau « Nouvelle version prête », qui prend la zone sûre).
+      expect(m.boite, quoi).toEqual([0, m.largeur, m.sousBandeau]);
+      expect(m.paddingHaut, quoi).toBe(bandeauMaj ? '10px' : '57px');
+      expect(m.capsule, quoi).toEqual([rgb(t.bg), '999px', '5px', '12px', '0.030']);
+      // 2,35 rem et 2,75 rem de 17 px : 40 / 47 (le grand titre de 3a ; 34 / 41 en v12).
+      expect(m.grand, quoi).toEqual([39.95, 46.75, '700']);
+      // Les rubriques : à plat, rien sur les côtés (de la marge de 16 au bord droit moins 16), un filet au-dessus sauf la première.
+      expect(m.rubriques.length, quoi).toBeGreaterThan(4);
+      for (const [i, x] of m.rubriques.entries()) {
+        const premiere = i === 0 && m.premiere;
+        expect([x.fond, x.rayon, x.titre], `${quoi} · rubrique ${i + 1}`).toEqual([TRANSPARENT, '0px 0px 0px 0px', '700']);
+        expect(x.filet, `${quoi} · rubrique ${i + 1}`).toBe(premiere ? 'none' : `${rgb(t.line)} 0px -1px 0px 0px`);
+        expect(x.padding, `${quoi} · rubrique ${i + 1}`).toBe(premiere ? '6px 0px 8px 0px' : '14px 0px 8px 0px');
+        expect(x.gauche >= 16 && x.droite <= m.largeur - 16, `${quoi} · rubrique ${i + 1} dans les marges`).toBe(true);
+      }
+      expect(m.premiere, `${quoi} : la première rubrique suit le bandeau`).toBe(aller_ === '#/aujourdhui');
+      expect(m.carte, quoi).toBe('24px');
+      expect(m.bande.length, quoi).toBeGreaterThan(1);
+      expect(m.bande.every((x) => x === '999px'), `${quoi} : la bande en pilules`).toBe(true);
+    }
+  }
+});
+
+// Moment difficile : les exercices courts en pilules teintées ; la respiration dans un bandeau --surface bord à bord, rayon 34,
+// marges 18 × 32, son cercle de 176 et « Commencer » en pilule sur toute la largeur ; « Une chose à la fois » et « Mon plan »
+// sans fond, au contour --line, rayon 24.
+test('v12.1 (A) · Moment difficile : les exercices en pilules, la respiration en bandeau bord à bord et « Commencer » sur toute sa largeur, « Une chose à la fois » et « Mon plan » au contour, en clair et en sombre', async ({ page }) => {
+  await verserControle(page);
+  for (const [schema, t] of THEMES) {
+    await page.emulateMedia({ colorScheme: schema });
+    await aller(page, '#/aujourdhui');
+    await aller(page, '#/moment-difficile');
+    const vue = page.getByRole('dialog', { name: 'Moment difficile' });
+    await expect(vue.getByRole('button', { name: 'Commencer', exact: true })).toBeVisible();
+    const m = await vue.evaluate((v) => {
+      const s = (e) => getComputedStyle(e);
+      const resp = v.querySelector('.carte-respiration');
+      const r = resp.getBoundingClientRect();
+      const commencer = [...resp.querySelectorAll('.btn')].find((b) => b.textContent.trim() === 'Commencer');
+      const [c, i] = [commencer.getBoundingClientRect(), resp.querySelector('.respiration').getBoundingClientRect()];
+      return {
+        exercices: [...v.querySelectorAll('.exercice-court')].map((e) => [s(e).backgroundColor, s(e).borderTopLeftRadius, s(e).boxShadow]),
+        respiration: [s(resp).backgroundColor, s(resp).borderTopLeftRadius, s(resp).paddingTop, s(resp).paddingLeft, Math.round(r.left), Math.round(r.right), innerWidth],
+        cercle: Math.round(resp.querySelector('.cercle-respiration').getBoundingClientRect().width),
+        commencer: [s(commencer).borderTopLeftRadius, Math.round(c.left - i.left), Math.round(i.right - c.right)],
+        contours: [...v.querySelectorAll('.une-chose-acces, .plan-moment')].map((e) => [s(e).backgroundColor, s(e).borderTopLeftRadius, s(e).boxShadow]),
+      };
+    });
+    expect(m.exercices.length, schema).toBe(4);
+    for (const e of m.exercices) expect(e, schema).toEqual([rgb(t.surface), '999px', contourDe(t)]);
+    expect(m.respiration, schema).toEqual([rgb(t.surface), '34px', '18px', '32px', 0, m.respiration[6], m.respiration[6]]);
+    expect(m.cercle, schema).toBe(176);
+    expect(m.commencer, schema).toEqual(['999px', 0, 0]);
+    expect(m.contours.length, schema).toBe(2);
+    for (const e of m.contours) expect(e, schema).toEqual([TRANSPARENT, '24px', `${rgb(t.line)} 0px 0px 0px 1px inset`]);
+    await vue.getByRole('button', { name: 'Fermer', exact: true }).click();
+  }
+});
+
 // ---------- Tâche 5 : les autres écrans et les graphiques ----------
 
 // Les contrôles de l'accent (tests/aides/controle.js), qui passent sur chaque écran du contrôle global, voient pour de bon ce
-// qu'ils cherchent : un point ou un disque vert sans texte ni icône, un rond d'un SVG à l'accent, l'accent dans un graphique,
-// un lien vert sur --surface-2 ; et laissent passer un rond qui porte une icône (une commande) et un contrôle autour d'un
-// graphique.
-test('v12 (5/9) · les contrôles de l\'accent voient pour de bon un point vert, l\'accent dans un graphique et un lien vert sur --surface-2, et laissent passer une commande ronde à icône', async ({ page }) => {
+// qu'ils cherchent : un point ou un disque d'accent sans texte ni icône, un rond d'un SVG à l'accent, l'accent dans un
+// graphique, un lien d'accent sur --surface-2 ; et laissent passer un rond qui porte une icône (une commande) et un contrôle
+// autour d'un graphique.
+test('v12 (5/9) · les contrôles de l\'accent voient pour de bon un point d\'accent, l\'accent dans un graphique et un lien d\'accent sur --surface-2, et laissent passer une commande ronde à icône', async ({ page }) => {
   const accents = [rgb(clair.accent), rgb(clair['accent-texte'])];
   const verifier = async () => ({
     ronds: await rondsAccent(page, accents), lieux: await accentHorsDeSaPlace(page, accents),
@@ -418,14 +544,14 @@ test('v12 (5/9) · les contrôles de l\'accent voient pour de bon un point vert,
     main.append(svg);
     svg.firstChild.style.fill = 'var(--accent)';
     const figure = document.querySelector('figure.graphe');
-    el('span', 'essai-graphe', 'color: var(--accent-texte);', figure).textContent = 'vert';
+    el('span', 'essai-graphe', 'color: var(--accent-texte);', figure).textContent = 'accent';
     el('button', 'essai-controle', 'color: var(--accent-texte);', figure).textContent = 'Voir';
     el('span', 'essai-lien', 'color: var(--accent-texte);', el('div', 'essai-fond', 'background: var(--surface-2);')).textContent = 'Voir ce jour';
   });
   const f = await verifier();
   expect([...new Set(f.ronds.map((x) => x.split(' ')[0]))].sort()).toEqual(['circle.essai-rond', 'div.essai-disque', 'i.essai-point']);
   expect(f.lieux).toEqual(['graphe › span.essai-graphe : color à l\'accent']);
-  expect(f.liens).toEqual(['« Voir ce jour » (span.essai-lien) : un lien vert sur --surface-2']);
+  expect(f.liens).toEqual(['« Voir ce jour » (span.essai-lien) : un lien d\'accent sur --surface-2']);
 });
 
 // Spec §5.5 : la couleur ne dit qu'une émotion. Hors des zones et des familles, un graphique est à l'encre (--donnee*), jamais
@@ -434,7 +560,8 @@ test('v12 (5/9) · les contrôles de l\'accent voient pour de bon un point vert,
 // carte comme sur la piste (au lieu d'une barre pâlie à 0,45, 2,25:1).
 test('v12 (5/9) · les graphiques sont à l\'encre : les séries de Mes jours se distinguent par leur forme, le pas discret des rampes a un contour à 3:1, « peu de valeurs » est une barre creuse au contour à 3:1, en clair et en sombre', async ({ page }) => {
   await verserControle(page);
-  const neutre = (c) => c === 'none' || /rgba\(0, 0, 0, 0\)/.test(c) || oklch(c).C < 0.02;
+  // À l'encre : aucun trait ni fond, ou une couleur de la base (v12.1 : un gris ou une teinte pétrole à peine saturée).
+  const neutre = (c) => c === 'none' || /rgba\(0, 0, 0, 0\)/.test(c) || dePetrole(c);
   for (const [schema, t] of THEMES) {
     await page.emulateMedia({ colorScheme: schema });
     await page.reload();
@@ -569,7 +696,7 @@ test('v12 (5/9) · le volume des sons de fond, comme sur iOS : la part remplie d
   expect(regles.bouton).toBe('rgb(255, 255, 255)');
 });
 
-// Spec §5.2 : les étiquettes du noting, transparentes, ont le contour d'un bouton non rempli (--contour, 3:1 au moins sur le
+// Spec §5.2 : les étiquettes du noting, au fond d'un choix non fait (transparentes en v12, --surface en v12.1), ont le contour d'un bouton non rempli (--contour, 3:1 au moins sur le
 // fond), comme « Précédent » et « Suivant » à côté. Relecture de la tâche 5 : en --line, un filet, elles se voyaient à peine
 // (1,53:1 en clair, 1,79:1 en sombre). Une bordure, pas un box-shadow : le halo du toucher anime déjà box-shadow.
 test('v12 (5/9) · les étiquettes du noting ont le contour d\'un bouton non rempli, en --contour, à 3:1 au moins sur le fond du parcours, en clair et en sombre', async ({ page }) => {
@@ -595,7 +722,7 @@ test('v12 (5/9) · les étiquettes du noting ont le contour d\'un bouton non rem
     expect(m.fond, schema).toBe(rgb(t.bg));
     expect(m.etiquettes.map((e) => e.nom), schema).toEqual(['Pensée', 'Corps', 'Son', 'Émotion']);
     for (const e of m.etiquettes) {
-      expect([...e.bord, e.fond], `${schema} · ${e.nom}`).toEqual([rgb(t.contour), '1px', 'solid', TRANSPARENT]);
+      expect([...e.bord, e.fond], `${schema} · ${e.nom}`).toEqual([rgb(t.contour), '1px', 'solid', rgb(t.surface)]);
       expect(contraste(e.bord[0], m.fond), `${schema} · ${e.nom} : son contour sur le fond`).toBeGreaterThanOrEqual(3);
     }
     // « Précédent » et « Suivant », à côté : le même contour.

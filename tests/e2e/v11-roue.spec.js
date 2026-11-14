@@ -735,6 +735,9 @@ test('la rangée Contact et Sport n\'a que 60 px de plus avec ses roues ; aucune
       await page.getByRole('button', { name: 'Sport en détail', exact: true }).click();
       await page.getByRole('button', { name: 'Contact en détail', exact: true }).click();
       await expect(page.locator('.carte-detail .roue-choix')).toHaveCount(2);
+      // Mesuré à l'arrêt : le chevron de « Détail › » tourne en 150 ms ; à mi-course, son carré tourné de 45° dépasse de 2,5 px
+      // le bord de sa rubrique, qui n'a plus de marge sur les côtés depuis la v12.1.
+      await page.evaluate(() => Promise.all(document.getAnimations().filter((x) => Number.isFinite(x.effect.getComputedTiming().endTime)).map((x) => x.finished.catch(() => {}))));
     }
     for (const largeur of [390, 375]) {
       await page.setViewportSize({ width: largeur, height: 844 });

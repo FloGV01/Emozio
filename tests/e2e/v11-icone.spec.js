@@ -45,13 +45,13 @@ test('chaque PNG : coin noir, maskable compris (plus de cadre bleu), et un point
   }
 });
 
-test('index.html : theme-color #f2f2f7 en clair (v12 : le fond du clair), #000000 en sombre, l\'apple-touch-icon v11 ; manifest : couleurs du clair et icônes v11', async ({ page }) => {
+test('index.html : theme-color #f8f9fa en clair et #080b0d en sombre (v12.1 : le fond de chaque thème ; #f2f2f7 et #000000 en v12), l\'apple-touch-icon v11 ; manifest : couleurs du clair et icônes v11', async ({ page }) => {
   const metas = await page.locator('meta[name="theme-color"]').evaluateAll((els) => els.map((e) => [e.getAttribute('media'), e.getAttribute('content')]));
-  expect(metas).toEqual([['(prefers-color-scheme: light)', '#f2f2f7'], ['(prefers-color-scheme: dark)', '#000000']]);
+  expect(metas).toEqual([['(prefers-color-scheme: light)', '#f8f9fa'], ['(prefers-color-scheme: dark)', '#080b0d']]);
   await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', 'icons/v11-apple-touch-icon.png');
   const manifest = await page.evaluate(async () => (await fetch('manifest.webmanifest')).json());
-  expect(manifest.background_color).toBe('#f2f2f7');
-  expect(manifest.theme_color).toBe('#f2f2f7');
+  expect(manifest.background_color).toBe('#f8f9fa');
+  expect(manifest.theme_color).toBe('#f8f9fa');
   expect(manifest.icons.map((i) => [i.src, i.sizes, i.purpose])).toEqual([
     ['icons/v11-icone-192.png', '192x192', 'any'],
     ['icons/v11-icone-512.png', '512x512', 'any'],

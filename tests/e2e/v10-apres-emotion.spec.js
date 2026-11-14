@@ -2,7 +2,8 @@ import { test, expect } from '../aides/gardes.js';
 import { viderBase, aller } from '../aides/saisie.js';
 import { espionnerAudio, audio } from '../aides/audio.js';
 import { installerParole, parole, seances, cacher, montrer, bols } from '../aides/lecteur.js';
-import { contraste } from '../aides/couleurs.js';
+import { readFileSync } from 'node:fs';
+import { canaux, contraste, jetons } from '../aides/couleurs.js';
 import {
   vueMoment, bulle, noter, toucherMot, finMouvements, continuer, fermer, terminer, faisais, activite, changerMot, loupe, champLoupe, trouve, NOTEE,
 } from '../aides/emotion.js';
@@ -181,12 +182,16 @@ test('pas de section : un relevé rouvert, même après « Changer le mot » ; �
   }
 });
 
-// v11 (8/11) : l'écran suit le thème (spec §9). Sur le noir en sombre, comme avant ; sur le gris clair en clair, avec le texte et
-// le contour du thème : les mêmes couleurs pour toutes les zones, dans chaque thème.
+// v11 (8/11) : l'écran suit le thème (spec §9). Sur le fond sombre de l'app en sombre (noir jusqu'à la v12, pétrole profond en
+// v12.1), sur le fond clair en clair, avec le texte et le contour du thème : les mêmes couleurs pour toutes les zones, dans
+// chaque thème.
 test('discret, dans les deux thèmes et pour toutes les zones : du texte et un contour, aucun fond, aucune couleur de zone ; contrastes AA ; des cibles de 44', async ({ page }) => {
   test.setTimeout(60000);
   const vus = { light: new Set(), dark: new Set() };
-  const FONDS = { light: '#f2f2f7', dark: '#000000' };
+  // Le fond de l'app dans chaque thème, lu dans les jetons (v12 : #f2f2f7 et #000000 ; v12.1 : #f8f9fa et #080b0d).
+  const { clair: jc, sombre: js } = jetons(readFileSync(new URL('../../public/css/tokens.css', import.meta.url), 'utf8'));
+  const FONDS = { light: jc.bg, dark: js.bg };
+  const rgb = (hex) => `rgb(${canaux(hex).join(', ')})`;
   for (const colorScheme of ['light', 'dark']) {
     await page.emulateMedia({ colorScheme });
     const fondEcran = FONDS[colorScheme];
@@ -198,7 +203,7 @@ test('discret, dans les deux thèmes et pour toutes les zones : du texte et un c
       });
       expect(style.fond, libelle).toBe('rgba(0, 0, 0, 0)');
       expect(style.trait).toBe('1px');
-      expect(await page.locator('.moment-plein').evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(colorScheme === 'dark' ? 'rgb(0, 0, 0)' : 'rgb(242, 242, 247)');
+      expect(await page.locator('.moment-plein').evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(rgb(fondEcran));
       expect(contraste(style.texte, fondEcran)).toBeGreaterThanOrEqual(4.5);
       expect(contraste(style.contour, fondEcran)).toBeGreaterThanOrEqual(3);
       expect(style.hauteur).toBeGreaterThanOrEqual(44);

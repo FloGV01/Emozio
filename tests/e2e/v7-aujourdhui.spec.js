@@ -44,7 +44,7 @@ const carteDe = (page, nom) => page.locator('.carte-champ', { has: groupe(page, 
 // v8 (8/9, Q27) : avec les zones sûres de l'iPhone (390 × 844, 47 px en haut et 34 en bas, spec §12.7), au lieu de 390 × 797
 // sans elles : 34 px de moins pour le soir. v11 (2/11, spec §13) : le soir ne tient plus sans défiler (la roue du Sommeil,
 // puis celles de Contact et Sport, et les gratitudes) ; il se défile jusqu'à sa dernière carte, au-dessus de la bande.
-test('le soir avec les zones sûres de l\'iPhone, en clair et en sombre : six rubriques en cartes 2b, la bande collée aux onglets, la dernière carte au-dessus de la bande, la page défilée', async ({ page }) => {
+test('le soir avec les zones sûres de l\'iPhone, en clair et en sombre : six rubriques (à plat depuis la v12.1), la bande collée aux onglets, la dernière rubrique au-dessus de la bande, la page défilée', async ({ page }) => {
   await simulerZonesSures(page);
   for (const [schema, t] of THEMES) {
     await page.emulateMedia({ colorScheme: schema });
@@ -67,19 +67,19 @@ test('le soir avec les zones sûres de l\'iPhone, en clair et en sombre : six ru
     // au-dessus de la bande.
     atteignable(await margesAFondDePage(page, ['.carte-champ:has(#points-positifs)', '.carte-champ:has(#gratitudes)', '.fini-bouton']), schema);
     await page.evaluate(() => window.scrollTo(0, 0));
-    // Chaque rubrique (v12, spec §5.4) : une carte --surface de rayon 16, sans carré coloré, l'icône de 20 en --text-2,
-    // le titre en 600.
+    // Chaque rubrique (v12, spec §5.4) : sans carré coloré, l'icône de 20 en --text-2. v12.1 (3a) : plus de carte, la
+    // rubrique est à plat sur le fond (ni fond ni rayon), son titre en 700, AA sur le fond de l'écran.
     for (const [nom, libelle] of [['Lieu', 'Lieu'], ['Sommeil', 'Sommeil'], ['Contact humain', 'Contact humain'],
       ['Sport / mouvement', 'Sport / mouvement'], ['Traitement pris', 'Traitement pris']]) {
       const c = await carteDe(page, nom);
       const quoi = `${schema} · ${nom}`;
-      expect(c.fond, quoi).toBe(rgb(t.surface));
-      expect(c.rayon, quoi).toBe('16px');
+      expect(c.fond, quoi).toBe('rgba(0, 0, 0, 0)');
+      expect(c.rayon, quoi).toBe('0px');
       expect(c.carre, quoi).toBe(0);
       expect(c.icone, quoi).toEqual([20, 20, rgb(t['text-2'])]);
       expect(c.titre, quoi).toBe(libelle);
-      expect(c.graisse, quoi).toBe('600');
-      expect(contraste(c.couleurTitre, c.fond), quoi).toBeGreaterThanOrEqual(4.5);
+      expect(c.graisse, quoi).toBe('700');
+      expect(contraste(c.couleurTitre, rgb(t.bg)), quoi).toBeGreaterThanOrEqual(4.5);
     }
     // Les choix d'une carte font 44 de haut (la cible ; 48 dans le lot, mais « J'ai fini » et la ligne Après coup doivent
     // tenir au-dessus de la bande à 390 × 844), ceux de Lieu en grille de 3.
@@ -93,7 +93,7 @@ test('le soir avec les zones sûres de l\'iPhone, en clair et en sombre : six ru
   }
 });
 
-test('« J\'ai fini pour ce soir » : en couleur action, sans fond, avec son icône', async ({ page }) => {
+test('« J\'ai fini pour ce soir » : en couleur d\'action (le texte de l\'accent, --accent-texte depuis la v12.1), sans fond, avec son icône', async ({ page }) => {
   for (const [schema, t] of THEMES) {
     await page.emulateMedia({ colorScheme: schema });
     await viderBase(page);
@@ -101,12 +101,13 @@ test('« J\'ai fini pour ce soir » : en couleur action, sans fond, avec son ic�
     const fini = page.getByRole('button', { name: 'J\'ai fini pour ce soir' });
     await expect(fini).toBeVisible();
     const s = await fini.evaluate((b) => ({ couleur: getComputedStyle(b).color, fond: getComputedStyle(b).backgroundColor, graisse: getComputedStyle(b).fontWeight, icone: Boolean(b.querySelector('svg')) }));
-    expect(s.couleur, schema).toBe(rgb(t.action));
+    // v12.1 : un texte d'action est en --accent-texte (plus foncé que l'aplat --accent en clair, pour l'AA).
+    expect(s.couleur, schema).toBe(rgb(t['accent-texte']));
     expect(s.fond, schema).toBe('rgba(0, 0, 0, 0)');
     expect(s.graisse).toBe('600');
     expect(s.icone).toBe(true);
     const memo = await page.getByRole('button', { name: 'Mémo vocal' }).evaluate((b) => [getComputedStyle(b).backgroundColor, getComputedStyle(b).boxShadow]);
-    expect(memo, `${schema} · Mémo vocal neutre : transparent, avec son contour (v12)`).toEqual(['rgba(0, 0, 0, 0)', `${rgb(t.contour)} 0px 0px 0px 1px inset`]);
+    expect(memo, `${schema} · Mémo vocal neutre : le fond d'un choix non fait (--surface en v12.1), avec son contour (v12)`).toEqual([rgb(t.surface), `${rgb(t.contour)} 0px 0px 0px 1px inset`]);
   }
 });
 
@@ -304,10 +305,10 @@ test('grand texte (17 à 28 px, 390 et 375) : rien ne sort des cartes, choix fai
 
 // ---------- En-tête ----------
 
-// v12 (4/9, spec §5.4) : l'en-tête façon App Store. Le sur-titre en capitales, 13/600 en --text-2, avec son chevron bas ; le
-// grand titre, 34/41 en 700 ; le titre entier ouvre le sélecteur de date ; ‹ › dans des ronds neutres de 36, des cibles de
+// v12 (4/9, spec §5.4) : l'en-tête façon App Store. Le sur-titre en capitales, 13/600 en --text-2, avec son chevron bas (v12.1 :
+// dans sa capsule --bg) ; le grand titre, 40/47 en 700 (v12.1 ; 34/41 en v12) ; le titre entier ouvre le sélecteur de date ; ‹ › dans des ronds neutres de 36, des cibles de
 // 44 ; › en --desactive sur aujourd'hui. Le nom accessible ne change pas.
-test('en-tête façon App Store : le sur-titre « JEUDI 15 OCTOBRE ⌄ » en 13/600, le grand titre « Aujourd\'hui » en 34/700, ‹ › dans des ronds neutres, › grisé sur aujourd\'hui ; un autre jour, « Mercredi 14 » sous « OCTOBRE »', async ({ page }) => {
+test('en-tête façon App Store : le sur-titre « JEUDI 15 OCTOBRE ⌄ » en 13/600, le grand titre « Aujourd\'hui » en 40/700 (v12.1), ‹ › dans des ronds neutres, › grisé sur aujourd\'hui ; un autre jour, « Mercredi 14 » sous « OCTOBRE »', async ({ page }) => {
   const mesure = () => page.locator('.entete-jour').evaluate((e) => {
     const s = (x, pseudo) => getComputedStyle(x, pseudo);
     const [h1, grand, sur] = ['h1', '.grand-titre', '.sur-titre'].map((x) => e.querySelector(x));
@@ -320,7 +321,7 @@ test('en-tête façon App Store : le sur-titre « JEUDI 15 OCTOBRE ⌄ » en 13/
       aDroite: b.getBoundingClientRect().left >= rh.right, desactive: b.disabled, opacite: s(b).opacity });
     const [precedent, suivant] = [...e.querySelectorAll('.nav-jour')].map(rond);
     return {
-      grand: [grand.textContent, Number.parseFloat(s(grand).fontSize), Math.round(Number.parseFloat(s(grand).lineHeight)), s(grand).fontWeight, s(grand).color],
+      grand: [grand.textContent, Math.round(Number.parseFloat(s(grand).fontSize) * 100) / 100, Math.round(Number.parseFloat(s(grand).lineHeight)), s(grand).fontWeight, s(grand).color],
       sur: [sur.textContent.trim(), Math.round(Number.parseFloat(s(sur).fontSize)), s(sur).fontWeight, s(sur).textTransform, s(sur).color],
       surAuDessus: rs.bottom <= rg.top + 0.5,
       chevron: [Math.round(chevron.getBoundingClientRect().width), chevron.getBoundingClientRect().right <= rs.right + 0.5],
@@ -335,7 +336,7 @@ test('en-tête façon App Store : le sur-titre « JEUDI 15 OCTOBRE ⌄ » en 13/
     await expect(titre).toHaveAccessibleName('Aujourd\'hui, Jeudi 15 octobre');
     expect(await titreVu(page)).toBe('Aujourd\'hui Jeudi 15 octobre');
     const m = await mesure();
-    expect(m.grand, schema).toEqual(['Aujourd\'hui, ', 34, 41, '700', rgb(t.text)]);
+    expect(m.grand, schema).toEqual(['Aujourd\'hui, ', 39.95, 47, '700', rgb(t.text)]);
     expect(m.sur, schema).toEqual(['Jeudi 15 octobre', 13, '600', 'uppercase', rgb(t['text-2'])]);
     expect(contraste(m.sur[4], rgb(t.bg)), schema).toBeGreaterThanOrEqual(4.5);
     expect(m.surAuDessus, 'le sur-titre au-dessus du grand titre').toBe(true);
@@ -355,7 +356,7 @@ test('en-tête façon App Store : le sur-titre « JEUDI 15 OCTOBRE ⌄ » en 13/
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName('Mercredi 14 octobre');
   expect(await titreVu(page)).toBe('Mercredi 14 octobre');
   const m = await mesure();
-  expect(m.grand.slice(0, 2)).toEqual(['Mercredi 14', 34]);
+  expect(m.grand.slice(0, 2)).toEqual(['Mercredi 14', 39.95]);
   expect(m.sur.slice(0, 4)).toEqual(['octobre', 13, '600', 'uppercase']);
   expect([m.suivant.desactive, m.suivant.couleur]).toEqual([false, rgb(sombre.text)]);
   // Le 1er du mois : « Jeudi 1er » sous « OCTOBRE ».
@@ -512,7 +513,7 @@ test('replis en liste groupée 2b : une carte, des rangées de 58 au moins, une 
     });
     const quoi = (i) => `${schema} · rangée ${i + 1}`;
     expect(m.fond).toBe(rgb(t.surface));
-    expect(m.rayon).toBe('16px');
+    expect(m.rayon).toBe('24px');
     m.rangees.forEach((r, i) => {
       expect(r.hauteur, quoi(i)).toBeGreaterThanOrEqual(58);
       expect(r.taille, quoi(i)).toBe(28);

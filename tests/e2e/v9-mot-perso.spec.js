@@ -1,6 +1,7 @@
 import { test, expect } from '../aides/gardes.js';
 import { viderBase, aller, appPrete } from '../aides/saisie.js';
-import { contraste } from '../aides/couleurs.js';
+import { readFileSync } from 'node:fs';
+import { canaux, contraste, jetons } from '../aides/couleurs.js';
 import { trouverInterdits } from '../aides/mots-interdits.js';
 import {
   vueMoment, bulle, carte, mot, toucherMot, retour, continuer, carteDuBas, terminer, loupe, champLoupe, trouves, trouve, ajouterMot,
@@ -14,6 +15,11 @@ import { energieDe } from '../../public/js/domain/carte-roue.js';
 // sur lui. « Ajouter mon mot « … » » ouvre l'écran du mot à soi : il naît au choix de sa couleur et entre aussitôt dans
 // le relevé ; sa famille et sa définition le complètent. Réglages › Émotions › « Mes mots » le renomme, le change, le
 // met de côté ou l'efface (point de vigilance 4). Données inventées. Horloge : jeudi 15 octobre 2026, 21:00 (390 × 844).
+// Le fond des écrans de l'émotion dans chaque thème, celui de l'app (lu dans les jetons : noir et #f2f2f7 jusqu'à la v12,
+// #080b0d et #f8f9fa en v12.1).
+const J = jetons(readFileSync(new URL('../../public/css/tokens.css', import.meta.url), 'utf8'));
+const rgbJ = (hex) => `rgb(${canaux(hex).join(', ')})`;
+const FONDS_MOMENT = { dark: rgbJ(J.sombre.bg), light: rgbJ(J.clair.bg) };
 const releves = (page) => () => page.evaluate(() => window.__carnet.repo.humeurs.tous());
 const lirePerso = (page) => () => page.evaluate(() => window.__carnet.repo.meta.lire('motsPerso'));
 const ecrirePerso = (page, perso) => page.evaluate((p) => window.__carnet.repo.meta.ecrire('motsPerso', p), perso);
@@ -65,7 +71,7 @@ test('la loupe de l\'écran 1 : champ actif ; « epuise » trouve Épuisé, à l
   // Le mot à la couleur de sa zone (le bleu), lisible sur le noir ; le début de sa définition en gris. v11 (8/11) : en clair,
   // le texte de sa zone (-text), lisible sur le gris clair. Le thème change écran ouvert : rien n'est recalculé.
   const couleurs = () => trouve(vue, 'Épuisé').evaluate((b) => [getComputedStyle(b.querySelector('.mot-resultat')).color, getComputedStyle(b.querySelector('.extrait-resultat')).color]);
-  for (const [schema, fond, attendu] of [['dark', 'rgb(0, 0, 0)', 'rgb(120, 159, 255)'], ['light', 'rgb(242, 242, 247)', 'rgb(49, 80, 169)']]) {
+  for (const [schema, fond, attendu] of [['dark', FONDS_MOMENT.dark, 'rgb(120, 159, 255)'], ['light', FONDS_MOMENT.light, 'rgb(49, 80, 169)']]) {
     await page.emulateMedia({ colorScheme: schema });
     const [motTrouve, extrait] = await couleurs();
     expect(motTrouve, schema).toBe(attendu);
@@ -272,7 +278,7 @@ test('plein écran, noir en sombre et gris clair en clair, pour la loupe et le m
     return { fond: getComputedStyle(ecran).backgroundColor, onglets: document.querySelectorAll('nav.onglets').length,
       deCote: document.documentElement.scrollWidth > innerWidth || scrollX !== 0 };
   });
-  const FONDS = { dark: 'rgb(0, 0, 0)', light: 'rgb(242, 242, 247)' };
+  const FONDS = FONDS_MOMENT;
   for (const schema of ['light', 'dark']) {
     await page.emulateMedia({ colorScheme: schema });
     const attendu = { fond: FONDS[schema], onglets: 0, deCote: false };

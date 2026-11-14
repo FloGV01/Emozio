@@ -34,7 +34,9 @@ button { cursor: pointer; }
 }
 h1, h2, h3 { margin: 0; font-weight: 600; }
 p { margin: 0; }
-a { color: var(--action); }
+/* Un lien, en --accent-texte (v12.1 : plus foncé que l'accent en clair, AA sur le fond et les surfaces teintées ; l'aplat
+   d'un choix fait ou d'une action reste --action, l'accent). */
+a { color: var(--accent-texte); }
 
 /* Titres (2b) : police système, 600. Titre d'écran et question d'un parcours 30/38, titre de bloc 17/22. */
 .titre-onglet { font: 600 var(--t-ecran)/var(--l-ecran) var(--police); margin: 4px 0 0; color: var(--text); }
