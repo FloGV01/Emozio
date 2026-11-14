@@ -236,7 +236,8 @@ input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 
 /* Sélection commune à tous les choix : pastilles, grilles, choix multiples, segmentés, Oui / Non, période (v12, spec §5.4).
    Non choisi : le fond --fond-choix (--surface depuis la v12.1, transparent en v12), avec le contour (--contour, en
-   box-shadow : sans bordure), en pilule (v12.1, 3a : rayon 999 ; 12 en v12), en 400.
+   box-shadow : sans bordure), en pilule (v12.1, 3a : rayon 26, la moitié de --cible-bouton, pour les pastilles et les
+   segmentés ; 12 en v12), en 400.
    Choisi : un aplat d'accent, le texte en --sur-accent, graisse 600 (700 pour un chiffre) et une coche ✓ devant le libellé,
    jamais la couleur seule. Dans une famille d'émotions ou une zone (.emo-*, .zone-*), l'aplat prend leur couleur (-fill,
    -on). Rien ne change de taille au toucher. */
