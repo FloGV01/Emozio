@@ -1,0 +1,26 @@
+/* Emozio · formes 3a. À fondre dans composants.css et ecrans.css (ou à charger après ecrans.css). Ces règles ne font que
+   surcharger l'existant : aucune cible sous 44 pt, un choix non fait garde son contour, un choix fait sa coche. */
+
+/* Tout ce qui se touche est en pilule. Les jetons --r-moyen, --r-bouton et --r-petit ne changent PAS : des éléments qui ne se
+   touchent pas (les tuiles de l'Analyse) les lisent aussi. */
+.pastille, .segmente button, .roue-choix, .roue-choix::before, .btn, .puce-reglage select, .action-bande, .fab { border-radius: 999px; }
+
+/* Aujourd'hui : l'en-tête en bandeau teinté, jusqu'en haut de l'écran (barre d'état comprise), coins du bas à 30. */
+.entete-jour { margin: calc(-1 * var(--zone-haut)) calc(-1 * var(--marge)) 8px; padding: calc(var(--zone-haut) + 10px) var(--marge) 18px; background: var(--surface); border-radius: 0 0 30px 30px; }
+.titre-jour h1 { gap: 6px; }
+/* La date, en capsule sur le bandeau. */
+.sur-titre { padding: 5px 12px; border-radius: 999px; background: var(--bg); letter-spacing: .03em; }
+
+/* Aujourd'hui : les rubriques à plat sur le fond, sans carte, séparées d'un filet ; pas de filet sous le bandeau. */
+.carte-champ { background: none; border-radius: 0; padding: 14px 0 8px; box-shadow: 0 -1px 0 var(--line); }
+.entete-jour + .carte-champ { box-shadow: none; padding-top: 6px; }
+.titre-rubrique { font-weight: 700; }
+
+/* Moment difficile : exercices en pilules teintées ; la respiration dans un bandeau bord à bord ; « Commencer » sur toute la
+   largeur ; « Une chose à la fois » et « Mon plan » au contour, sans fond. */
+.exercice-court { background: var(--surface); border-radius: 999px; }
+.carte-respiration { margin: 0 calc(-1 * var(--marge)); border-radius: 34px; padding: 18px 32px; }
+.carte-respiration .respiration { gap: 10px; }
+.carte-respiration .cercle-respiration { width: 176px; }
+.moment-difficile .respiration .btn { align-self: stretch; }
+.moment-difficile .une-chose-acces, .moment-difficile .plan-moment { background: none; border-radius: 24px; box-shadow: inset 0 0 0 1px var(--line); }

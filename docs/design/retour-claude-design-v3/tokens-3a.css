@@ -1,0 +1,75 @@
+/* Emozio · palette 3a « Bandeau, tout en rondeur ». À reporter dans public/css/tokens.css : seules les lignes ci-dessous
+   changent ; le reste du fichier (familles, zones, --danger, typographie, espacements, cibles, durées, .ecran-noir) ne bouge pas. */
+:root {
+  --bg: #f8f9fa;
+  --surface: #e8f1f4;
+  --surface-2: #dae8ed;
+  --barre: #f1f6f8;
+  --line: #c3d6dd;
+  --contour: #627a83;
+  --text: #0a1c22;
+  --text-2: #40535a;
+  --desactive: #b7c9d0;
+  --piste: #e8f1f4;
+  --fenetre: #ffffff;
+  --rond: #ffffff;
+  --accent: #2e7f99;
+  --sur-accent: #ffffff;
+  --accent-texte: #1f6c85;
+  --donnee: #3c525c;
+  --donnee-1: #bdcfd6;
+  --donnee-2: #657e87;
+  --donnee-3: #1f343c;
+  --fond-choix: var(--surface); /* était transparent : un choix non fait est teinté, et garde son contour */
+
+  /* Écrans de l'émotion : l'encre et le voile suivent la nouvelle base ; les autres --moment-* du clair ne changent pas. */
+  --moment-texte: #0a1c22;
+  --moment-verre-texte: #0a1c22;
+  --moment-voile: 248, 249, 250;
+  --moment-plein: #0a1c22;
+  --moment-plein-on: #f8f9fa;
+  --moment-contour: var(--contour);
+  --moment-focus: #0a1c22;
+
+  /* Formes */
+  --r-carte: 24px;                      /* était 16 */
+  --t-grand-titre: min(2.35rem, 48px);  /* était min(2rem, 48px) */
+  --l-grand-titre: min(2.75rem, 58px);  /* était min(2.412rem, 58px) */
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #080b0d;
+    --surface: #10252c;
+    --surface-2: #19353f;
+    --barre: #0c181d;
+    --line: #24434e;
+    --contour: #6c8c97;
+    --text: #f3f8f9;
+    --text-2: #9fb7bf;
+    --desactive: #33505a;
+    --piste: #10252c;
+    --fenetre: #2f5563;
+    --rond: #19353f;
+    --accent: #62cbe8;
+    --sur-accent: #04161c;
+    --accent-texte: #62cbe8;
+    --donnee: #a8bec6;
+    --donnee-1: #2b4751;
+    --donnee-2: #7a939c;
+    --donnee-3: #e2edf0;
+
+    --moment-texte: #f3f8f9;
+    --moment-gris: #9fb7bf;
+    --moment-verre: #10252c;
+    --moment-verre-carte: rgba(16, 37, 44, .85);
+    --moment-verre-texte: #f3f8f9;
+    --moment-voile: 8, 11, 13;
+    --moment-carte-bas: #19353f;
+    --moment-plein: #f3f8f9;
+    --moment-plein-on: #080b0d;
+    --moment-choix: #19353f;
+    --moment-contour: #6c8c97;
+    --moment-filet: #24434e;
+    --moment-focus: #f3f8f9;
+  }
+}
