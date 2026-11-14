@@ -121,7 +121,7 @@ test('vigilance 3 · avec le bandeau « Nouvelle version prête », le soir se d
 // ---------- La Durée ----------
 // v11 (2/11) : la roue de la carte Sommeil, toujours visible (spec §5), remplace « Durée › » et sa rangée de 7 pastilles.
 
-test('la Durée, sur la roue sous Mal · Moyen · Bien : un toucher enregistre la nuit qui précède le jour, le résumé du jour la dit ; un second toucher l\'efface', async ({ page }) => {
+test('la Durée, sur la roue sous Mal · Moyen · Bien : un toucher enregistre la nuit qui précède le jour ; un second toucher l\'efface (v12.1 : plus de résumé du jour sous le titre)', async ({ page }) => {
   const d = duree(page);
   await expect(d.getByRole('button')).toHaveCount(13);
   // Dans la carte Sommeil, sous la qualité, de toute sa largeur, une cible de 44 de haut.
@@ -139,17 +139,19 @@ test('la Durée, sur la roue sous Mal · Moyen · Bien : un toucher enregistre l
   await d.getByRole('button', { name: '6 h', exact: true }).click();
   await expect.poll(async () => (await entreeDuJour(page))?.heuresSommeil).toBe(6);
   await expect(d.getByRole('button', { name: '6 h', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.resume-jour')).toHaveText('nuit 6 h');
   await toucher(page, 'Sommeil', 'Mal');
-  await expect(page.locator('.resume-jour')).toHaveText('nuit mal · 6 h');
+  await expect.poll(async () => (await entreeDuJour(page))?.sommeilRessenti).toBe('sommeil:mal');
+  expect((await entreeDuJour(page)).heuresSommeil).toBe(6);
   // Une erreur se corrige tout de suite : un second toucher efface, un autre note.
   await d.getByRole('button', { name: '6 h', exact: true }).click();
   await expect.poll(async () => (await entreeDuJour(page))?.heuresSommeil ?? null).toBeNull();
-  await expect(page.locator('.resume-jour')).toHaveText('nuit mal');
+  await expect(d.locator('[aria-pressed="true"]')).toHaveCount(0);
   await d.getByRole('button', { name: '4 h ou moins' }).click();
   await expect.poll(async () => (await entreeDuJour(page))?.heuresSommeil).toBe(4);
-  await expect(page.locator('.resume-jour')).toHaveText('nuit mal · 4 h ou moins');
+  expect((await entreeDuJour(page)).sommeilRessenti).toBe('sommeil:mal');
   await expect(d.locator('[aria-pressed="true"]')).toHaveText(['4 h ou moins']);
+  // v12.1 : rien de tout cela n'est résumé sous le titre.
+  await expect(page.locator('.entete-jour')).not.toContainText('nuit');
 });
 
 test('la roue montre la nuit notée de chaque jour, jamais celle d\'un autre, à chaque ouverture et à chaque changement de jour', async ({ page }) => {

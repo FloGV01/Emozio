@@ -429,8 +429,8 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    column-reverse le met dessous. Le sélecteur de date couvre le titre entier, sur-titre et grand titre (une cible de 44 au
    moins) : le sur-titre seul aurait demandé une rangée de 44, et la page du soir ne doit pas grandir de plus de 120 px (spec
    v12 §5.4). ‹ › sont des ronds neutres de 36 (--rond, une ombre légère en clair, un filet en sombre) dans des cibles de 44,
-   à droite du grand titre, centrées sur sa dernière ligne ; › prend --desactive sur aujourd'hui. Dessous, en 15 : « Encore
-   jeudi jusqu'à 4 h. » avant 4 h, les zones du jour en points et le résumé.
+   à droite du grand titre, centrées sur sa dernière ligne ; › prend --desactive sur aujourd'hui. Dessous, en 15, seulement
+   avant 4 h : « Encore jeudi jusqu'à 4 h. » (v12.1 : plus de points des zones ni de résumé sous le titre).
    v12.1 (spec §3.1, formes 3a) : l'en-tête est un bandeau teinté (--surface), bord à bord et jusqu'en haut de l'écran, barre
    d'état comprise (marges négatives : la zone sûre du haut, et --marge sur les côtés), coins du bas à 30, 8 sous lui ; ses
    marges intérieures, zone sûre + 10 en haut, --marge sur les côtés et 18 en bas. Avec « ‹ Retour », la barre de retour est
@@ -470,20 +470,16 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .nav-jour svg { position: relative; width: 18px; height: 18px; }
 .nav-jour[disabled] { color: var(--desactive); cursor: default; }
 .entete-jour > .barre-retour { margin: 0 -8px; }
-/* La ligne n'a que du texte : elle laisse passer les touchers (v11, contrôle des 44 pt), et le message d'échec reste
-   lisible. */
-.sous-jour { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: var(--t-sous); line-height: 1.2; color: var(--text-2); min-height: 1.2em; pointer-events: none; }
-/* Avant 4 h : en entier, avant les points et le résumé (qui se coupe) ; en grand texte, sur deux lignes au besoin. */
-.veille-jour { flex: 0 1 auto; min-width: 0; color: var(--text-2); }
-/* Les zones des émotions du jour (v9 ; leurs familles en v7 et v8) : un point par zone présente, à sa couleur (.zone-*) :
-   celle des bulles, avec un liseré à l'accent (comme .g-emo, plus haut). */
+/* La ligne sous le titre (v12.1, spec §2 point 2) : elle n'existe que pour « Encore jeudi jusqu'à 4 h. » avant 4 h, ou
+   pour le message d'échec d'écriture, qui prend sa place, en --text ; sur deux lignes et plus au besoin (grand texte).
+   Elle n'a que du texte : elle laisse passer les touchers (v11, contrôle des 44 pt). « Enregistré » n'est plus qu'annoncé
+   (entete-jour.js, .visuellement-cache). */
+.sous-jour { margin-top: 4px; font-size: var(--t-sous); line-height: 1.2; color: var(--text-2); pointer-events: none; }
+.sous-jour.echec { color: var(--text); }
+/* Les zones des émotions d'un jour (v9 ; leurs familles en v7 et v8), dans l'Historique et l'Après coup : un point par zone
+   présente, à sa couleur (.zone-*) : celle des bulles, avec un liseré à l'accent (comme .g-emo, plus haut). */
 .zones-jour { flex: none; display: inline-flex; align-items: center; gap: 3px; }
 .zones-jour i { width: 8px; height: 8px; border-radius: 4px; background: var(--c-fill); box-shadow: inset 0 0 0 1px var(--c); }
-.sous-jour .zones-jour { gap: 4px; }
-.sous-jour .zones-jour i { width: 10px; height: 10px; border-radius: 5px; }
-.resume-jour { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.indicateur { flex: none; margin-left: auto; color: var(--text); font-weight: 600; }
-.sous-jour.echec .indicateur { flex: 1; white-space: normal; font-weight: 400; }
 .revenir { align-self: flex-start; margin: -8px 0 -6px; }
 
 /* Rubriques du soir (v12, spec §5.4) : en tête, l'icône de 20 en --text-2, sans carré (les rubriques n'ont plus de
@@ -993,21 +989,17 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 }
 .carte-defile::-webkit-scrollbar { display: none; }
 .carte-plan { position: relative; }
-/* Une bulle : 96 pt, faite de deux moitiés à la couleur de sa case (--c). Choisie, chaque moitié devient une capsule de
-   78 × 156 (rayon 24, × 1,625), la « double capsule » de How We Feel, encoche en haut et en bas à la couleur du fond, noire
-   en sombre, gris clair en clair (visuel §2.4) ; elle garde sa forme quand la lentille suit le glissement ailleurs, à
-   l'échelle que celle-ci lui donne (spec v10 §4.1). Place et taille par transform (carte-emotions.js) ; le libellé dans la
-   moitié gauche, que la droite ne couvre pas. */
+/* Une bulle : un disque de 96 pt à la couleur de sa case (--c), son libellé noir dessus. Choisie, elle reste un disque,
+   agrandi par la lentille à 156 pt (× 1,625, carte-geometrie.js), plus gros que ses voisines (120 puis 108), à 4 pt
+   d'elles, au-dessus d'elles le temps d'une transition (v12.1, spec §2 point 3 : la « double capsule » de How We Feel,
+   deux capsules de 78 × 156 au rayon 24 × 1,625, n'existe plus) ; le même en clair et en sombre. Place et taille par
+   transform (carte-emotions.js) ; seules elles changent, jamais la forme. */
 .bulle-mot {
-  position: absolute; left: 0; top: 0; width: 96px; height: 96px; padding: 0; border: 0; border-radius: 50%; background: none; color: #000;
+  position: absolute; left: 0; top: 0; width: 96px; height: 96px; padding: 0; border: 0; border-radius: 50%; background: var(--c); color: #000;
   transform-origin: 48px 48px; transition: transform .45s cubic-bezier(.2, .8, .2, 1);
   -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
 }
-.bulle-mot.choisi { z-index: 2; border-radius: 24px; }
-.bulle-mot .demi { position: absolute; top: 0; width: 48.5px; height: 96px; background: var(--c); transition: border-radius .45s cubic-bezier(.2, .8, .2, 1); }
-.bulle-mot .demi.gauche { left: 0; border-radius: 48px 0 0 48px / 48px 0 0 48px; }
-.bulle-mot .demi.droite { right: 0; border-radius: 0 48px 48px 0 / 0 48px 48px 0; }
-.bulle-mot.choisi .demi { border-radius: 24px; }
+.bulle-mot.choisi { z-index: 2; }
 /* Le libellé : 12 pt (le diamètre / 8, visuel §2.6) en police système grasse, noir, 78 pt utiles (80 %) ; un mot trop long
    réduit son corps (ui/mesures.js), plusieurs mots passent à la ligne. Choisi, il passe à 18 pt (× 1,625 × 0,923). */
 .etiquette-mot {

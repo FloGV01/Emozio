@@ -167,7 +167,7 @@ test('les 144 bulles gardent la couleur de leur case et leur texte noir, et les 
     expect(faces, schema).toEqual([['rgb(254, 76, 64)', NOIR], ['rgb(255, 208, 76)', NOIR], ['rgb(120, 159, 255)', NOIR], ['rgb(76, 227, 155)', NOIR]]);
     await bulle(vue, 'bleu').click();
     await expect(carte(vue).getByRole('button')).toHaveCount(144);
-    const vus = await carte(vue).getByRole('button').evaluateAll((bs) => bs.map((b) => [b.textContent, getComputedStyle(b.querySelector('.demi.gauche')).backgroundColor,
+    const vus = await carte(vue).getByRole('button').evaluateAll((bs) => bs.map((b) => [b.textContent, getComputedStyle(b).backgroundColor,
       getComputedStyle(b.querySelector('.etiquette-mot')).color]));
     expect(vus).toHaveLength(144);
     for (const [nom, fond, texte] of vus) expect([fond, texte], `${schema} ${nom}`).toEqual([attendu[nom], NOIR]);

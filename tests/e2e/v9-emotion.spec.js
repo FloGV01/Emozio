@@ -318,7 +318,9 @@ test('l\'ordre de lecture suit l\'écran : ✕ d\'abord à l\'écran 1 ; à l\'�
   await expect.poll(releves(page)).toMatchObject([{ emotion: 'roue:peur:anxieux' }]);
 });
 
-test('le mot choisi : la double capsule de 156 au milieu de l\'écran, ses voisines à 120 puis 108, les autres à 96 ; en police système grasse (v10), corps = diamètre / 8', async ({ page }) => {
+// v12.1 (spec §2 point 3) : le mot choisi reste une bulle ronde, agrandie à 156 (la double capsule de la v9 à la v12 n'existe
+// plus).
+test('le mot choisi : un disque de 156 au milieu de l\'écran, ses voisines à 120 puis 108, les autres à 96 ; en police système grasse (v10), corps = diamètre / 8', async ({ page }) => {
   for (const mouvement of ['reduce', 'no-preference']) {
     await page.emulateMedia({ reducedMotion: mouvement });
     const vue = await ouvrir(page);
@@ -335,16 +337,18 @@ test('le mot choisi : la double capsule de 156 au milieu de l\'écran, ses voisi
     }, { message: mouvement }).toBe(true);
     await finMouvements(page);
     expect(await mesure(), mouvement).toMatchObject({ calme: [expect.any(Number), expect.any(Number), 156, 156], voisines: [120, 120, 120, 120], diagonales: [108, 108, 108], loin: [96, 96, 96] });
-    // Deux capsules de 78 de rayon 39 (24 × 1,625) ; le libellé noir, 12 px en police système grasse, 18 une fois choisi.
+    // Un disque (la bulle elle-même, rayon 50 %, rien d'autre qu'elle et son libellé) ; le libellé noir, 12 px en police
+    // système grasse, 18 une fois choisi.
     const forme = await page.evaluate(() => {
       const choisi = document.querySelector('.bulle-mot.choisi');
       const autre = [...document.querySelectorAll('.bulle-mot')].find((b) => b.textContent === 'Tendu');
       const etiquette = (b) => { const e = b.querySelector('.etiquette-mot'); const s = getComputedStyle(e); return [Math.round(parseFloat(s.fontSize) * 10) / 10, s.fontWeight, s.color, /^-apple-system/.test(s.fontFamily)]; };
-      return { demis: [...choisi.querySelectorAll('.demi')].map((d) => [Math.round(d.getBoundingClientRect().width), getComputedStyle(d).borderTopLeftRadius]),
+      const r = choisi.getBoundingClientRect();
+      return { disque: [Math.round(r.width), Math.round(r.height), getComputedStyle(choisi).borderTopLeftRadius, [...choisi.children].map((e) => e.className)],
         choisi: etiquette(choisi), autre: etiquette(autre),
         hauteur: Math.round(choisi.querySelector('.etiquette-mot').getBoundingClientRect().height / autre.querySelector('.etiquette-mot').getBoundingClientRect().height * 10) / 10 };
     });
-    expect(forme.demis).toEqual([[79, '24px'], [79, '24px']]);
+    expect(forme.disque).toEqual([156, 156, '50%', ['etiquette-mot']]);
     expect(forme.autre).toEqual([12, '700', 'rgb(0, 0, 0)', true]);
     expect(forme.choisi).toEqual(forme.autre);
     expect(forme.hauteur).toBe(1.5);
@@ -367,16 +371,13 @@ test('AA : le texte noir de chaque bulle sur sa couleur rendue (les quatre de l\
       for (const fond of f.fonds) expect(contraste(f.texte, fond), `${schema} ${fond}`).toBeGreaterThanOrEqual(4.5);
     }
     await bulle(vue, 'rouge').click();
+    // v12.1 : la bulle elle-même porte sa couleur (plus de moitiés).
     const mots = await carte(vue).getByRole('button').evaluateAll((bs) => bs.map((b) => ({
-      nom: b.textContent, texte: getComputedStyle(b.querySelector('.etiquette-mot')).color,
-      fond: getComputedStyle(b.querySelector('.demi.gauche')).backgroundColor, autre: getComputedStyle(b.querySelector('.demi.droite')).backgroundColor,
+      nom: b.textContent, texte: getComputedStyle(b.querySelector('.etiquette-mot')).color, fond: getComputedStyle(b).backgroundColor,
     })));
     expect(mots).toHaveLength(144);
     expect(new Set(mots.map((m) => m.fond)).size, 'une couleur par case').toBe(144);
-    for (const m of mots) {
-      expect(m.autre, m.nom).toBe(m.fond);
-      expect(contraste(m.texte, m.fond), `${schema} ${m.nom}`).toBeGreaterThanOrEqual(4.5);
-    }
+    for (const m of mots) expect(contraste(m.texte, m.fond), `${schema} ${m.nom}`).toBeGreaterThanOrEqual(4.5);
     // Les cases les plus profondes de chaque zone, et une claire : en sombre, le mot, éclairci si besoin, et la définition,
     // à l'encre, sur --moment-carte-bas (#2c2c2e jusqu'à la v12) ; en clair (v11), le mot en noir sur sa capsule (la couleur de sa case) et la définition foncée,
     // sur une carte blanche.
@@ -453,7 +454,8 @@ const debordements = (page) => page.evaluate(() => {
     return lignes(e).some((q) => [[q.left, q.top], [q.right, q.top], [q.left, q.bottom], [q.right, q.bottom]].some(([x, y]) => Math.hypot(x - cx, y - cy) > rayon + 0.5));
   };
   for (const e of document.querySelectorAll('.etiquette-bulle')) if (horsDuDisque(e, e.closest('.face'))) fautes.push(`${e.textContent} : hors de sa bulle`);
-  for (const e of document.querySelectorAll('.bulle-mot:not(.choisi) .etiquette-mot')) if (horsDuDisque(e, e.closest('.bulle-mot'))) fautes.push(`${e.textContent} : hors de sa bulle`);
+  // Le mot choisi aussi (v12.1 : un disque, plus une double capsule).
+  for (const e of document.querySelectorAll('.bulle-mot .etiquette-mot')) if (horsDuDisque(e, e.closest('.bulle-mot'))) fautes.push(`${e.textContent} : hors de sa bulle`);
   for (const e of document.querySelectorAll('.titre-bulles')) for (const q of lignes(e)) if (q.left < 0 || q.right > innerWidth) fautes.push('titre hors de l\'écran');
   const carte = document.querySelector('.carte-du-bas');
   if (carte) {
@@ -697,7 +699,7 @@ test('un mot à soi est sur la carte, hors du carré du côté de sa zone, à la
     const de = (n) => tous.find((b) => b.textContent === n);
     const x = (b) => b.getBoundingClientRect().left;
     const verts = [...document.querySelectorAll('[data-zone="vert"] .bulle-mot')];
-    const couleur = (b) => getComputedStyle(b.querySelector('.demi')).backgroundColor;
+    const couleur = (b) => getComputedStyle(b).backgroundColor;
     return { dansLeVert: verts.includes(de('Flottant')), aDroite: x(de('Flottant')) > Math.max(...verts.filter((b) => b !== de('Flottant')).map(x)),
       couleur: couleur(de('Flottant')) === couleur(de('Serein')) };
   });

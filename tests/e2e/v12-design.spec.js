@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { test, expect } from '../aides/gardes.js';
 import { toucher, groupe, viderBase, aller, appPrete, simulerZonesSures } from '../aides/saisie.js';
 import { canaux, contraste, jetons, oklch } from '../aides/couleurs.js';
-import { vueMoment, noter, continuer, faisais } from '../aides/emotion.js';
+import { vueMoment, noter, continuer, faisais, mot } from '../aides/emotion.js';
 import { stabiliser, verserControle, ciblesPetites, rondsAccent, accentHorsDeSaPlace, liensSurSurface2 } from '../aides/controle.js';
 import { installerParole } from '../aides/lecteur.js';
 
@@ -17,7 +17,8 @@ import { installerParole } from '../aides/lecteur.js';
 // vigilance 3 sont contrôlés sur tous les écrans du contrôle, v7-controle.spec.js ; ici, leurs contrôles eux-mêmes), les
 // graphiques sont à l'encre, une seule action en aplat par vue. v12.1 (spec 2026-11-14, tâche A) : les jetons « 3a » (base
 // presque blanche, surfaces teintées de bleu pétrole, accent pétrole), le bandeau d'Aujourd'hui, les rubriques à plat, les
-// pilules, le grand titre de 40. Données inventées. Horloge : jeudi 15 octobre 2026, 21:00 (390 × 844).
+// pilules, le grand titre de 40. Tâche B : plus de ligne sous le titre, le mot choisi de la carte reste un disque. Données
+// inventées. Horloge : jeudi 15 octobre 2026, 21:00 (390 × 844).
 const { clair, sombre } = jetons(readFileSync(new URL('../../public/css/tokens.css', import.meta.url), 'utf8'));
 const THEMES = [['light', clair], ['dark', sombre]];
 const rgb = (hex) => `rgb(${canaux(hex).join(', ')})`;
@@ -367,7 +368,9 @@ test('v12 (4/9) · point de vigilance 4 : en très grand texte (17 à 53, 390 et
             const texte = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
             if (texte && el.scrollWidth > el.clientWidth + 1 && !coupe(el)) fautes.push(`${el.className || el.tagName} : texte qui déborde`);
           };
-          for (const el of document.querySelectorAll('.entete-jour, .entete-jour *, .actions-flottantes, .actions-flottantes *')) if ((!(el instanceof SVGElement) || el.tagName === 'svg') && el.tagName !== 'INPUT') verifier(el);
+          // La région annoncée de l'en-tête (« Enregistré », v12.1) est masquée à l'écran, dans une boîte de 1 px : son texte
+          // en déborde exprès, comme celui de tout .visuellement-cache.
+          for (const el of document.querySelectorAll('.entete-jour, .entete-jour *, .actions-flottantes, .actions-flottantes *')) if ((!(el instanceof SVGElement) || el.tagName === 'svg') && el.tagName !== 'INPUT' && !el.closest('.visuellement-cache')) verifier(el);
           const conge = [...document.querySelectorAll('[aria-label="Lieu"] button')].find((b) => b.textContent.includes('Congé'));
           const carte = conge.closest('.carte-champ').getBoundingClientRect();
           for (const el of [conge, ...conge.querySelectorAll('*')]) if (!(el instanceof SVGElement) || el.tagName === 'svg') verifier(el, carte);
@@ -510,6 +513,132 @@ test('v12.1 (A) · Moment difficile : les exercices en pilules, la respiration e
     for (const e of m.contours) expect(e, schema).toEqual([TRANSPARENT, '24px', `${rgb(t.line)} 0px 0px 0px 1px inset`]);
     await vue.getByRole('button', { name: 'Fermer', exact: true }).click();
   }
+});
+
+// ---------- v12.1 (tâche B) : plus de ligne sous le titre, le mot choisi reste un disque (spec v12.1 §2 et §3.3) ----------
+
+// Spec §2 point 2 : sous « Aujourd'hui », ni les points des zones, ni le résumé de la journée, ni « Enregistré » à l'écran :
+// le bandeau finit 18 sous le titre. « Enregistré » reste annoncé, par la région role="status" de l'en-tête, masquée
+// (.visuellement-cache). Un échec d'écriture devient, dans cette même région, une ligne visible sous le titre, en --text ;
+// la panne passée, « Enregistré » est de nouveau seulement annoncé. Avant 4 h, « Encore jeudi jusqu'à 4 h. » seul.
+test('v12.1 (B) · sous le titre d\'Aujourd\'hui, plus de ligne : ni points des zones, ni résumé, ni « Enregistré » à l\'écran ; « Enregistré » annoncé, masqué ; un échec d\'écriture se lit ; avant 4 h, « Encore jeudi jusqu\'à 4 h. », en clair et en sombre', async ({ page }) => {
+  await verserControle(page);
+  const entete = page.locator('.entete-jour');
+  const annonce = entete.locator('[role="status"]');
+  const ECHEC = 'Enregistrement impossible pour l\'instant, nouvel essai en cours.';
+  const premiere = () => page.locator('.carte-champ').first().evaluate((c) => Math.round(c.getBoundingClientRect().top));
+  // Ce que l'en-tête montre sous sa ligne de titre : sa hauteur, et les textes visibles qui y sont peints.
+  const dessous = () => entete.evaluate((e) => {
+    const ligne = e.querySelector('.ligne-jour').getBoundingClientRect();
+    const textes = [...e.querySelectorAll('*')].filter((x) => !x.closest('.ligne-jour, .barre-retour, .visuellement-cache')
+      && [...x.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && x.getClientRects().length).map((x) => x.textContent.trim());
+    return { hauteur: Math.round(e.getBoundingClientRect().bottom - ligne.bottom), textes };
+  });
+  for (const [schema, t] of THEMES) {
+    await page.emulateMedia({ colorScheme: schema });
+    await page.reload();
+    // Ce soir-là, Bureau, une nuit, trois relevés de deux zones : de quoi faire un résumé et des points, jusqu'à la v12.
+    await expect(page.locator('.liste-evenements > li')).toHaveCount(3);
+    await expect(entete.locator('.zones-jour, .sous-jour')).toHaveCount(0);
+    await expect(page.getByRole('img', { name: /^Émotions/ })).toHaveCount(0);
+    expect(await dessous(), schema).toEqual({ hauteur: 18, textes: [] });
+    await expect(annonce).toHaveAttribute('aria-live', 'polite');
+    await expect(annonce).toHaveClass('visuellement-cache');
+    await expect(annonce).toHaveText('');
+    // Un toucher : « Enregistré » annoncé, rien à l'écran, rien ne bouge.
+    const avant = await premiere();
+    await toucher(page, 'Lieu', 'Télétravail');
+    await expect(annonce).toHaveText('Enregistré');
+    await expect(annonce).toHaveClass('visuellement-cache');
+    expect(await annonce.evaluate((e) => { const r = e.getBoundingClientRect(); return [r.width, r.height]; }), schema).toEqual([1, 1]);
+    expect(await dessous(), schema).toEqual({ hauteur: 18, textes: [] });
+    expect(await premiere(), schema).toBe(avant);
+    // Une panne d'écriture : le message, visible sous le titre, dans le bandeau, en --text, et toujours annoncé.
+    await page.evaluate(() => {
+      const j = window.__carnet.repo.journal;
+      const vrai = j.patch;
+      window.__panne = true;
+      j.patch = (...a) => (window.__panne ? Promise.reject(new Error('panne d\'essai')) : vrai.apply(j, a));
+    });
+    await toucher(page, 'Lieu', 'Bureau');
+    await expect(annonce).toHaveText(ECHEC);
+    await expect(annonce).toHaveClass('sous-jour echec');
+    expect((await dessous()).textes, schema).toEqual([ECHEC]);
+    const vu = await annonce.evaluate((e) => {
+      const [r, b, g] = [e, e.closest('.entete-jour'), e.closest('.entete-jour').querySelector('.grand-titre')].map((x) => x.getBoundingClientRect());
+      return { couleur: getComputedStyle(e).color, sousLeTitre: r.top >= g.bottom - 0.5, dansLeBandeau: r.bottom <= b.bottom - 17.5 };
+    });
+    expect(vu, schema).toEqual({ couleur: rgb(t.text), sousLeTitre: true, dansLeBandeau: true });
+    // La panne passée (le nouvel essai, 1,5 s plus tard, réussit) : « Enregistré » annoncé, la ligne repart.
+    await page.evaluate(() => { window.__panne = false; });
+    await expect(annonce).toHaveText('Enregistré');
+    await expect(annonce).toHaveClass('visuellement-cache');
+    expect(await premiere(), schema).toBe(avant);
+    await expect.poll(async () => (await page.evaluate(() => window.__carnet.repo.journal.lire('2026-10-15'))).lieu).toBe('lieu:bureau');
+  }
+  // Avant 4 h : « Encore jeudi jusqu'à 4 h. », seule ligne sous le titre ; la région annoncée reste masquée.
+  await page.clock.setSystemTime(new Date(2026, 9, 16, 1, 30));
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName('Aujourd\'hui, Jeudi 15 octobre');
+  await expect(entete.locator('.sous-jour')).toHaveText('Encore jeudi jusqu\'à 4 h.');
+  expect((await dessous()).textes).toEqual(['Encore jeudi jusqu\'à 4 h.']);
+  await expect(annonce).toHaveClass('visuellement-cache');
+});
+
+// Spec §2 point 3 et §3.3 : le mot choisi reste une bulle ronde agrandie, son libellé noir dessus : un disque (largeur =
+// hauteur, rayon = la moitié, la bulle seule et son libellé, rien de peint dans les coins de sa boîte), plus gros que toutes
+// ses voisines (156 contre 120 au plus), à 3,5 pt au moins d'elles, dans l'écran ; plus de double capsule. Le même en clair
+// et en sombre, et avec « Réduire les animations » ; au milieu de la carte (Calme) comme dans son coin (Enragé, rouge).
+test('v12.1 (B) · le mot choisi reste un disque agrandi, son libellé noir dessus, plus gros que ses voisines sans les recouvrir, au milieu de la carte comme à son bord ; le même en clair et en sombre, avec et sans « Réduire les animations »', async ({ page }) => {
+  test.setTimeout(90000);
+  const vus = {};
+  for (const [schema] of THEMES) {
+    for (const mouvement of ['no-preference', 'reduce']) {
+      for (const [zone, libelle] of [['vert', 'Calme'], ['rouge', 'Enragé']]) {
+        const quoi = `${schema} · ${mouvement} · ${libelle}`;
+        await page.emulateMedia({ colorScheme: schema, reducedMotion: mouvement });
+        await aller(page, '#/aujourdhui');
+        await aller(page, '#/moment');
+        const vue = vueMoment(page);
+        await noter(vue, zone, libelle);
+        await expect(mot(vue, libelle), quoi).toHaveAttribute('aria-pressed', 'true');
+        await expect.poll(() => mot(vue, libelle).evaluate((b) => { const r = b.getBoundingClientRect(); return [Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2)]; }), quoi)
+          .toEqual([195, 422]);
+        await stabiliser(page);
+        const m = await mot(vue, libelle).evaluate((b) => {
+          const r = b.getBoundingClientRect();
+          const s = getComputedStyle(b);
+          const [cx, cy, rayon] = [r.left + r.width / 2, r.top + r.height / 2, r.width / 2];
+          // Un point de sa boîte hors du disque, sur la diagonale (à 11,5 % du coin) : un rectangle arrondi au rayon 39, ou la
+          // double capsule, y peignait encore.
+          const coin = document.elementFromPoint(r.left + r.width * 0.115, r.top + r.height * 0.115);
+          const autres = [...document.querySelectorAll('.bulle-mot')].filter((x) => x !== b).map((x) => x.getBoundingClientRect());
+          const e = b.querySelector('.etiquette-mot');
+          const plage = document.createRange();
+          plage.selectNodeContents(e);
+          const lignes = [...plage.getClientRects()];
+          return {
+            boite: [Math.round(r.width * 10) / 10, Math.round(r.height * 10) / 10], rayon: s.borderTopLeftRadius, fond: s.backgroundColor,
+            enfants: [...b.children].map((x) => x.className), coin: Boolean(coin && coin.closest('.bulle-mot') === b),
+            plusGrosse: Math.max(...autres.map((q) => Math.round(q.width))),
+            ecart: Math.min(...autres.map((q) => Math.hypot(q.left + q.width / 2 - cx, q.top + q.height / 2 - cy) - q.width / 2 - rayon)),
+            dansLEcran: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight,
+            libelle: [e.textContent, getComputedStyle(e).color, new Set(lignes.map((q) => Math.round(q.top))).size <= 2,
+              lignes.every((q) => [[q.left, q.top], [q.right, q.top], [q.left, q.bottom], [q.right, q.bottom]].every(([x, y]) => Math.hypot(x - cx, y - cy) <= rayon + 0.5))],
+          };
+        });
+        expect([m.boite, m.rayon, m.enfants, m.coin], quoi).toEqual([[156, 156], '50%', ['etiquette-mot'], false]);
+        expect(m.plusGrosse, quoi).toBeLessThanOrEqual(120);
+        expect(m.ecart, quoi).toBeGreaterThanOrEqual(3.5);
+        expect(m.dansLEcran, quoi).toBe(true);
+        expect(m.libelle, quoi).toEqual([libelle, 'rgb(0, 0, 0)', true, true]);
+        // Le même rendu dans les deux thèmes et les deux réglages : sa couleur (celle de sa case) ne change pas.
+        vus[libelle] = vus[libelle] || m.fond;
+        expect(m.fond, quoi).toBe(vus[libelle]);
+      }
+    }
+  }
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
 });
 
 // ---------- Tâche 5 : les autres écrans et les graphiques ----------

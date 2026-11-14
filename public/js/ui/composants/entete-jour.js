@@ -1,7 +1,6 @@
 import { html } from '../lib.js';
 import { Icones } from '../icones.js';
 import { formaterJourComplet } from '../../domain/dates.js';
-import { PointsZones } from './zones.js';
 
 const majusculeInitiale = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
@@ -13,11 +12,16 @@ const majusculeInitiale = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 // (« Aujourd'hui, Jeudi 15 octobre », « Mercredi 14 octobre ») : l'aria-label du h1 le donne en toutes lettres, car le nom
 // tiré du texte peut prendre les capitales du sur-titre (Chromium lit « Aujourd'hui, JEUDI 15 OCTOBRE », et VoiceOver
 // peut épeler des capitales). Le texte suit le même ordre : le DOM met le grand titre avant le sur-titre (ecrans.css les
-// inverse à l'écran), et la virgule d'aujourd'hui, lue mais sans taille, reste collée au grand titre. Dessous, sur une
-// seule ligne : « Encore jeudi jusqu'à 4 h. » avant 4 h (`veille`), les zones des émotions du jour en points de couleur
-// (v9), le résumé de la journée et « Enregistré ». Un échec d'écriture prend la place de la ligne, sans décaler les
-// champs. Au-dessus, pour un jour ouvert depuis l'Historique (v6.1) : « ‹ Retour ».
-export function EnteteJour({ date, aujourdhui, surAller, indicateur, resume, zones = [], surRetour, veille = null }) {
+// inverse à l'écran), et la virgule d'aujourd'hui, lue mais sans taille, reste collée au grand titre. Au-dessus, pour un
+// jour ouvert depuis l'Historique (v6.1) : « ‹ Retour ».
+// v12.1 (spec §2, point 2) : plus de ligne sous le titre, ni points des zones, ni résumé de la journée, ni « Enregistré » à
+// l'écran. Dessous, une ligne seulement quand elle a quelque chose à dire : « Encore jeudi jusqu'à 4 h. » avant 4 h
+// (`veille`), ou le message d'échec d'écriture, qui prend sa place (on ne perd jamais une saisie sans le savoir). Elle n'a
+// plus de place gardée : quand le message paraît, les champs descendent de sa hauteur, le temps de la panne (une ligne
+// vide sous le titre aurait laissé un blanc dans le bandeau, en permanence, pour une panne rare). La région
+// role="status" est toujours là, pour que VoiceOver annonce ce qui y change : masquée à l'écran, elle porte « Enregistré »
+// après une écriture réussie ; après un échec, elle devient elle-même la ligne visible du message.
+export function EnteteJour({ date, aujourdhui, surAller, indicateur, surRetour, veille = null }) {
   const estAujourdhui = date === aujourdhui;
   const surDate = (e) => {
     const v = e.target.value;
@@ -46,11 +50,7 @@ export function EnteteJour({ date, aujourdhui, surAller, indicateur, resume, zon
         <button type="button" class="nav-jour" aria-label="Jour suivant" disabled=${estAujourdhui} onClick=${() => surAller('suivant')}>${Icones.chevron({ trait: 2.2 })}</button>
       </div>
     </div>
-    <p class=${echec ? 'sous-jour echec' : 'sous-jour'}>
-      ${!echec && veille && html`<span class="veille-jour">${veille}</span>`}
-      ${!echec && html`<${PointsZones} zones=${zones} annoncer=${true} />`}
-      ${!echec && html`<span class="resume-jour">${resume || ''}</span>`}
-      <span class="indicateur" role="status" aria-live="polite">${indicateur === 'ok' ? 'Enregistré' : echec ? "Enregistrement impossible pour l'instant, nouvel essai en cours." : ''}</span>
-    </p>
+    ${!echec && veille && html`<p class="sous-jour">${veille}</p>`}
+    <p class=${echec ? 'sous-jour echec' : 'visuellement-cache'} role="status" aria-live="polite">${indicateur === 'ok' ? 'Enregistré' : echec ? "Enregistrement impossible pour l'instant, nouvel essai en cours." : ''}</p>
   </header>`;
 }

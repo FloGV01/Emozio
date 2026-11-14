@@ -5,7 +5,8 @@ import { canaux, contraste, jetons } from '../aides/couleurs.js';
 
 // v7 (4/9) · Aujourd'hui 2b : en-tête « Jeudi 15 octobre », rubriques du soir en cartes, replis en liste groupée,
 // Ma journée et le résumé avec les émotions (spec §5), bande du bas avec « Émotion » (P5), changer de jour en glissant
-// (B4). Données inventées. Horloge : jeudi 15 octobre 2026, 21:00 (390 × 844, sauf mention).
+// (B4). v12.1 : plus de résumé sous le titre. Données inventées. Horloge : jeudi 15 octobre 2026, 21:00 (390 × 844, sauf
+// mention).
 const { clair, sombre } = jetons(readFileSync(new URL('../../public/css/tokens.css', import.meta.url), 'utf8'));
 const rgb = (hex) => `rgb(${canaux(hex).join(', ')})`;
 const repo = (page, f, arg) => page.evaluate(f, arg);
@@ -164,22 +165,24 @@ test('P3 · « J\'ai fini pour ce soir » s\'atteint en défilant, au-dessus de 
   }
 });
 
-test('après minuit, « Encore jeudi jusqu\'à 4 h. » est sur la ligne du résumé, sans hauteur : le soir s\'atteint en défilant avec les zones sûres de l\'iPhone', async ({ page }) => {
+// v12.1 (spec §2 point 2) : la ligne du résumé n'existe plus. À 21 h, rien sous le titre ; après minuit, « Encore jeudi
+// jusqu'à 4 h. » y prend une ligne à lui, seul, dans le bandeau, sous le grand titre (la première rubrique descend d'autant).
+test('après minuit, « Encore jeudi jusqu\'à 4 h. » seul sous le titre, dans le bandeau ; à 21 h, rien : le soir s\'atteint en défilant avec les zones sûres de l\'iPhone', async ({ page }) => {
   await simulerZonesSures(page);
-  // À 21 h, la première carte est à cette hauteur ; à 01:30, elle n'a pas bougé.
   const hautPremiereCarte = () => page.locator('.carte-champ').first().evaluate((c) => c.getBoundingClientRect().top);
   await toucher(page, 'Lieu', 'Bureau');
+  await expect(page.locator('.entete-jour .sous-jour')).toHaveCount(0);
   const aVingtEtUneHeures = await hautPremiereCarte();
   await page.clock.setSystemTime(new Date(2026, 9, 16, 1, 30));
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName('Aujourd\'hui, Jeudi 15 octobre');
-  const veille = page.locator('.sous-jour').getByText('Encore jeudi jusqu\'à 4 h.', { exact: true });
-  await expect(veille).toBeVisible();
-  await expect(page.locator('.resume-jour')).toHaveText('Bureau');
-  const [v, r] = await Promise.all([veille.boundingBox(), boite(page, '.resume-jour')]);
-  expect(Math.abs(v.y - r.y), 'sur la ligne du résumé').toBeLessThanOrEqual(1);
-  expect(v.x + v.width).toBeLessThanOrEqual(r.x);
-  expect(await hautPremiereCarte()).toBe(aVingtEtUneHeures);
+  const veille = page.locator('.entete-jour .sous-jour');
+  await expect(veille).toHaveText('Encore jeudi jusqu\'à 4 h.');
+  const [v, titre, bandeau] = await Promise.all([veille.boundingBox(), boite(page, '.grand-titre'), boite(page, '.entete-jour')]);
+  expect(v.y, 'sous le grand titre').toBeGreaterThanOrEqual(titre.y + titre.height - 0.5);
+  expect(v.y + v.height, 'dans le bandeau').toBeLessThanOrEqual(bandeau.y + bandeau.height - 10);
+  // Une ligne de 15 px (et ses 4 au-dessus), pas plus.
+  expect(await hautPremiereCarte() - aVingtEtUneHeures).toBeCloseTo(v.height + 4, 0);
   for (const schema of ['light', 'dark']) {
     await page.emulateMedia({ colorScheme: schema });
     await expect(veille).toBeVisible();
@@ -368,7 +371,8 @@ test('en-tête façon App Store : le sur-titre « JEUDI 15 OCTOBRE ⌄ » en 13/
 // ---------- Ma journée et le résumé (point de vigilance 5) ----------
 
 // v9 (tâche 3) : les points prennent la couleur de la zone du mot ; une famille seule de la v7 n'a pas de zone, point creux.
-test('point de vigilance 5 · Ma journée mêle un ancien relevé chiffré et des relevés à émotion, dans l\'ordre des heures ; le résumé montre les zones du jour', async ({ page }) => {
+// v12.1 (spec §2 point 2) : le résumé et les zones du jour ne sont plus sous le titre.
+test('point de vigilance 5 · Ma journée mêle un ancien relevé chiffré et des relevés à émotion, dans l\'ordre des heures ; rien n\'en est résumé sous le titre (v12.1)', async ({ page }) => {
   await repo(page, async () => {
     const r = window.__carnet.repo;
     await r.journal.patch('2026-10-15', { lieu: 'lieu:bureau' });
@@ -417,28 +421,24 @@ test('point de vigilance 5 · Ma journée mêle un ancien relevé chiffré et de
     }
     expect(new Set(colonnes.map((c) => c.texte)).size).toBe(1);
 
-    // Le résumé : les zones du jour en points de couleur (v9 ; une seule ici, la famille seule n'en a pas), puis le
-    // texte ; l'ancienne note y reste (« humeur 6 »).
-    const zones = page.getByRole('img', { name: 'Émotions : énergie haute · désagréable' });
-    await expect(zones).toBeVisible();
-    expect(await zones.locator('i').evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor)), schema)
-      .toEqual([rgb(t['c-zone-rouge-fill'])]);
-    await expect(page.locator('.resume-jour')).toHaveText('Bureau · humeur 6');
-    const [points, resume] = await Promise.all([boite(page, '.zones-jour'), boite(page, '.resume-jour')]);
-    expect(points.x + points.width).toBeLessThanOrEqual(resume.x);
+    // Sous le titre, ni les zones du jour en points, ni le résumé (« Bureau · humeur 6 ») : l'en-tête n'a que le titre et
+    // la région annoncée, vide.
+    await expect(page.locator('.entete-jour .zones-jour, .entete-jour .sous-jour')).toHaveCount(0);
+    await expect(page.getByRole('img', { name: /^Émotions/ })).toHaveCount(0);
+    await expect(page.locator('.entete-jour')).not.toContainText(/Bureau|humeur/);
   }
   await expect(page.locator('main')).not.toContainText(/NaN|undefined|null|roue:/);
 
-  // Un jour qui n'a que des émotions : plus de note dans le résumé, seulement les points.
+  // Un jour qui n'a que des émotions : sa ligne dans Ma journée, rien sous le titre.
   await repo(page, async () => {
     const r = window.__carnet.repo;
     await r.journal.patch('2026-10-13', { lieu: 'lieu:teletravail' });
     await r.humeurs.creer({ date: '2026-10-13', heure: '11:00', emotion: 'roue:joie:curieux', energie: 'energie:haute' });
   });
   await aller(page, '#/jour/2026-10-13');
-  await expect(page.getByRole('img', { name: 'Émotions : énergie haute · agréable' })).toBeVisible();
-  await expect(page.locator('.resume-jour')).toHaveText('Télétravail');
   await expect(page.locator('.liste-evenements > li')).toHaveText(['11:00Curieux · énergie haute']);
+  await expect(page.locator('.entete-jour .zones-jour, .entete-jour .sous-jour')).toHaveCount(0);
+  await expect(page.locator('.entete-jour')).not.toContainText('Télétravail');
   // Un jour sans relevé : ni points, ni texte de trop.
   await aller(page, '#/jour/2026-10-12');
   await expect.poll(() => titreVu(page)).toBe('Lundi 12 octobre');

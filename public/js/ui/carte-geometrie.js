@@ -59,8 +59,9 @@ export function couleurLisible(couleur, fond = FOND_CARTE_DU_BAS) {
 
 // ---------- Disposition (visuel §2.2 et §2.3) ----------
 
-// Autour du mot choisi, la taille suit la distance de Manhattan d = |Δcol| + |Δrang| : d = 0, la double capsule de
-// 156 ; 1, 120 ; 2, 108 ; 3 et plus, 96. ECHELLES : le facteur sur une bulle de 96.
+// Autour du mot choisi, la taille suit la distance de Manhattan d = |Δcol| + |Δrang| : d = 0, le disque de 156 (une
+// double capsule jusqu'à la v12 ; v12.1 : une bulle ronde agrandie, à 4 pt de ses voisines dans l'axe) ; 1, 120 ; 2, 108 ;
+// 3 et plus, 96. ECHELLES : le facteur sur une bulle de 96.
 const ECHELLES = [1.625, 1.25, 1.125, 1];
 
 // La lentille mesurée sur la capture de How We Feel (visuel §2.2), codée en dur comme il le conseille : le centre de

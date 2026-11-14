@@ -42,7 +42,8 @@ test('les 5 champs du soir en 5 touchers, sans frappe, sans bouton Enregistrer ;
   await expect(page.locator('.actions-flottantes .moment .libelle-action')).toBeVisible();
   await expect(page.locator('.actions-flottantes .action-bande > svg')).toHaveCount(2);
   await expect(page.getByRole('button', { name: /enregistrer/i })).toHaveCount(0);
-  await expect(page.getByText('Enregistré')).toBeVisible();
+  // v12.1 : « Enregistré » est annoncé (role="status", masqué à l'écran), plus affiché sous le titre.
+  await expect(page.locator('.entete-jour [role="status"].visuellement-cache')).toHaveText('Enregistré');
   const entree = await entreeDuJour(page);
   expect(entree).toMatchObject({
     lieu: 'lieu:bureau', sommeilRessenti: 'sommeil:moyen', humeur: null, contactHumain: true,

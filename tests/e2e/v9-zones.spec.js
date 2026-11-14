@@ -4,8 +4,8 @@ import { viderBase, aller } from '../aides/saisie.js';
 import { canaux, contraste, jetons } from '../aides/couleurs.js';
 
 // v9 (3/8) · Couleurs de zone partout (spec §4.6 et §13.4) : un relevé prend la couleur de la zone de son mot ; l'en-tête
-// d'Aujourd'hui, l'Historique et Après coup montrent un point par zone présente, sans doublon, dans l'ordre rouge, jaune,
-// bleu, vert ; « Mes jours » en mode jour colore ses points par zone, avec la légende des 4 zones, et garde ses barres par
+// d'Aujourd'hui (jusqu'à la v12 ; v12.1 : plus de points sous le titre), l'Historique et Après coup montrent un point par
+// zone présente, sans doublon, dans l'ordre rouge, jaune, bleu, vert ; « Mes jours » en mode jour colore ses points par zone, avec la légende des 4 zones, et garde ses barres par
 // famille par semaine. Point de vigilance 1 : un ancien relevé sans zone (famille seule de la v7, note de 1 à 10, énergie
 // seule) s'affiche sans erreur, au point creux. Relecture finale : une marque de zone a la couleur des bulles (-fill),
 // dans les deux thèmes, avec un liseré à l'accent qui porte le 3:1 (en clair, l'accent seul rendait le jaune olive).
@@ -16,7 +16,6 @@ const repo = (page, f, arg) => page.evaluate(f, arg);
 const THEMES = [['light', clair], ['dark', sombre]];
 // Une marque de zone : la couleur des bulles, puis celle de son liseré (box-shadow inset, ou contour en SVG).
 const attendue = (t, z) => [rgb(t[`c-zone-${z}-fill`]), rgb(t[`c-zone-${z}`])];
-const ZONE_HAUTE = 'Émotions : énergie haute · désagréable, énergie haute · agréable, énergie basse · agréable';
 // Un mot à soi (méta motsPerso), vert.
 const PERSO = 'roue:perso:u-0a1b2c3d';
 const MOT = { libelle: 'Flottant', zone: 'vert', famille: null, definition: null, archive: false, createdAt: '2026-10-01T08:00:00.000Z' };
@@ -47,21 +46,15 @@ async function journee(page) {
   }, [PERSO, MOT]);
 }
 
-test('Aujourd\'hui : un point par zone présente dans l\'en-tête, sans doublon, dans l\'ordre rouge, jaune, vert ; chaque relevé au point de sa zone, creux sans zone', async ({ page }) => {
+test('Aujourd\'hui : plus de points des zones dans l\'en-tête (v12.1) ; chaque relevé de Ma journée au point de sa zone, creux sans zone', async ({ page }) => {
   await journee(page);
   for (const [schema, t] of THEMES) {
     await page.emulateMedia({ colorScheme: schema });
     await page.reload();
-    // L'en-tête : trois zones (le rouge noté deux fois n'a qu'un point), à leur couleur, lues par VoiceOver.
-    const zones = page.getByRole('img', { name: ZONE_HAUTE });
-    await expect(zones).toBeVisible();
-    const points = await zones.locator('i').evaluateAll((els) => els.map((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).boxShadow.match(/rgba?\([^)]+\)/)[0]]));
-    expect(points, schema).toEqual(['rouge', 'jaune', 'vert'].map((z) => attendue(t, z)));
-    // La couleur des bulles, le jaune vif de How We Feel, jamais l'olive de l'accent clair.
-    expect(points[1][0]).toBe('rgb(255, 208, 76)');
-    // Un point se voit sur le fond de l'écran (3:1 au moins) : son liseré.
-    const fond = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    for (const [, lisere] of points) expect(contraste(lisere, fond), `${schema} ${lisere}`).toBeGreaterThanOrEqual(3);
+    // L'en-tête (v12.1, spec §2 point 2) : ni points des zones, ni rien qui les lise à VoiceOver.
+    await expect(page.locator('.liste-evenements > li .releve')).toHaveCount(8);
+    await expect(page.locator('.entete-jour .zones-jour')).toHaveCount(0);
+    await expect(page.getByRole('img', { name: /^Émotions/ })).toHaveCount(0);
 
     // Ma journée : le point de la zone du mot ; creux pour la note, la famille seule et l'énergie seule.
     await expect(page.getByRole('heading', { name: 'Ma journée' })).toBeVisible();
@@ -84,7 +77,7 @@ test('Aujourd\'hui : un point par zone présente dans l\'en-tête, sans doublon,
       ['Flottant · énergie basse', attendue(t, 'vert')],
     ]);
   }
-  // Un jour qui n'a qu'une famille seule (v7) : ni point dans l'en-tête, ni erreur ; sa ligne au point creux.
+  // Un jour qui n'a qu'une famille seule (v7) : ni point, ni erreur ; sa ligne au point creux.
   await aller(page, '#/jour/2026-10-14');
   await expect(page.locator('.liste-evenements > li')).toHaveText(['18:00Colère']);
   await expect(page.locator('.liste-evenements .point-evenement')).toHaveClass(/point-creux/);
@@ -92,6 +85,7 @@ test('Aujourd\'hui : un point par zone présente dans l\'en-tête, sans doublon,
   await expect(page.locator('main')).not.toContainText(/NaN|undefined|null|roue:/);
 });
 
+// v12.1 : la couleur et le liseré des points, contrôlés jusque-là sous le titre d'Aujourd'hui, le sont ici.
 test('Historique et Après coup : les points des zones du jour, dans le même ordre, masqués à VoiceOver ; une famille seule n\'en a pas', async ({ page }) => {
   const episode = await journee(page);
   for (const [schema, t] of THEMES) {
@@ -101,8 +95,20 @@ test('Historique et Après coup : les points des zones du jour, dans le même or
     await expect(ligne.locator('.mots-jour')).toHaveText('calme, furieux…');
     const points = ligne.locator('.zones-jour');
     await expect(points).toHaveAttribute('aria-hidden', 'true');
-    expect(await points.locator('i').evaluateAll((els) => els.map((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).boxShadow.match(/rgba?\([^)]+\)/)[0]])), schema)
-      .toEqual(['rouge', 'jaune', 'vert'].map((z) => attendue(t, z)));
+    // Trois zones (le rouge noté deux fois n'a qu'un point), à leur couleur.
+    const vus = await points.locator('i').evaluateAll((els) => els.map((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).boxShadow.match(/rgba?\([^)]+\)/)[0]]));
+    expect(vus, schema).toEqual(['rouge', 'jaune', 'vert'].map((z) => attendue(t, z)));
+    // La couleur des bulles, le jaune vif de How We Feel, jamais l'olive de l'accent clair.
+    expect(vus[1][0]).toBe('rgb(255, 208, 76)');
+    // Un point se voit sur son fond (le premier ancêtre opaque ; 3:1 au moins) : son liseré.
+    const fond = await points.evaluate((e) => {
+      for (let x = e; x; x = x.parentElement) {
+        const c = getComputedStyle(x).backgroundColor;
+        if (c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') return c;
+      }
+      return getComputedStyle(document.documentElement).backgroundColor;
+    });
+    for (const [, lisere] of vus) expect(contraste(lisere, fond), `${schema} ${lisere}`).toBeGreaterThanOrEqual(3);
     // Le 14 n'a qu'une famille seule : son mot, sans point.
     const veille = page.getByRole('link', { name: /mercredi 14 oct\./ });
     await expect(veille.locator('.mots-jour')).toHaveText('colère');

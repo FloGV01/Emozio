@@ -2,7 +2,7 @@
 import { html, useEffect, useReducer, useRef, useState } from '../lib.js';
 import { repo } from '../../donnees.js';
 import { useDonnees, useEtatApp, useIndicateur, ecrireAvecEssais, lireLocal, ecrireLocal } from '../hooks.js';
-import { addDays, JOURS, jourSemaine, jourEvenement, estAvantBascule, formaterJour, formaterVers } from '../../domain/dates.js';
+import { addDays, JOURS, jourSemaine, estAvantBascule, formaterJour, formaterVers } from '../../domain/dates.js';
 import { episodesRecents, premierJourRecent } from '../../domain/apres-coup.js';
 import { versHash } from '../../routeur.js';
 import { EnteteJour } from '../composants/entete-jour.js';
@@ -24,7 +24,7 @@ import { normaliserJournee, champsAffiches, repliAffiche, repliNuitAffiche, chan
 import { VALEURS_HEURES_SOMMEIL, texteHeuresSommeil } from '../../domain/champs.js';
 import { estExplosion } from '../../domain/explosions.js';
 import { zoneDe } from '../../domain/carte-roue.js';
-import { texteReleve, zonesDuJour } from '../../domain/releves.js';
+import { texteReleve } from '../../domain/releves.js';
 import { PastillesMultiples } from '../composants/multiples.js';
 import { etatApp } from '../../store.js';
 import { carteLibelles, libelle } from '../../domain/libelles.js';
@@ -259,15 +259,13 @@ export function Aujourdhui({ date: dateRoute, depuisHistorique = false }) {
 
   const carte = carteLibelles(items);
   const nExplosions = evenements ? evenements.episodes.filter(estExplosion).length : 0;
-  // Humeur du jour (v6) : le résumé dit la moyenne des notes de 1 à 10 des relevés du jour, sinon l'humeur du soir ;
-  // depuis la v7, seuls les anciens relevés en ont (« humeur 6 » reste affiché, spec §5). Les champs, eux, gardent
-  // l'entrée du soir telle quelle. Pendant un changement de jour, les relevés encore chargés sont ceux de l'autre
-  // jour : seule l'entrée de ce jour-ci compte, et seuls les relevés de ce jour-ci donnent leurs zones.
+  // La phrase de la soirée repliée (« J'ai fini pour ce soir ») ; v12.1 : elle n'est plus résumée sous le titre. Humeur du
+  // jour (v6) : la moyenne des notes de 1 à 10 des relevés du jour, sinon l'humeur du soir ; depuis la v7, seuls les
+  // anciens relevés en ont (« humeur 6 » reste affiché, spec §5). Les champs, eux, gardent l'entrée du soir telle quelle.
+  // Pendant un changement de jour, les relevés encore chargés sont ceux de l'autre jour : seule l'entrée de ce jour-ci
+  // compte.
   const duJour = avecHumeurDuJour([entree], evenements ? evenements.humeurs : []).find((j) => j.date === date);
   const phrase = phraseResume('jour', duJour, carte, { nExplosions });
-  const resume = phrase.map((x) => x.texte).join('');
-  // Les zones des émotions du jour, en points de couleur (v9, spec §13.4 ; v7 : leurs familles, au lieu de l'humeur moyenne).
-  const zones = evenements ? zonesDuJour(evenements.humeurs.filter((h) => jourEvenement(h.date, h.heure) === date), evenements.perso) : [];
   const replie = fini && date === aujourdhui && !vide;
   const visibles = champsAffiches(journee, entree);
   // Un détail renseigné vaut aussi « Oui » quand le Oui / Non n'était pas encore choisi.
@@ -397,7 +395,7 @@ export function Aujourdhui({ date: dateRoute, depuisHistorique = false }) {
     : null;
 
   return html`<main class=${classeEcran} ref=${refPage}>
-    <${EnteteJour} date=${date} aujourdhui=${aujourdhui} surAller=${aller} indicateur=${indicateur} resume=${resume} zones=${zones} surRetour=${retour}
+    <${EnteteJour} date=${date} aujourdhui=${aujourdhui} surAller=${aller} indicateur=${indicateur} surRetour=${retour}
       veille=${enVeille ? `Encore ${JOURS[jourSemaine(aujourdhui)]} jusqu'à 4 h.` : null} />
     ${date !== aujourdhui && html`<a class="lien revenir" href="#/aujourdhui">Revenir à aujourd'hui</a>`}
 

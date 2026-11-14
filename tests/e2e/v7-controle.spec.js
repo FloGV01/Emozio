@@ -102,7 +102,8 @@ const tirets = (page) => page.evaluate(() => [...document.querySelectorAll('body
 }).map((el) => `${el.tagName.toLowerCase()}.${String(el.className).split(' ').join('.')}`));
 
 // Les choix faits visibles sans leur coche (jamais la couleur seule). Une question cochée a sa propre case ; le mot choisi
-// de la carte des émotions (v9) a sa forme, la double capsule de 156 au lieu d'un disque de 96 (visuel §2.4) ; la couleur
+// de la carte des émotions (v9) a sa taille : la double capsule de 156 jusqu'à la v12 ; depuis la v12.1, un disque de 156,
+// le plus gros de la carte, au lieu d'un disque de 96 (visuel §2.4 ; spec v12.1 §2 point 3) ; la couleur
 // choisie d'un mot à soi (v9, les quatre bulles en petit), son anneau autour du disque (blanc sur le noir du relevé, foncé
 // sur son gris clair en clair depuis la v11, couleur du texte dans Réglages). Relecture de la tâche 8 : cet anneau ne vaut coche que s'il se voit, un contour plein
 // d'au moins 2 px, à 2 px au moins du disque, à 3:1 au moins sur son fond (le premier ancêtre opaque, comme plus haut).
@@ -136,7 +137,12 @@ const sansCoche = (page) => page.evaluate(() => {
   };
   return [...document.querySelectorAll('[aria-pressed="true"]')].filter((b) => {
     if (b.getBoundingClientRect().width < 1 || b.closest('.visuellement-cache') || b.classList.contains('question-case')) return false;
-    if (b.classList.contains('bulle-mot') || (b.matches('.quatre-bulles.petites .bulle-zone') && anneauVu(b))) return false;
+    if (b.classList.contains('bulle-mot')) {
+      const l = b.getBoundingClientRect().width;
+      const disque = getComputedStyle(b).borderTopLeftRadius === '50%';
+      if (disque && [...document.querySelectorAll('.bulle-mot')].every((x) => x === b || x.getBoundingClientRect().width < l - 0.5)) return false;
+    }
+    if (b.matches('.quatre-bulles.petites .bulle-zone') && anneauVu(b)) return false;
     if (b.classList.contains('epingle') && getComputedStyle(b.querySelector('svg')).fill !== 'none') return false;
     if (b.classList.contains('roue-valeur')) {
       const [d, r] = [b.closest('.roue-defile').getBoundingClientRect(), b.getBoundingClientRect()];
@@ -389,8 +395,8 @@ const ECRANS = (ids) => [
     }
   }, '.aujourdhui .roue-choix.notee'],
   // v9 (4/8) : les écrans de l'émotion, comme How We Feel (noirs ; selon le thème depuis la v11) : les quatre bulles et
-  // « C'était vers… » ouvert, puis la carte ouverte par une bulle, puis un mot au sens corrigé, choisi : la double capsule et
-  // sa carte du bas (en clair, le mot sur sa capsule).
+  // « C'était vers… » ouvert, puis la carte ouverte par une bulle, puis un mot au sens corrigé, choisi : son disque agrandi
+  // (la double capsule jusqu'à la v12) et sa carte du bas (en clair, le mot sur sa capsule).
   ['Émotion du moment', async (p) => {
     await aller(p, '#/moment');
     await p.getByRole('button', { name: 'Maintenant', exact: true }).click();
