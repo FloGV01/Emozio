@@ -35,7 +35,8 @@ test.beforeEach(async ({ page }) => {
   await viderBase(page);
 });
 
-// Chaque bouton d'un groupe : sa boîte, son style, son rayon vu (999px, borné par la moitié de la plus petite dimension), sa
+// Chaque bouton d'un groupe : sa boîte, son style, son rayon vu (26px depuis la relecture de la tâche A, la moitié de
+// --cible-bouton, 999px avant : borné par la moitié de la plus petite dimension, il fait une pilule jusqu'à 52 de haut), sa
 // coche (montrée ou non, sa taille, sa couleur) et ce qui bouge.
 const choixDe = (loc) => loc.evaluate(async (g) => {
   const rayonVu = (b) => {
@@ -373,10 +374,11 @@ test('v12 (4/9) · point de vigilance 4 : en très grand texte (17 à 53, 390 et
           const sous = document.querySelector('.rubrique-sous');
           verifier(sous, sous.closest('.carte-champ').getBoundingClientRect());
           const coche = conge.querySelector('.coche');
+          const rayon = [Number.parseFloat(getComputedStyle(conge).borderTopLeftRadius), conge.getBoundingClientRect().height];
           const [prec, suiv] = [...document.querySelectorAll('.nav-jour')].map((b) => b.getBoundingClientRect());
           const ligne = document.querySelector('.ligne-jour').getBoundingClientRect();
           return { fautes, grand: Number.parseFloat(getComputedStyle(document.querySelector('.grand-titre')).fontSize),
-            coche: Boolean(coche) && getComputedStyle(coche).display !== 'none',
+            coche: Boolean(coche) && getComputedStyle(coche).display !== 'none', rayon,
             navs: { rangee: Math.abs(prec.top - suiv.top) < 0.5, ordre: suiv.left >= prec.right - 0.5, bord: Math.abs(suiv.right - ligne.right) < 0.5 },
             actions: [...document.querySelectorAll('.actions-flottantes > a')].map((a) => [a.getAttribute('aria-label') || a.textContent.trim(),
               Math.round(a.getBoundingClientRect().width), Math.round(a.getBoundingClientRect().height)]),
@@ -385,6 +387,9 @@ test('v12 (4/9) · point de vigilance 4 : en très grand texte (17 à 53, 390 et
         expect(m.fautes, quoi).toEqual([]);
         expect(m.grand, quoi).toBeCloseTo(Math.min(2.35 * px, 48), 1);
         expect(m.coche, `${quoi} : la coche de « Congé / repos »`).toBe(true);
+        // Relecture de la tâche A : son rayon reste 26 ; passée sur deux lignes (plus de 52 de haut), « Congé / repos » est un
+        // rectangle arrondi et non un ovale, dont la courbe coupait le « / » à 47 et à 53 px.
+        expect(m.rayon[0], `${quoi} : le rayon de « Congé / repos » (${m.rayon[1]} de haut)`).toBe(26);
         expect(m.navs, `${quoi} : ‹ et › ensemble, à droite`).toEqual({ rangee: true, ordre: true, bord: true });
         // Un jour passé n'a pas d'Émotion : « Moment difficile » et « + Épisode ».
         expect(m.actions.length, quoi).toBe(jour ? 2 : 3);

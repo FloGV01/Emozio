@@ -96,7 +96,11 @@ test('v12.1 : les formes : rayon des cartes 24, marge 16, grand titre 40/47 (pla
 
 // v12.1 : les règles de formes-3a.css, fondues dans composants.css et ecrans.css : chacune de leurs déclarations est dans une
 // règle d'un des mêmes sélecteurs. La bande du bas (.action-bande, .fab) a sa règle, plus forte, sous .actions-flottantes : la
-// pilule y est posée (README : « les boutons de la bande en pilule »).
+// pilule y est posée (README : « les boutons de la bande en pilule »). Relecture de la tâche A : une pastille et un bouton
+// de segmenté ont le rayon 26 (la moitié de --cible-bouton) et non 999 : la même pilule à 44, 48 ou 52 de haut, un
+// rectangle arrondi qui garde son texte dedans quand le très grand texte le passe sur deux lignes.
+const PILULE_26 = 'border-radius: calc(var(--cible-bouton) / 2);';
+const ECARTS_FORMES = { '.pastille': { 'border-radius: 999px;': PILULE_26 }, '.segmente button': { 'border-radius: 999px;': PILULE_26 } };
 test('v12.1 : les formes 3a sont fondues dans les feuilles : chaque déclaration de formes-3a.css est dans une règle d\'un de ses sélecteurs', () => {
   const FORMES = sansCommentaires(lire(join(RACINE, 'docs', 'design', 'retour-claude-design-v3', 'formes-3a.css')));
   const selecteurs = (sel) => sel.split(/,(?![^(]*\))/).map((x) => x.replace(/\s+/g, ' ').trim());
@@ -107,7 +111,7 @@ test('v12.1 : les formes 3a sont fondues dans les feuilles : chaque déclaration
     for (const s of selecteurs(sel)) {
       for (const [, prop, val] of corps.matchAll(/([\w-]+)\s*:\s*([^;]+);/g)) {
         n += 1;
-        const decl = `${prop}: ${val.trim()};`;
+        const decl = ECARTS_FORMES[s]?.[`${prop}: ${val.trim()};`] ?? `${prop}: ${val.trim()};`;
         // Un élément de la bande : sa règle sous .actions-flottantes, et la sienne seule s'il en a une (.fab, hors de la bande).
         const cibles = PLUS_FORTS[s] ? [PLUS_FORTS[s], ...(REGLES.some(([x]) => selecteurs(x).includes(s)) ? [s] : [])] : [s];
         if (!cibles.every((c) => REGLES.some(([x, d]) => selecteurs(x).includes(c) && d.includes(decl)))) fautes.push(`${s} { ${decl} }`);
@@ -116,9 +120,12 @@ test('v12.1 : les formes 3a sont fondues dans les feuilles : chaque déclaration
   }
   assert.ok(n >= 30, `${n} déclarations lues`);
   assert.deepEqual(fautes, []);
-  // Aucune règle d'un élément en pilule n'y remet un autre rayon (le segmenté « petit » avait --r-petit).
+  // Aucune règle d'un élément en pilule n'y remet un autre rayon (le segmenté « petit » avait --r-petit) ; seuls la pastille
+  // et le bouton de segmenté ont le rayon 26, et nulle part ailleurs 999.
   const remis = REGLES.filter(([sel, d]) => /\.segmente\.petit button|\.actions-flottantes \.action-bande/.test(sel) && /border-radius: (?!999px)/.test(d)).map(([sel]) => sel);
   assert.deepEqual(remis, []);
+  assert.deepEqual(REGLES.filter(([sel, d]) => /\.(pastille|segmente)\b/.test(sel) && /border-radius: 999px/.test(d)).map(([sel]) => sel), []);
+  assert.equal(clair['cible-bouton'], '52px');
 });
 
 test('v12 : AA du texte et du texte secondaire sur le fond, la carte et --surface-2 ; l\'accent et le texte posé dessus à 4,5:1 au moins', () => {
@@ -319,7 +326,7 @@ test('v12 : un choix fait est un aplat d\'accent (ou de sa famille, de sa zone) 
   };
   for (const sel of ['.pastille', '.segmente button']) {
     assert.match(decl(sel), /background: var\(--fond-choix\);/, sel);
-    assert.match(decl(sel), /border-radius: 999px;/, `${sel} : en pilule (v12.1)`);
+    assert.match(decl(sel), /border-radius: calc\(var\(--cible-bouton\) \/ 2\);/, `${sel} : en pilule de 26 (v12.1, relecture de la tâche A)`);
     assert.match(decl(sel), /box-shadow: inset 0 0 0 1px var\(--contour\);/, sel);
     assert.doesNotMatch(decl(sel), /font-weight/, `${sel} : en 400`);
     const fait = decl(`${sel}[aria-pressed="true"]`);

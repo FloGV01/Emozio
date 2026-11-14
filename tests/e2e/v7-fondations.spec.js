@@ -22,7 +22,6 @@ const TEINTES = {
 const attendu = (t, couleur) => (couleur
   ? { fond: rgb(t[`c-${couleur}-fill`]), texte: rgb(t[`c-${couleur}-on`]) }
   : { fond: rgb(t.action), texte: rgb(t['action-on']) });
-const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 const contourDe = (t) => `${rgb(t.contour)} 0px 0px 0px 1px inset`;
 
 test.beforeEach(async ({ page }) => {

@@ -1053,7 +1053,8 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    capsule, plus bas) ; « Aucun mot » en gris ; « Ce que je faisais » en titre gras, ses pastilles sur --moment-choix (la surface
    de la carte du bas ; #2c2c2e jusqu'à la v12 ; teintées en clair), un choix fait à la couleur de la case du mot (--c-fill, posé aussi par
    moment.js : la même que le mot en rappel), sinon de sa zone (.zone-* : -fill), le texte en -on de la zone (les mêmes
-   dans les deux thèmes), à la couleur action sans zone. Le texte secondaire en #909090 (--text-2 en clair). */
+   dans les deux thèmes), à la couleur action sans zone. Le texte secondaire en --moment-gris (#9fb7bf en sombre depuis la
+   v12.1, #909090 avant ; --text-2 en clair). */
 .ecran-faisais {
   position: absolute; inset: 0; display: flex; flex-direction: column; --fond-choix: var(--moment-choix); --c-mot: var(--c-fill, var(--moment-texte));
   animation: apparition-carte var(--duree-anim) ease-out;
