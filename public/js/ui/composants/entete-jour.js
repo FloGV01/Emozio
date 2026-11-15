@@ -1,4 +1,4 @@
-import { html } from '../lib.js';
+import { html, useLayoutEffect, useRef } from '../lib.js';
 import { Icones } from '../icones.js';
 import { formaterJourComplet } from '../../domain/dates.js';
 
@@ -17,10 +17,16 @@ const majusculeInitiale = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 // v12.1 (spec §2, point 2) : plus de ligne sous le titre, ni points des zones, ni résumé de la journée, ni « Enregistré » à
 // l'écran. Dessous, une ligne seulement quand elle a quelque chose à dire : « Encore jeudi jusqu'à 4 h. » avant 4 h
 // (`veille`), ou le message d'échec d'écriture, qui prend sa place (on ne perd jamais une saisie sans le savoir). Elle n'a
-// plus de place gardée : quand le message paraît, les champs descendent de sa hauteur, le temps de la panne (une ligne
-// vide sous le titre aurait laissé un blanc dans le bandeau, en permanence, pour une panne rare). La région
-// role="status" est toujours là, pour que VoiceOver annonce ce qui y change : masquée à l'écran, elle porte « Enregistré »
-// après une écriture réussie ; après un échec, elle devient elle-même la ligne visible du message.
+// plus de place gardée (une ligne vide sous le titre aurait laissé un blanc dans le bandeau, en permanence, pour une panne
+// rare). La région role="status" est toujours là, pour que VoiceOver annonce ce qui y change : masquée à l'écran, elle
+// porte « Enregistré » après une écriture réussie ; après un échec, elle devient elle-même la ligne visible du message.
+// Relecture finale de la v12.1 : quand le message paraît ou repart, l'en-tête change de hauteur (deux lignes, 40 px au
+// texte par défaut), et tout ce qui est dessous bougeait sous le doigt : le toucher suivant tombait sur la rangée du dessus
+// (une autre valeur écrite) ou entre deux rangées (un toucher perdu). La page défile alors d'autant, dans le même rendu,
+// avant d'être peinte : rien ne bouge à l'écran sous l'en-tête, en haut de la page comme plus bas. Le défilement d'avant est
+// lu au rendu, avant que le DOM change : quand l'en-tête raccourcit en bas de la page, le navigateur a déjà remonté la page
+// (elle est plus courte), et un défilement relatif l'aurait remontée deux fois. Arrondi : WebKit tronque le défilement au
+// pixel, et l'écart s'ajoutait à chaque panne.
 export function EnteteJour({ date, aujourdhui, surAller, indicateur, surRetour, veille = null }) {
   const estAujourdhui = date === aujourdhui;
   const surDate = (e) => {
@@ -29,6 +35,20 @@ export function EnteteJour({ date, aujourdhui, surAller, indicateur, surRetour, 
     else e.target.value = date;
   };
   const echec = indicateur === 'echec';
+  const refEntete = useRef(null);
+  // Ce qui est sous la ligne du titre au dernier rendu peint, l'état du message, et le défilement juste avant qu'il change.
+  const dessous = useRef({ echec, hauteur: null, defile: 0 });
+  if (dessous.current.echec !== echec) dessous.current.defile = window.scrollY;
+  useLayoutEffect(() => {
+    const e = refEntete.current;
+    if (!e) return;
+    const hauteur = e.getBoundingClientRect().bottom - e.querySelector('.ligne-jour').getBoundingClientRect().bottom;
+    const avant = dessous.current;
+    dessous.current = { echec, hauteur, defile: 0 };
+    if (avant.echec !== echec && avant.hauteur != null && Math.abs(hauteur - avant.hauteur) >= 0.5) {
+      window.scrollTo(0, Math.max(0, Math.round(avant.defile + hauteur - avant.hauteur)));
+    }
+  });
   const jour = majusculeInitiale(formaterJourComplet(date));
   const mots = jour.split(' ');
   // Aujourd'hui : le grand titre, et la date entière en sur-titre ; un autre jour : « Mercredi 14 », puis le mois.
@@ -36,7 +56,7 @@ export function EnteteJour({ date, aujourdhui, surAller, indicateur, surRetour, 
   const grand = estAujourdhui ? "Aujourd'hui" : mots.slice(0, -1).join(' ');
   // Le chevron suit le dernier mot du sur-titre, sans s'en séparer quand il passe à la ligne (grand texte).
   const dernier = sur[sur.length - 1];
-  return html`<header class="entete-jour">
+  return html`<header class="entete-jour" ref=${refEntete}>
     ${surRetour && html`<div class="barre-retour">
       <button type="button" class="retour" onClick=${surRetour}>${Icones.retour({ trait: 2 })}Retour</button>
     </div>`}

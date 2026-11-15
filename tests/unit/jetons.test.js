@@ -98,9 +98,11 @@ test('v12.1 : les formes : rayon des cartes 24, marge 16, grand titre 40/47 (pla
 // règle d'un des mêmes sélecteurs. La bande du bas (.action-bande, .fab) a sa règle, plus forte, sous .actions-flottantes : la
 // pilule y est posée (README : « les boutons de la bande en pilule »). Relecture de la tâche A : une pastille et un bouton
 // de segmenté ont le rayon 26 (la moitié de --cible-bouton) et non 999 : la même pilule à 44, 48 ou 52 de haut, un
-// rectangle arrondi qui garde son texte dedans quand le très grand texte le passe sur deux lignes.
+// rectangle arrondi qui garde son texte dedans quand le très grand texte le passe sur deux lignes. Relecture finale : de
+// même, la capsule de la date (.sur-titre) a pour rayon la moitié de sa hauteur sur une ligne, (1,25 em + 2 × 5 px) / 2.
 const PILULE_26 = 'border-radius: calc(var(--cible-bouton) / 2);';
-const ECARTS_FORMES = { '.pastille': { 'border-radius: 999px;': PILULE_26 }, '.segmente button': { 'border-radius: 999px;': PILULE_26 } };
+const ECARTS_FORMES = { '.pastille': { 'border-radius: 999px;': PILULE_26 }, '.segmente button': { 'border-radius: 999px;': PILULE_26 },
+  '.sur-titre': { 'border-radius: 999px;': 'border-radius: calc(0.625em + 5px);' } };
 test('v12.1 : les formes 3a sont fondues dans les feuilles : chaque déclaration de formes-3a.css est dans une règle d\'un de ses sélecteurs', () => {
   const FORMES = sansCommentaires(lire(join(RACINE, 'docs', 'design', 'retour-claude-design-v3', 'formes-3a.css')));
   const selecteurs = (sel) => sel.split(/,(?![^(]*\))/).map((x) => x.replace(/\s+/g, ' ').trim());
@@ -219,6 +221,23 @@ test('v12.1 : l\'accent est loin de la menthe des zones (ΔE OKLab ≥ 0,12), en
     for (const n of ['donnee', 'donnee-1', 'donnee-2', 'donnee-3']) assert.ok(petrole(t[n]), `${theme} : --${n} (${t[n]}), une encre de la base`);
     assert.ok(contraste(t.donnee, t.surface) >= 4.5, `${theme} : --donnee sur la carte`);
     assert.ok(contraste(t['donnee-2'], t.surface) >= 3, `${theme} : --donnee-2, contour du pas le plus discret, sur la carte`);
+  }
+});
+
+// Relecture finale de la v12.1 : l'accent pétrole est voisin de Sérénité (turquoise), surtout en sombre (teintes à 26°, même
+// clarté). Ce sont la forme et les lieux qui les séparent : l'accent n'est jamais une marque de graphique, Sérénité jamais un
+// contrôle. Les jetons, définitifs (spec v12.1 §3.1), ne changent pas sans l'accord de l'utilisateur (docs/decisions.md,
+// v12.1.0, « En attente de l'utilisateur ») ; ce garde-fou fige les écarts d'aujourd'hui (ΔE OKLab au plus près : 0,058 en
+// clair, entre --accent-texte et --c-emo-serenite-text ; 0,048 en sombre, entre l'accent et --c-emo-serenite-text), pour
+// qu'ils ne rétrécissent pas.
+test('v12.1 : l\'accent ne se rapproche pas de Sérénité : ΔE OKLab de l\'accent et du texte d\'action à 0,055 au moins de ses rôles --c, -fill et -text en clair, à 0,045 au moins en sombre', () => {
+  for (const [theme, t, plancher] of [['clair', clair, 0.055], ['sombre', sombre, 0.045]]) {
+    for (const a of ['accent', 'accent-texte']) {
+      for (const r of ['', '-fill', '-text']) {
+        const d = ecartOklab(t[a], t[`c-emo-serenite${r}`]);
+        assert.ok(d >= plancher, `${theme} : --${a} et --c-emo-serenite${r}, ΔE OKLab ${d.toFixed(3)}`);
+      }
+    }
   }
 });
 
@@ -377,6 +396,53 @@ test('AA : -on sur -fill, -text sur le fond, les cartes et la teinte ; l\'accent
       assert.ok(contraste(v(''), t.bg) >= 3, `${theme} ${c} : accent sur le fond`);
     }
   }
+});
+
+// Relecture finale de la v12.1 : les barres de « Tes émotions » (Analyse › Ma semaine) sont posées sur --surface-2. Depuis les
+// jetons 3a, en clair, Joie (2,95:1) et Sérénité (3,00:1, 2,998 avant l'arrondi) y passaient sous le 3:1 d'un graphique
+// (WCAG 1.4.11). Les jetons des familles sont figés (test précédent) : un liseré au -text de la famille porte le 3:1, comme
+// celui des marques de zone. Chaque famille, par --c ou par son liseré, à 3:1 au moins sur --surface-2, en clair et en sombre.
+test('v12.1 : chaque barre de « Tes émotions » se voit sur --surface-2 à 3:1 au moins, par sa couleur ou par son liseré au -text de sa famille, en clair et en sombre', () => {
+  const ecrans = sansCommentaires(lire(join(RACINE, 'public', 'css', 'ecrans.css')));
+  const regle = (sel) => {
+    const r = [...ecrans.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[1].split(/,(?![^(]*\))/).map((x) => x.replace(/\s+/g, ' ').trim()).includes(sel));
+    assert.equal(r.length, 1, sel);
+    return r[0][2].replace(/\s+/g, ' ');
+  };
+  // Les tuiles de Ma semaine sont sur --surface-2 ; leurs barres de famille ont le liseré, d'un pixel quel que soit
+  // l'étirement du SVG, sans être coupé à son bord.
+  assert.match(regle('.tuiles-semaine .tuile'), /background: var\(--surface-2\);/);
+  assert.match(regle('.tuile-emotions .g-emo'), /stroke: var\(--c-text\); stroke-width: 1px; vector-effect: non-scaling-stroke;/);
+  assert.match(regle('.tuile-emotions .barre-famille'), /overflow: visible;/);
+  for (const [theme, t] of THEMES) {
+    for (const f of FAMILLES_ROUE) {
+      const [c, lisere] = [t[`c-emo-${f}`], t[`c-emo-${f}-text`]];
+      const vu = Math.max(contraste(c, t['surface-2']), contraste(lisere, t['surface-2']));
+      assert.ok(vu >= 3, `${theme} ${f} : ${contraste(c, t['surface-2']).toFixed(2)}:1, liseré ${contraste(lisere, t['surface-2']).toFixed(2)}:1`);
+      assert.ok(contraste(lisere, t['surface-2']) >= 3, `${theme} ${f} : le liseré seul`);
+    }
+  }
+  // Ce que le liseré corrige : sans lui, deux familles passaient sous 3:1 en clair.
+  assert.deepEqual(FAMILLES_ROUE.filter((f) => contraste(clair[`c-emo-${f}`], clair['surface-2']) < 3), ['joie', 'serenite']);
+});
+
+// Relecture finale de la v12.1 : ce qui se touche est en pilule (3a), une carte a le rayon des cartes. Quatre éléments touchables
+// gardaient l'ancien rayon de 12 (ou 8) à côté de pilules, et une carte le sien : « Ajouter » (un .btn, que sa règle défaisait),
+// « En consultation » (.pilule, au rayon des pastilles : un rectangle arrondi sur deux lignes, en très grand texte), la loupe
+// de l'Historique (un rond de 44, au --contour), les étiquettes du noting (la moitié de leurs 60), la carte des questions d'un
+// rendez-vous et la carte « Après coup · TCC » (24).
+test('v12.1 : relecture finale, ce qui se touche est en pilule et une carte a 24 : « Ajouter », « En consultation », la loupe, le noting, les questions et « Après coup »', () => {
+  const regles = (sel) => REGLES.filter(([x]) => x.split(/,(?![^(]*\))/).map((y) => y.trim()).includes(sel)).map(([, d]) => d);
+  const rayon = (sel) => regles(sel).flatMap((d) => [...d.matchAll(/border-radius: ([^;]+);/g)].map((m) => m[1]));
+  assert.deepEqual(rayon('.bouton-ajouter'), [], '« Ajouter » prend le rayon de .btn');
+  assert.ok(rayon('.btn').includes('999px'));
+  assert.deepEqual(rayon('.pilule'), ['calc(var(--cible-bouton) / 2)']);
+  assert.deepEqual(rayon('.bouton-loupe'), ['999px']);
+  assert.ok(regles('.bouton-loupe').some((d) => d.includes('border: 1px solid var(--contour);')), 'la loupe au --contour');
+  assert.deepEqual(rayon('.etiquette-noting'), ['30px']);
+  assert.ok(regles('.etiquette-noting').some((d) => d.includes('min-height: 60px;')));
+  assert.deepEqual(rayon('.carte-questions'), ['var(--r-carte)']);
+  assert.deepEqual(rayon('.ligne-carte.bouton-apres-coup'), ['var(--r-carte)']);
 });
 
 test('roue des émotions : 7 familles, dans l\'ordre ; -text lisible aussi sur -tint-2 ; une classe emo-<famille> par famille', () => {

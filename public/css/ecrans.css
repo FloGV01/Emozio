@@ -21,9 +21,12 @@
 
 /* Historique */
 .barre-recherche { display: flex; align-items: center; gap: var(--esp-2); margin-top: var(--esp-3); }
+/* La loupe : un rond de 44 (relecture finale de la v12.1 : tout ce qui se touche en pilule, 3a), au contour de ce qui se touche
+   sans être choisi (--contour, 3:1 ; --line, un filet décoratif, avant). Elle porte son icône : un rond sans icône reste aux
+   émotions. */
 .bouton-loupe {
   flex: none; width: var(--cible); height: var(--cible); display: grid; place-items: center;
-  border: 1px solid var(--line); border-radius: var(--r-moyen); background: var(--surface); color: var(--text);
+  border: 1px solid var(--contour); border-radius: 999px; background: var(--surface); color: var(--text);
 }
 .bouton-loupe[aria-expanded="true"] { border-color: var(--action); color: var(--accent-texte); }
 .bouton-loupe svg { width: 20px; height: 20px; }
@@ -133,7 +136,7 @@
 .questions-grandes .question-case { min-height: 56px; padding: 8px 0; gap: 14px; font-size: 1.118rem; }
 .questions-grandes .case-question { width: 28px; height: 28px; border-radius: 8px; border-width: 2px; }
 .questions-grandes .case-question svg { width: 16px; height: 16px; }
-.carte-questions { background: var(--surface); border-radius: var(--r-bouton); padding: 0 4px 0 12px; }
+.carte-questions { background: var(--surface); border-radius: var(--r-carte); padding: 0 4px 0 12px; }
 .voir-question { flex: none; padding: 0 4px 0 12px; font-weight: 600; }
 /* Fiche d'un rendez-vous (v8) : la case seule coche (cible de 44, le carré à sa place), le texte se modifie sur place,
    dans une zone à sa taille ; « Parler de… » et ses sujets sous le champ des questions. */
@@ -247,6 +250,12 @@
 .tuiles-semaine .tuile { background: var(--surface-2); min-height: 0; padding: 12px 12px 14px; gap: 8px; }
 .tuiles-semaine .tuile-valeur { font-size: var(--t-tuile); color: var(--text); }
 .tuile-emotions { grid-column: 1 / -1; }
+/* Ses barres, à la couleur de leur famille (--c), sur --surface-2 : en clair, Joie (2,95:1) et Sérénité (3,00:1) y passaient
+   sous le 3:1 d'un graphique depuis les jetons 3a (relecture finale de la v12.1). Un liseré de 1 px au -text de la famille
+   (5,32:1 et 5,43:1) porte le 3:1, comme celui des marques de zone ; en sombre, il se fond dans la barre. Il ne grossit pas
+   avec la barre étirée (preserveAspectRatio="none"), et sa moitié extérieure n'est pas coupée au bord du SVG. */
+.tuile-emotions .barre-famille { overflow: visible; }
+.tuile-emotions .g-emo { stroke: var(--c-text); stroke-width: 1px; vector-effect: non-scaling-stroke; }
 /* Tes zones (v9) : les quatre bulles, puis la barre par semaine dans la même carte (son cadre de graphique s'y fond). */
 .tes-zones { display: flex; flex-direction: column; gap: 14px; }
 .tes-zones .carte-entete { margin: 0; }
@@ -345,7 +354,8 @@ rect:is(.g-sommeil-1, .g-energie-1) { stroke: var(--donnee-2); stroke-width: 1; 
 .action-liste { font-size: var(--t-sous); padding: 0 10px; }
 .ajout-element { display: flex; gap: var(--esp-2); }
 .ajout-element input { flex: 1; border-radius: var(--r-moyen); }
-.bouton-ajouter { min-height: var(--cible); border-radius: var(--r-moyen); }
+/* « Ajouter » est un .btn : en pilule, comme eux (relecture finale de la v12.1 ; le champ d'à côté garde le rayon des champs). */
+.bouton-ajouter { min-height: var(--cible); }
 .listes .libelle-section { padding: 8px 0 0; margin-bottom: -6px; }
 
 /* Rappel du soir, aide iPhone */
@@ -404,8 +414,9 @@ rect:is(.g-sommeil-1, .g-energie-1) { stroke: var(--donnee-2); stroke-width: 1; 
    (v11) ; « J'ai fini pour ce soir » (P3) et la ligne Après coup (P2) s'atteignent au-dessus de la bande. v12 : la page
    remplie ne grandit que de 120 px au plus depuis la v11 (390 × 844, texte par défaut ; v12-design.spec.js) : 8 entre la tête
    d'une rubrique et ses choix, choix de 44 (la cible minimale, au lieu des 48 du lot), 10 entre deux rubriques et 6 entre
-   les autres blocs. Avant 4 h, « Encore jeudi jusqu'à 4 h. » est dans la ligne du résumé, sans hauteur. Le geste
-   horizontal reste à la page (changer de jour en glissant), le défilement vertical à iOS. */
+   les autres blocs. Avant 4 h, « Encore jeudi jusqu'à 4 h. » a sa ligne sous le titre (v12.1 : la ligne du résumé, qui
+   l'accueillait sans hauteur de plus, a disparu) : la page grandit alors de 22 px, au-delà des 120 (réserve de la v12.1,
+   docs/decisions.md). Le geste horizontal reste à la page (changer de jour en glissant), le défilement vertical à iOS. */
 /* Un champ qui reçoit le focus (clavier, VoiceOver) défile au-dessus de la bande et des onglets, jamais dessous. */
 html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) + var(--h-bande) + var(--zone-bas)); }
 .aujourdhui {
@@ -450,10 +461,13 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 /* La virgule d'« Aujourd'hui, Jeudi 15 octobre » : lue par VoiceOver, sans taille à l'écran. Elle reste en ligne : un
    élément caché par position: absolute serait un bloc, et le nom accessible lirait « Aujourd'hui , Jeudi ». */
 .virgule-lue { font-size: 0; line-height: 0; }
-/* La date, en capsule --bg sur le bandeau (v12.1, 3a) : marges 5 × 12, rayon 999, interlettrage .03em. En très grand texte,
-   elle passe sur deux lignes, sans sortir du bandeau. */
+/* La date, en capsule --bg sur le bandeau (v12.1, 3a) : marges 5 × 12, interlettrage .03em. En très grand texte, elle passe sur
+   deux lignes, sans sortir du bandeau. Son rayon, la moitié de sa hauteur sur une ligne ((1,25 em + 2 × 5 px) / 2) et non 999
+   (relecture finale de la v12.1, comme les pastilles) : la même pilule sur une ligne, un rectangle arrondi sur deux, où
+   l'ovale du rayon 999 laissait sortir de ses courbes les lettres droites qui ouvrent ses lignes (le « L » de LUNDI, le « N »
+   de NOVEMBRE, à 47 et à 53 px). */
 .sur-titre {
-  max-width: 100%; padding: 5px 12px; border-radius: 999px; background: var(--bg);
+  max-width: 100%; padding: 5px 12px; border-radius: calc(0.625em + 5px); background: var(--bg);
   font: 600 var(--t-note)/1.25 var(--police); letter-spacing: .03em; text-transform: uppercase; color: var(--text-2); overflow-wrap: break-word;
 }
 .fin-titre { white-space: nowrap; }
@@ -473,7 +487,8 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 /* La ligne sous le titre (v12.1, spec §2 point 2) : elle n'existe que pour « Encore jeudi jusqu'à 4 h. » avant 4 h, ou
    pour le message d'échec d'écriture, qui prend sa place, en --text ; sur deux lignes et plus au besoin (grand texte).
    Elle n'a que du texte : elle laisse passer les touchers (v11, contrôle des 44 pt). « Enregistré » n'est plus qu'annoncé
-   (entete-jour.js, .visuellement-cache). */
+   (entete-jour.js, .visuellement-cache). Elle n'a pas de place gardée : quand le message paraît ou repart, la page défile
+   de sa hauteur (entete-jour.js), et rien ne bouge sous le doigt. */
 .sous-jour { margin-top: 4px; font-size: var(--t-sous); line-height: 1.2; color: var(--text-2); pointer-events: none; }
 .sous-jour.echec { color: var(--text); }
 /* Les zones des émotions d'un jour (v9 ; leurs familles en v7 et v8), dans l'Historique et l'Après coup : un point par zone
@@ -857,8 +872,9 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .lien-apres-coup .ligne-libelle { display: flex; flex-direction: column; gap: 2px; }
 .titre-apres-coup { font-weight: 600; }
 /* Carte « Après coup · TCC » des épisodes : un cadre de bouton, neutre (la carte et le contour), son texte en accent (v12,
-   spec §5.4) ; son chevron, comme tous ceux d'une rangée, en --contour (composants.css). */
-.ligne-carte.bouton-apres-coup { border: 1px solid var(--contour); border-radius: var(--r-bouton); background: var(--surface); color: var(--accent-texte); }
+   spec §5.4) ; son chevron, comme tous ceux d'une rangée, en --contour (composants.css). Une carte : le rayon des cartes, 24
+   (relecture finale de la v12.1 ; 12 avant, à côté de la carte récapitulative à 24). */
+.ligne-carte.bouton-apres-coup { border: 1px solid var(--contour); border-radius: var(--r-carte); background: var(--surface); color: var(--accent-texte); }
 .bouton-apres-coup .note-carte-interne { color: inherit; }
 /* Aujourd'hui et sa liste : une ligne ordinaire, toujours de la même forme (aucun état). */
 .ligne-apres-coup-jour {
@@ -1382,10 +1398,12 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    (très grand texte, plus de 40 px), l'une sous l'autre, le mot entier. Touchée, l'une brille 600 ms : son fond change et, sauf
    avec « Réduire les animations », un halo s'étend et s'efface. Rien d'autre ne bouge. Transparentes, elles ont le contour d'un
    bouton non rempli (v12, spec §5.2 : --contour, 3:1 sur le fond ; --line, un filet, ne s'y voyait pas), en bordure et non en
-   box-shadow, que le halo anime déjà. */
+   box-shadow, que le halo anime déjà. En pilule (relecture finale de la v12.1, 3a : tout ce qui se touche), au rayon de la
+   moitié de leur hauteur minimale (30) : plus hautes en très grand texte, elles deviennent des rectangles arrondis, qui
+   gardent leur mot dedans (un rayon de 999 en ferait des ovales, comme les pastilles). */
 .etiquettes-noting { display: grid; grid-template-columns: repeat(auto-fit, minmax(max(calc(50% - 5px), 4.2rem), 1fr)); gap: 10px; }
 .etiquette-noting {
-  min-width: 0; min-height: 60px; padding: 8px; border: 1px solid var(--contour); border-radius: var(--r-moyen); background: var(--fond-choix);
+  min-width: 0; min-height: 60px; padding: 8px; border: 1px solid var(--contour); border-radius: 30px; background: var(--fond-choix);
   color: var(--text); font: 600 var(--t-corps)/1.25 var(--police); overflow-wrap: anywhere;
 }
 .etiquette-noting.brille { background: var(--c-tint-2, var(--surface-2)); }

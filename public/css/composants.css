@@ -82,9 +82,12 @@
 .btn-lien[disabled] { color: var(--line); cursor: default; }
 .lien-discret { color: var(--text-2); text-decoration: underline; border: 0; background: none; font-size: var(--t-sous); min-height: var(--cible); padding: 0; }
 .lien { color: var(--accent-texte); text-decoration: none; min-height: var(--cible); display: inline-flex; align-items: center; font-weight: 600; font-size: var(--t-sous); }
+/* « En consultation » (v8) : en pilule (relecture finale de la v12.1, 3a : tout ce qui se touche ; 12 avant, sous le segmenté
+   en pilules de Soins), au rayon des pastilles, la moitié de --cible-bouton et non 999 : la même pilule sur une ligne ; passée
+   sur deux lignes en très grand texte (47 et 53 px), un rectangle arrondi, quand l'ovale du 999 posait l'icône sur sa courbe. */
 .pilule {
   display: inline-flex; align-items: center; gap: 6px; min-height: var(--cible); padding: 0 16px 0 12px;
-  border-radius: var(--r-bouton); border: 0; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
+  border-radius: calc(var(--cible-bouton) / 2); border: 0; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
   font-size: var(--t-sous); font-weight: 600; text-decoration: none;
 }
 .pilule svg { width: 18px; height: 18px; }

@@ -225,28 +225,47 @@ const HAUTEUR_SOIR_V11 = 1611;
 // La même, « Sport en détail » ouvert (v11 f5b6c8b, mesurée le 13/11/2026 de la même façon) : relecture finale, la carte du
 // détail n'avait pas été recalibrée comme la paire, et « Autre » passait seul sur une 4e rangée (+157 px).
 const HAUTEUR_SOIR_SPORT_V11 = 1915;
+// Relecture finale de la v12.1 : entre minuit et 4 h, « Encore jeudi jusqu'à 4 h. » a sa ligne sous le titre (4 + 18 px), que
+// la ligne du résumé accueillait sans hauteur de plus jusqu'à la v12.0.1. La page passe alors à 1751 / 2055 px, +140 sur la
+// v11, au-delà des +120 de la spec v12 §5.4. Les valeurs 3a du bandeau étant définitives, ce dépassement attend l'utilisateur
+// (docs/decisions.md, v12.1.0, « En attente de l'utilisateur ») : le passage de 21:00 garde ses +120 ; celui de 01:30 ne
+// tolère que la hauteur de cette ligne en plus, et rien d'autre.
+const LIGNE_VEILLE = 22;
 
-test('v12 (4/9) · la page du soir, remplie comme le contrôle, grandit de 120 px au plus depuis la v11 (390 × 844, texte par défaut), en clair et en sombre, « Sport en détail » fermé puis ouvert', async ({ page }) => {
+test('v12 (4/9) · la page du soir, remplie comme le contrôle, grandit de 120 px au plus depuis la v11 (390 × 844, texte par défaut), en clair et en sombre, « Sport en détail » fermé puis ouvert ; avant 4 h, la seule ligne « Encore jeudi » en plus (réserve de la v12.1)', async ({ page }) => {
   await verserControle(page);
-  for (const [schema] of THEMES) {
-    await page.emulateMedia({ colorScheme: schema });
-    await page.reload();
-    // Tout ce que la page montre ce soir-là : les trois relevés, la ligne Après coup et le prochain rendez-vous.
-    await expect(page.locator('.liste-evenements > li')).toHaveCount(3);
-    await expect(page.locator('.ligne-apres-coup-jour')).toBeVisible();
-    await expect(page.locator('.ligne-rdv')).toBeVisible();
-    await stabiliser(page);
-    const hauteur = await page.evaluate(() => document.documentElement.scrollHeight);
-    expect(hauteur - HAUTEUR_SOIR_V11, `${schema} : ${hauteur} px, contre ${HAUTEUR_SOIR_V11} en v11`).toBeLessThanOrEqual(120);
-    // « Sport en détail » ouvert (il remplit « tout ») : les 7 types d'activité tiennent sur 3 rangées, comme en v11.
-    await page.getByRole('button', { name: 'Sport en détail', exact: true }).click();
-    const types = groupe(page, 'Activité 1 : type');
-    await expect(types.getByRole('button')).toHaveCount(7);
-    await stabiliser(page);
-    const rangees = await types.evaluate((g) => new Set([...g.querySelectorAll('button')].map((b) => Math.round(b.getBoundingClientRect().top))).size);
-    expect(rangees, `${schema} : les types d'activité`).toBe(3);
-    const ouverte = await page.evaluate(() => document.documentElement.scrollHeight);
-    expect(ouverte - HAUTEUR_SOIR_SPORT_V11, `${schema}, Sport en détail : ${ouverte} px, contre ${HAUTEUR_SOIR_SPORT_V11} en v11`).toBeLessThanOrEqual(120);
+  const soir = {};
+  for (const [quand, heure, veille] of [['21:00', new Date(2026, 9, 15, 21, 0), 0], ['01:30', new Date(2026, 9, 16, 1, 30), LIGNE_VEILLE]]) {
+    await page.clock.setSystemTime(heure);
+    for (const [schema] of THEMES) {
+      await page.emulateMedia({ colorScheme: schema });
+      await page.reload();
+      // Tout ce que la page montre ce soir-là : les trois relevés, la ligne Après coup et le prochain rendez-vous.
+      await expect(page.locator('.liste-evenements > li')).toHaveCount(3);
+      await expect(page.locator('.ligne-apres-coup-jour')).toBeVisible();
+      await expect(page.locator('.ligne-rdv')).toBeVisible();
+      await stabiliser(page);
+      // Avant 4 h, la ligne est là, et sa hauteur est celle qu'on tolère en plus.
+      await expect(page.locator('.entete-jour .sous-jour')).toHaveCount(veille ? 1 : 0);
+      if (veille) {
+        expect(await page.locator('.entete-jour .sous-jour').evaluate((e) => Math.round(e.getBoundingClientRect().height + parseFloat(getComputedStyle(e).marginTop))), `${schema} · ${quand}`).toBe(LIGNE_VEILLE);
+      }
+      const hauteur = await page.evaluate(() => document.documentElement.scrollHeight);
+      expect(hauteur - HAUTEUR_SOIR_V11, `${schema} · ${quand} : ${hauteur} px, contre ${HAUTEUR_SOIR_V11} en v11`).toBeLessThanOrEqual(120 + veille);
+      if (veille) expect(hauteur - soir[`${schema} fermée`], `${schema} · ${quand} : rien d'autre ne grandit`).toBe(veille);
+      soir[`${schema} fermée`] = hauteur;
+      // « Sport en détail » ouvert (il remplit « tout ») : les 7 types d'activité tiennent sur 3 rangées, comme en v11.
+      await page.getByRole('button', { name: 'Sport en détail', exact: true }).click();
+      const types = groupe(page, 'Activité 1 : type');
+      await expect(types.getByRole('button')).toHaveCount(7);
+      await stabiliser(page);
+      const rangees = await types.evaluate((g) => new Set([...g.querySelectorAll('button')].map((b) => Math.round(b.getBoundingClientRect().top))).size);
+      expect(rangees, `${schema} : les types d'activité`).toBe(3);
+      const ouverte = await page.evaluate(() => document.documentElement.scrollHeight);
+      expect(ouverte - HAUTEUR_SOIR_SPORT_V11, `${schema} · ${quand}, Sport en détail : ${ouverte} px, contre ${HAUTEUR_SOIR_SPORT_V11} en v11`).toBeLessThanOrEqual(120 + veille);
+      if (veille) expect(ouverte - soir[`${schema} ouverte`], `${schema} · ${quand}, Sport en détail : rien d'autre ne grandit`).toBe(veille);
+      soir[`${schema} ouverte`] = ouverte;
+    }
   }
 });
 
@@ -432,8 +451,10 @@ test('v12.1 (A) · Aujourd\'hui : l\'en-tête en bandeau bord à bord jusqu\'en 
     return {
       fond: s(entete).backgroundColor, rayon: rayons(entete), boite: [r.left, r.right, Math.round(r.top)], largeur: innerWidth,
       paddingHaut: s(entete).paddingTop, sousBandeau: bandeau ? Math.round(bandeau.getBoundingClientRect().bottom) : 0,
-      // L'interlettrage, en em de sa taille (.03em de 13 px, --t-note).
-      capsule: [s(sur).backgroundColor, s(sur).borderTopLeftRadius, s(sur).paddingTop, s(sur).paddingLeft, (parseFloat(s(sur).letterSpacing) / parseFloat(s(sur).fontSize)).toFixed(3)],
+      // L'interlettrage, en em de sa taille (.03em de 13 px, --t-note). Le rayon : la moitié de sa hauteur sur une ligne, une
+      // pilule (999 jusqu'à la relecture finale, la même pilule sur une ligne ; plus bas, la capsule sur deux lignes).
+      capsule: [s(sur).backgroundColor, Math.abs(parseFloat(s(sur).borderTopLeftRadius) - sur.getBoundingClientRect().height / 2) < 0.5 ? 'pilule' : s(sur).borderTopLeftRadius,
+        s(sur).paddingTop, s(sur).paddingLeft, (parseFloat(s(sur).letterSpacing) / parseFloat(s(sur).fontSize)).toFixed(3)],
       grand: [Math.round(parseFloat(s(grand).fontSize) * 100) / 100, Math.round(parseFloat(s(grand).lineHeight) * 100) / 100, s(grand).fontWeight],
       rubriques, premiere: document.querySelector('.entete-jour + .carte-champ') === document.querySelector('.aujourdhui .carte-champ'),
       carte: s(document.querySelector('.replis.carte')).borderTopLeftRadius,
@@ -459,7 +480,7 @@ test('v12.1 (A) · Aujourd\'hui : l\'en-tête en bandeau bord à bord jusqu\'en 
       // Bord à bord, et jusqu'en haut de l'écran (sous le bandeau « Nouvelle version prête », qui prend la zone sûre).
       expect(m.boite, quoi).toEqual([0, m.largeur, m.sousBandeau]);
       expect(m.paddingHaut, quoi).toBe(bandeauMaj ? '10px' : '57px');
-      expect(m.capsule, quoi).toEqual([rgb(t.bg), '999px', '5px', '12px', '0.030']);
+      expect(m.capsule, quoi).toEqual([rgb(t.bg), 'pilule', '5px', '12px', '0.030']);
       // 2,35 rem et 2,75 rem de 17 px : 40 / 47 (le grand titre de 3a ; 34 / 41 en v12).
       expect(m.grand, quoi).toEqual([39.95, 46.75, '700']);
       // Les rubriques : à plat, rien sur les côtés (de la marge de 16 au bord droit moins 16), un filet au-dessus sauf la première.
@@ -479,6 +500,62 @@ test('v12.1 (A) · Aujourd\'hui : l\'en-tête en bandeau bord à bord jusqu\'en 
   }
 });
 
+// Relecture finale de la v12.1 : en très grand texte, la capsule de la date passe sur deux lignes. Au rayon 999, c'était un ovale,
+// et les lettres droites qui ouvrent ses lignes sortaient de ses courbes (le « L » de LUNDI, le « N » de NOVEMBRE, le lundi 16
+// novembre, à 47 et à 53 px ; rien ne se voyait avec JEUDI / OCTOBRE). Son rayon est la moitié de sa hauteur sur une ligne :
+// la même pilule sur une ligne, un rectangle arrondi sur deux, dont aucune lettre ne sort (les coins de la boîte em de chaque
+// morceau de ligne, dans la forme arrondie). À 390 et à 375, en clair et en sombre.
+test('v12.1 · la capsule de la date sur deux lignes (très grand texte, lundi 16 novembre) : un rectangle arrondi au rayon de la pilule d\'une ligne, dont aucune lettre ne sort ; une pilule sur une ligne', async ({ page }) => {
+  await page.clock.setSystemTime(new Date(2026, 10, 16, 21, 0));
+  await page.reload();
+  await appPrete(page);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName('Aujourd\'hui, Lundi 16 novembre');
+  const capsule = () => page.evaluate(() => {
+    const c = document.querySelector('.sur-titre');
+    const r = c.getBoundingClientRect();
+    const s = getComputedStyle(c);
+    const rayon = Math.min(parseFloat(s.borderTopLeftRadius), r.width / 2, r.height / 2);
+    const taille = parseFloat(s.fontSize);
+    // Un point est dans la forme arrondie s'il est à moins du rayon du centre du coin le plus proche.
+    const hors = (x, y) => {
+      const [cx, cy] = [Math.min(Math.max(x, r.left + rayon), r.right - rayon), Math.min(Math.max(y, r.top + rayon), r.bottom - rayon)];
+      return Math.hypot(x - cx, y - cy) - rayon;
+    };
+    const sorties = [];
+    const marcheur = document.createTreeWalker(c, NodeFilter.SHOW_TEXT);
+    for (let n = marcheur.nextNode(); n; n = marcheur.nextNode()) {
+      const plage = document.createRange();
+      plage.selectNodeContents(n);
+      for (const q of plage.getClientRects()) {
+        if (!q.width) continue;
+        const m = (q.height - taille) / 2;
+        for (const [x, y] of [[q.left, q.top + m], [q.right, q.top + m], [q.left, q.bottom - m], [q.right, q.bottom - m]]) {
+          if (hors(x, y) > 0) sorties.push(`« ${n.textContent.trim()} » de ${hors(x, y).toFixed(1)} px`);
+        }
+      }
+    }
+    return { lignes: Math.round((r.height - 10) / parseFloat(s.lineHeight)), rayon, uneLigne: (parseFloat(s.lineHeight) + 10) / 2, demi: r.height / 2, sorties };
+  });
+  for (const [schema] of THEMES) {
+    await page.emulateMedia({ colorScheme: schema });
+    for (const largeur of [390, 375]) {
+      await page.setViewportSize({ width: largeur, height: 844 });
+      for (const px of [17, 47, 53]) {
+        await page.evaluate((x) => { document.documentElement.style.fontSize = `${x}px`; document.body.style.fontSize = `${x}px`; window.scrollTo(0, 0); }, px);
+        await stabiliser(page);
+        const m = await capsule();
+        const quoi = `${schema} · ${largeur} · ${px} px`;
+        expect(m.lignes, quoi).toBe(px === 17 ? 1 : 2);
+        expect(Math.abs(m.rayon - m.uneLigne), `${quoi} : le rayon de la pilule d'une ligne`).toBeLessThan(0.5);
+        if (px === 17) expect(Math.abs(m.rayon - m.demi), `${quoi} : une pilule`).toBeLessThan(0.5);
+        expect(m.sorties, quoi).toEqual([]);
+      }
+    }
+  }
+  await page.evaluate(() => { document.documentElement.style.fontSize = ''; document.body.style.fontSize = ''; });
+  await page.setViewportSize({ width: 390, height: 844 });
+});
+
 // Moment difficile : les exercices courts en pilules teintées ; la respiration dans un bandeau --surface bord à bord, rayon 34,
 // marges 18 × 32, son cercle de 176 et « Commencer » en pilule sur toute la largeur ; « Une chose à la fois » et « Mon plan »
 // sans fond, au contour --line, rayon 24.
@@ -490,6 +567,9 @@ test('v12.1 (A) · Moment difficile : les exercices en pilules, la respiration e
     await aller(page, '#/moment-difficile');
     const vue = page.getByRole('dialog', { name: 'Moment difficile' });
     await expect(vue.getByRole('button', { name: 'Commencer', exact: true })).toBeVisible();
+    // Mon plan se lit en base après l'ouverture : il n'était pas toujours là quand la mesure partait (relecture finale, un
+    // passage en sombre de la suite complète n'en a vu qu'un des deux).
+    await expect(vue.locator('.une-chose-acces, .plan-moment')).toHaveCount(2);
     const m = await vue.evaluate((v) => {
       const s = (e) => getComputedStyle(e);
       const resp = v.querySelector('.carte-respiration');
@@ -521,12 +601,23 @@ test('v12.1 (A) · Moment difficile : les exercices en pilules, la respiration e
 // le bandeau finit 18 sous le titre. « Enregistré » reste annoncé, par la région role="status" de l'en-tête, masquée
 // (.visuellement-cache). Un échec d'écriture devient, dans cette même région, une ligne visible sous le titre, en --text ;
 // la panne passée, « Enregistré » est de nouveau seulement annoncé. Avant 4 h, « Encore jeudi jusqu'à 4 h. » seul.
+// Relecture finale : quand le message paraît (deux lignes, 40 px) puis repart, rien ne bouge sous le doigt (la page défile
+// d'autant, entete-jour.js) : avant, toute la page descendait de 40 px puis remontait, pendant le toucher suivant, qui
+// écrivait la valeur de la rangée du dessus. En haut de la page, défilée de 600 px, et avant 4 h (le message remplace alors
+// « Encore jeudi », 18 px de plus).
 test('v12.1 (B) · sous le titre d\'Aujourd\'hui, plus de ligne : ni points des zones, ni résumé, ni « Enregistré » à l\'écran ; « Enregistré » annoncé, masqué ; un échec d\'écriture se lit ; avant 4 h, « Encore jeudi jusqu\'à 4 h. », en clair et en sombre', async ({ page }) => {
   await verserControle(page);
   const entete = page.locator('.entete-jour');
   const annonce = entete.locator('[role="status"]');
   const ECHEC = 'Enregistrement impossible pour l\'instant, nouvel essai en cours.';
   const premiere = () => page.locator('.carte-champ').first().evaluate((c) => Math.round(c.getBoundingClientRect().top));
+  // Les écritures du journal échouent tant que window.__panne est vrai (posé ici à vrai).
+  const installerPanne = () => page.evaluate(() => {
+    const j = window.__carnet.repo.journal;
+    const vrai = j.patch;
+    window.__panne = true;
+    j.patch = (...a) => (window.__panne ? Promise.reject(new Error('panne d\'essai')) : vrai.apply(j, a));
+  });
   // Ce que l'en-tête montre sous sa ligne de titre : sa hauteur, et les textes visibles qui y sont peints.
   const dessous = () => entete.evaluate((e) => {
     const ligne = e.querySelector('.ligne-jour').getBoundingClientRect();
@@ -554,15 +645,11 @@ test('v12.1 (B) · sous le titre d\'Aujourd\'hui, plus de ligne : ni points des 
     expect(await dessous(), schema).toEqual({ hauteur: 18, textes: [] });
     expect(await premiere(), schema).toBe(avant);
     // Une panne d'écriture : le message, visible sous le titre, dans le bandeau, en --text, et toujours annoncé.
-    await page.evaluate(() => {
-      const j = window.__carnet.repo.journal;
-      const vrai = j.patch;
-      window.__panne = true;
-      j.patch = (...a) => (window.__panne ? Promise.reject(new Error('panne d\'essai')) : vrai.apply(j, a));
-    });
+    await installerPanne();
     await toucher(page, 'Lieu', 'Bureau');
     await expect(annonce).toHaveText(ECHEC);
     await expect(annonce).toHaveClass('sous-jour echec');
+    expect(await premiere(), `${schema} : rien ne bouge sous le doigt pendant la panne`).toBe(avant);
     expect((await dessous()).textes, schema).toEqual([ECHEC]);
     const vu = await annonce.evaluate((e) => {
       const [r, b, g] = [e, e.closest('.entete-jour'), e.closest('.entete-jour').querySelector('.grand-titre')].map((x) => x.getBoundingClientRect());
@@ -575,6 +662,26 @@ test('v12.1 (B) · sous le titre d\'Aujourd\'hui, plus de ligne : ni points des 
     await expect(annonce).toHaveClass('visuellement-cache');
     expect(await premiere(), schema).toBe(avant);
     await expect.poll(async () => (await page.evaluate(() => window.__carnet.repo.journal.lire('2026-10-15'))).lieu).toBe('lieu:bureau');
+    // Plus bas dans la page (défilée de 600 px, l'en-tête hors de l'écran) : le choix sous le doigt reste à sa place, pendant
+    // la panne et après. Le toucher passe par l'élément, sans que Playwright fasse défiler la page.
+    await page.evaluate(() => window.scrollTo(0, 600));
+    const partiel = () => page.evaluate(() => {
+      const b = [...document.querySelectorAll('[aria-label="Traitement pris"] button')].find((x) => x.textContent.includes('Partiel'));
+      return { haut: b.getBoundingClientRect().top, defile: scrollY };
+    });
+    const loin = await partiel();
+    await page.evaluate(() => { window.__panne = true; });
+    await page.evaluate(() => [...document.querySelectorAll('[aria-label="Traitement pris"] button')].find((x) => x.textContent.includes('Partiel')).click());
+    await expect(annonce).toHaveClass('sous-jour echec');
+    const pendant = await partiel();
+    expect(pendant.haut, `${schema} : défilée, pendant la panne`).toBeCloseTo(loin.haut, 0);
+    expect(pendant.defile, schema).toBe(640);
+    await page.evaluate(() => { window.__panne = false; });
+    await expect(annonce).toHaveClass('visuellement-cache');
+    const apres = await partiel();
+    expect(apres.haut, `${schema} : défilée, la panne passée`).toBeCloseTo(loin.haut, 0);
+    expect(apres.defile, schema).toBe(600);
+    await page.evaluate(() => window.scrollTo(0, 0));
   }
   // Avant 4 h : « Encore jeudi jusqu'à 4 h. », seule ligne sous le titre ; la région annoncée reste masquée.
   await page.clock.setSystemTime(new Date(2026, 9, 16, 1, 30));
@@ -583,6 +690,18 @@ test('v12.1 (B) · sous le titre d\'Aujourd\'hui, plus de ligne : ni points des 
   await expect(entete.locator('.sous-jour')).toHaveText('Encore jeudi jusqu\'à 4 h.');
   expect((await dessous()).textes).toEqual(['Encore jeudi jusqu\'à 4 h.']);
   await expect(annonce).toHaveClass('visuellement-cache');
+  // Une panne avant 4 h : le message prend la place d'« Encore jeudi » ; rien ne bouge sous le doigt, ni pendant, ni après.
+  await expect(page.locator('.liste-evenements > li')).toHaveCount(3);
+  const nuit = await premiere();
+  await installerPanne();
+  await toucher(page, 'Lieu', 'Télétravail');
+  await expect(annonce).toHaveClass('sous-jour echec');
+  expect((await dessous()).textes).toEqual([ECHEC]);
+  expect(await premiere(), 'avant 4 h, pendant la panne').toBe(nuit);
+  await page.evaluate(() => { window.__panne = false; });
+  await expect(annonce).toHaveClass('visuellement-cache');
+  expect((await dessous()).textes).toEqual(['Encore jeudi jusqu\'à 4 h.']);
+  expect(await premiere(), 'avant 4 h, la panne passée').toBe(nuit);
 });
 
 // Spec §2 point 3 et §3.3 : le mot choisi reste une bulle ronde agrandie, son libellé noir dessus : un disque (largeur =

@@ -127,9 +127,11 @@ test('disposition avec un mot choisi : la fenêtre visible suit la table mesuré
   proche(a(3, 3), [192.2 + PAS, 192.2 + PAS], '(3, 3)');
 });
 
-// Chaque bulle est un disque : [x, y, rayon].
+// Chaque bulle est un disque : [x, y, rayon]. Une garde de la lentille (v10) : elle ne lit que disposition(), les places et les
+// tailles, jamais la forme peinte d'une bulle. La forme du mot choisi, un disque depuis la v12.1, est prouvée par l'e2e
+// « v12.1 (B) » de v12-design.spec.js (relecture finale de la v12.1 : ce test passait déjà sur la double capsule).
 const disquesDe = (p) => [...p.values()].map((q) => [q.x, q.y, 48 * q.echelle]);
-test('aucune bulle n\'en chevauche une autre, quel que soit le centre (chacun des mots, ou aucun), toutes en disques (le mot choisi aussi depuis la v12.1), mots à soi compris', () => {
+test('lentille : aucune bulle n\'en chevauche une autre, quel que soit le centre (chacun des mots, ou aucun), mots à soi compris', () => {
   const mots = motsDeLaCarte(PERSO);
   for (const centre of [null, ...mots.map((m) => m.id)]) {
     // Le centre en disque de 156 (le mot touché, ou le mot du milieu pendant le glissement) ; les autres, plus petits.
@@ -143,11 +145,11 @@ test('aucune bulle n\'en chevauche une autre, quel que soit le centre (chacun de
   }
 });
 
-// v12.1 (spec §2 point 3) : le mot choisi reste une bulle ronde agrandie, au centre de la lentille : un disque de 156,
-// nettement plus gros que ses voisines (120 au plus), à 4 pt au moins de chacune. La double capsule (v9 à v12), deux
-// capsules de 78 × 156 accolées, n'existe plus ; le mot choisi ailleurs que sous la lentille (pendant un glissement) est
-// un disque à la taille qu'elle lui donne, comme les autres (le test précédent).
-test('v12.1 : le mot choisi, centre de la lentille, est le plus gros disque, 156 contre 120 au plus, à 4 pt au moins de chacune de ses voisines, mots à soi compris', () => {
+// Une garde de la lentille (v10) : son centre (le mot touché) a 156, nettement plus que ses voisines (120 au plus), à 4 pt au
+// moins de chacune. Comme le test précédent, elle ne lit que disposition() et passait déjà sur la double capsule (v9 à
+// v12.0.1) : elle protège les tailles et les écarts, pas la forme. Que le mot choisi soit peint en disque (spec v12.1 §2
+// point 3), c'est l'e2e « v12.1 (B) » de v12-design.spec.js qui le prouve (relecture finale de la v12.1).
+test('lentille : son centre a 156, contre 120 au plus pour ses voisines, à 4 pt au moins de chacune, mots à soi compris', () => {
   const mots = motsDeLaCarte(PERSO);
   for (const choisi of mots) {
     const p = disposition(mots, choisi.id);
