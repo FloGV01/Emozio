@@ -96,14 +96,11 @@ test('v12.1 : les formes : rayon des cartes 24, marge 16, grand titre 40/47 (pla
 
 // v12.1 : les règles de formes-3a.css, fondues dans composants.css et ecrans.css : chacune de leurs déclarations est dans une
 // règle d'un des mêmes sélecteurs. La bande du bas (.action-bande, .fab) a sa règle, plus forte, sous .actions-flottantes : la
-// pilule y est posée (README : « les boutons de la bande en pilule »). Relecture de la tâche A : une pastille et un bouton
-// de segmenté ont le rayon 26 (la moitié de --cible-bouton) et non 999 : la même pilule à 44, 48 ou 52 de haut, un
-// rectangle arrondi qui garde son texte dedans quand le très grand texte le passe sur deux lignes. Relecture finale : de
-// même, la capsule de la date (.sur-titre) a pour rayon la moitié de sa hauteur sur une ligne, (1,25 em + 2 × 5 px) / 2.
-const PILULE_26 = 'border-radius: calc(var(--cible-bouton) / 2);';
-const ECARTS_FORMES = { '.pastille': { 'border-radius: 999px;': PILULE_26 }, '.segmente button': { 'border-radius: 999px;': PILULE_26 },
-  '.sur-titre': { 'border-radius: 999px;': 'border-radius: calc(0.625em + 5px);' } };
-test('v12.1 : les formes 3a sont fondues dans les feuilles : chaque déclaration de formes-3a.css est dans une règle d\'un de ses sélecteurs', () => {
+// pilule y est posée (README : « les boutons de la bande en pilule »). Décision de l'utilisateur du 16/11 (« niveau design,
+// fais comme Claude Design a défini ») : aucun écart de forme. La pastille, le bouton de segmenté et la capsule de la date
+// (.sur-titre) reprennent le rayon 999 de la planche (26, puis la moitié de la hauteur d'une ligne, depuis la relecture de la
+// tâche A et la relecture finale), « En consultation » (.pilule) aussi, comme un .btn.
+test('v12.1 : les formes 3a sont fondues dans les feuilles : chaque déclaration de formes-3a.css est dans une règle d\'un de ses sélecteurs, sans écart', () => {
   const FORMES = sansCommentaires(lire(join(RACINE, 'docs', 'design', 'retour-claude-design-v3', 'formes-3a.css')));
   const selecteurs = (sel) => sel.split(/,(?![^(]*\))/).map((x) => x.replace(/\s+/g, ' ').trim());
   const PLUS_FORTS = { '.action-bande': '.actions-flottantes .action-bande', '.fab': '.actions-flottantes .fab' };
@@ -113,7 +110,7 @@ test('v12.1 : les formes 3a sont fondues dans les feuilles : chaque déclaration
     for (const s of selecteurs(sel)) {
       for (const [, prop, val] of corps.matchAll(/([\w-]+)\s*:\s*([^;]+);/g)) {
         n += 1;
-        const decl = ECARTS_FORMES[s]?.[`${prop}: ${val.trim()};`] ?? `${prop}: ${val.trim()};`;
+        const decl = `${prop}: ${val.trim()};`;
         // Un élément de la bande : sa règle sous .actions-flottantes, et la sienne seule s'il en a une (.fab, hors de la bande).
         const cibles = PLUS_FORTS[s] ? [PLUS_FORTS[s], ...(REGLES.some(([x]) => selecteurs(x).includes(s)) ? [s] : [])] : [s];
         if (!cibles.every((c) => REGLES.some(([x, d]) => selecteurs(x).includes(c) && d.includes(decl)))) fautes.push(`${s} { ${decl} }`);
@@ -122,12 +119,19 @@ test('v12.1 : les formes 3a sont fondues dans les feuilles : chaque déclaration
   }
   assert.ok(n >= 30, `${n} déclarations lues`);
   assert.deepEqual(fautes, []);
-  // Aucune règle d'un élément en pilule n'y remet un autre rayon (le segmenté « petit » avait --r-petit) ; seuls la pastille
-  // et le bouton de segmenté ont le rayon 26, et nulle part ailleurs 999.
-  const remis = REGLES.filter(([sel, d]) => /\.segmente\.petit button|\.actions-flottantes \.action-bande/.test(sel) && /border-radius: (?!999px)/.test(d)).map(([sel]) => sel);
+  // Aucune règle d'un élément que la planche met en pilule n'y remet un autre rayon que 999 (le segmenté « petit » avait
+  // --r-petit, la pastille et le segmenté 26, la capsule de la date la moitié de sa hauteur, « En consultation » 26) ; une
+  // règle qui vise un de ces éléments par une autre de ses classes est vue par le contrôle global (v7-controle.spec.js,
+  // PILULES_PLANCHE), sur chaque écran du parcours.
+  const PILULES = /\.(pastille|segmente|roue-choix|btn|puce-reglage|action-bande|fab|exercice-court|sur-titre|pilule)(?![\w-])/;
+  const remis = REGLES.filter(([sel, d]) => sel.split(/,(?![^(]*\))/).some((x) => PILULES.test(x)) && /border-radius: (?!999px;)/.test(d)).map(([sel]) => sel);
   assert.deepEqual(remis, []);
-  assert.deepEqual(REGLES.filter(([sel, d]) => /\.(pastille|segmente)\b/.test(sel) && /border-radius: 999px/.test(d)).map(([sel]) => sel), []);
-  assert.equal(clair['cible-bouton'], '52px');
+  for (const sel of ['.pastille', '.segmente button', '.sur-titre', '.pilule', '.btn']) {
+    assert.ok(REGLES.some(([x, d]) => x.split(/,(?![^(]*\))/).map((y) => y.trim()).includes(sel) && d.includes('border-radius: 999px;')), `${sel} : rayon 999`);
+  }
+  // Ce que la planche ne nomme pas garde son rayon : « Mémo vocal » (12) et « Arrêter » (8) restent des rectangles arrondis.
+  const rayonDe = (sel) => REGLES.filter(([x]) => x.split(/,(?![^(]*\))/).map((y) => y.trim()).includes(sel)).flatMap(([, d]) => [...d.matchAll(/border-radius: ([^;]+);/g)].map((m) => m[1]));
+  assert.deepEqual([rayonDe('.btn-memo'), rayonDe('.btn-arreter')], [['var(--r-bouton)'], ['8px']]);
 });
 
 test('v12 : AA du texte et du texte secondaire sur le fond, la carte et --surface-2 ; l\'accent et le texte posé dessus à 4,5:1 au moins', () => {
@@ -345,7 +349,7 @@ test('v12 : un choix fait est un aplat d\'accent (ou de sa famille, de sa zone) 
   };
   for (const sel of ['.pastille', '.segmente button']) {
     assert.match(decl(sel), /background: var\(--fond-choix\);/, sel);
-    assert.match(decl(sel), /border-radius: calc\(var\(--cible-bouton\) \/ 2\);/, `${sel} : en pilule de 26 (v12.1, relecture de la tâche A)`);
+    assert.match(decl(sel), /border-radius: 999px;/, `${sel} : en pilule de 999 (v12.1, formes 3a ; décision du 16/11)`);
     assert.match(decl(sel), /box-shadow: inset 0 0 0 1px var\(--contour\);/, sel);
     assert.doesNotMatch(decl(sel), /font-weight/, `${sel} : en 400`);
     const fait = decl(`${sel}[aria-pressed="true"]`);
@@ -428,7 +432,7 @@ test('v12.1 : chaque barre de « Tes émotions » se voit sur --surface-2 à 3:1
 
 // Relecture finale de la v12.1 : ce qui se touche est en pilule (3a), une carte a le rayon des cartes. Quatre éléments touchables
 // gardaient l'ancien rayon de 12 (ou 8) à côté de pilules, et une carte le sien : « Ajouter » (un .btn, que sa règle défaisait),
-// « En consultation » (.pilule, au rayon des pastilles : un rectangle arrondi sur deux lignes, en très grand texte), la loupe
+// « En consultation » (.pilule, au rayon 999 des .btn depuis la décision du 16/11 ; 26 à la relecture finale), la loupe
 // de l'Historique (un rond de 44, au --contour), les étiquettes du noting (la moitié de leurs 60), la carte des questions d'un
 // rendez-vous et la carte « Après coup · TCC » (24).
 test('v12.1 : relecture finale, ce qui se touche est en pilule et une carte a 24 : « Ajouter », « En consultation », la loupe, le noting, les questions et « Après coup »', () => {
@@ -436,7 +440,7 @@ test('v12.1 : relecture finale, ce qui se touche est en pilule et une carte a 24
   const rayon = (sel) => regles(sel).flatMap((d) => [...d.matchAll(/border-radius: ([^;]+);/g)].map((m) => m[1]));
   assert.deepEqual(rayon('.bouton-ajouter'), [], '« Ajouter » prend le rayon de .btn');
   assert.ok(rayon('.btn').includes('999px'));
-  assert.deepEqual(rayon('.pilule'), ['calc(var(--cible-bouton) / 2)']);
+  assert.deepEqual(rayon('.pilule'), ['999px']);
   assert.deepEqual(rayon('.bouton-loupe'), ['999px']);
   assert.ok(regles('.bouton-loupe').some((d) => d.includes('border: 1px solid var(--contour);')), 'la loupe au --contour');
   assert.deepEqual(rayon('.etiquette-noting'), ['30px']);

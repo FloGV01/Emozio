@@ -334,8 +334,22 @@ test('docs/decisions.md, l\'entrée v12.1.0 : les quatre décisions du §2, les 
   for (const x of ['#1C7D36', '#30D158', 'n\'apparaissent plus nulle part dans `public/`', 'les points des zones, le résumé de la journée et « Enregistré » à l\'écran', 'La double capsule']) {
     assert.ok(disparu.includes(x), `ce qui disparaît : ${x}`);
   }
+  // Décision de l'utilisateur du 16/11 (« niveau design, fais comme Claude Design a défini ») : plus aucun écart de forme ; restent
+  // les deux écarts de lisibilité qu'il n'a pas remis en cause (le texte d'action, la cible de « Détail › »).
   const ecarts = section(v121, 'Écarts au retour de Claude Design');
-  for (const x of ['`calc(var(--cible-bouton) / 2)`', '« Congé / repos »', '`--accent-texte`', '« Mémo vocal » et « Arrêter »']) assert.ok(ecarts.includes(x), `écarts : ${x}`);
+  for (const x of ['**Plus aucun écart de forme depuis le 16/11**', '`calc(var(--cible-bouton) / 2)`', '« Congé / repos »', '`--accent-texte`', '**La cible de « Détail › »**',
+    '« Mémo vocal » et « Arrêter »']) {
+    assert.ok(ecarts.includes(x), `écarts : ${x}`);
+  }
+  const lettre = section(v121, 'Les formes de la planche, à la lettre (décision du 16/11)');
+  for (const x of ['« niveau design, fais comme Claude Design a défini »', 'reprennent le rayon 999', '« En consultation » (`.pilule`) aussi', 'identiques au pixel près',
+    '« Mémo vocal » (12) et « Arrêter » (8)', 'les 62 valeurs de `tokens-3a.css`', '**Le défaut connu, accepté**', '« Congé / repos »', 'dès 40 px', '« Clinique »',
+    'le « L » de LUNDI', 'la liste `HERITES` ne change pas', 'recette v12.1', 'quatre coins à 999']) {
+    assert.ok(lettre.includes(x), `les formes à la lettre : ${x}`);
+  }
+  const formesA = section(v121, 'Les formes (spec §3.1, tâche A)');
+  assert.ok(formesA.includes('`.pastille`, `.segmente button`, `.btn` (« En consultation », `.pilule`, compris)'), 'formes : les pilules à 999');
+  assert.doesNotMatch(formesA, /ont un rayon de 26/);
   // La page du soir : sa hauteur mesurée, sous le budget de la spec v12 §5.4, sans test desserré ; les 30 s restent à l'iPhone.
   const controle = section(v121, 'Contrôle et mesures (tâches A, B et C)');
   for (const x of ['**1729 px**', '**2033 px**', '+118', 'n\'a pas été desserré', 'les 30 s restent à vérifier sur l\'iPhone (recette v12.1)', 'La liste `HERITES` ne change pas',
@@ -344,7 +358,12 @@ test('docs/decisions.md, l\'entrée v12.1.0 : les quatre décisions du §2, les 
   }
   assert.doesNotMatch(v121, /se remplit (toujours )?en moins de 30 s/);
   const attente = section(v121, 'En attente de l\'utilisateur');
-  for (const x of ['`docs/recette-iphone.md`', '**Publier la v12.1**', '**Le rayon 26 des pastilles et des segmentés**', '**« Mémo vocal » et « Arrêter »**',
+  // Le 16/11, le rayon 26 et les rayons bornés de la capsule de la date et d'En consultation ne sont plus en attente : à leur
+  // place, sa décision et le défaut connu, à regarder sur l'iPhone.
+  assert.ok(!attente.includes('Le rayon 26') && !/la moitié de sa hauteur sur une ligne/.test(attente), 'le rayon 26 encore en attente');
+  for (const x of ['`docs/recette-iphone.md`', '**Publier la v12.1**', '**Les formes de la planche, en très grand texte**', 'on suit Claude Design à la lettre',
+    '« Congé / repos » à partir de 40 px', '« Clinique »', 'la capsule de la date sur deux lignes', 'un défaut accepté de la planche', 'dans la plage déjà héritée d\'Aujourd\'hui',
+    '**La page du soir avant 4 h**', '**L\'accent et Sérénité**', '**Moment difficile avec des refuges**', '**« Mémo vocal » et « Arrêter »**',
     '**Le disque de 156 n\'est pas propre au mot choisi**', 'rien n\'est changé sans son accord', 'v12.0.0 et v12.0.1 restent ouverts']) {
     assert.ok(attente.includes(x), `en attente : ${x}`);
   }
@@ -361,9 +380,10 @@ test('la section v12.1 de integration.md, du journal de version et de la recette
   const v121d = design.slice(titre.index);
   for (const x of ['docs/superpowers/specs/2026-11-14-emozio-v12-1-design.md', 'docs/decisions.md', 'docs/design/retour-claude-design-v3/', '#2e7f99', '#62cbe8',
     '#f8f9fa', '#080b0d', '**Le bandeau d\'Aujourd\'hui**', '**Les rubriques à plat**', '**Les pilules**', '**Ce qui disparaît**', 'la ligne du jour', 'la double capsule',
-    '1729 px']) {
+    '1729 px', 'Le 16/11, l\'utilisateur a tranché : on suit la planche à la lettre', 'un défaut accepté de la planche']) {
     assert.ok(v121d.includes(x), `integration.md, v12.1 : ${x}`);
   }
+  assert.doesNotMatch(v121d, /ont un rayon de 26|et non 999/, 'integration.md, v12.1 : le rayon borné');
   // Le haut du fichier, qui dit l'état actuel des jetons et de la sélection, renvoie à la v12.1.
   assert.match(design.slice(0, titre.index), /En v12\.1 :\s+la base « 3a »/);
   assert.match(design.slice(0, titre.index), /En v12\.1 : l'aplat pétrole/);
@@ -378,7 +398,8 @@ test('la section v12.1 de integration.md, du journal de version et de la recette
   const v121 = sectionV121(recette);
   for (const x of ['**Les couleurs, en clair et en sombre**', '`#f8f9fa`', '`#080b0d`', '**Le bandeau d\'Aujourd\'hui**', '« ‹ Retour »', '« Nouvelle version prête »',
     '**Les pilules**', '« Congé / repos »', '**La page du soir**', 'chacun en moins de 30 s', '13 px de plus', '**Plus rien sous le titre**',
-    '**« Enregistré » annoncé par VoiceOver**', 'VoiceOver dit « Enregistré »', '**Le mot choisi, un disque**', '« Réduire les animations »']) {
+    '**« Enregistré » annoncé par VoiceOver**', 'VoiceOver dit « Enregistré »', '**Le mot choisi, un disque**', '« Réduire les animations »',
+    'dans une pastille devenue ovale', '« Clinique »', 'la capsule de la date devient alors un ovale']) {
     assert.ok(v121.includes(x), `recette v12.1 : ${x}`);
   }
   const cochee = recette.replace('- [ ] **Le mot choisi, un disque**', '- [x] **Le mot choisi, un disque**');

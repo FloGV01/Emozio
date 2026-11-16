@@ -552,12 +552,32 @@ const couleursFamilles = (t) => {
   return [...new Set(FAMILLES_ROUE.flatMap((f) => ROLES.map((r) => rgb(t[`c-emo-${f}${r}`]))))].filter((c) => !zones.has(c));
 };
 
+// v12.1, décision de l'utilisateur du 16/11 (« niveau design, fais comme Claude Design a défini ») : tout ce que formes-3a.css
+// met en pilule l'est au rayon 999, ses quatre coins, sur chaque écran du parcours, quelle que soit la règle d'une autre de
+// ses classes : la pastille, le bouton de segmenté, la roue et sa fenêtre, .btn, la puce d'un réglage, la bande du bas et
+// .fab, les exercices courts, la capsule de la date ; « En consultation » (.pilule) aussi, comme un .btn. Ce que la planche ne
+// nomme pas (« Mémo vocal », « Arrêter », le noting, les tuiles de l'Analyse…) n'est pas vu ici.
+const PILULES_PLANCHE = '.pastille, .segmente button, .roue-choix, .btn, .puce-reglage select, .action-bande, .fab, .exercice-court, .sur-titre, .pilule';
+const pilulesDefaites = (page) => page.evaluate((sel) => {
+  const fautes = new Set();
+  const coins = (s) => [s.borderTopLeftRadius, s.borderTopRightRadius, s.borderBottomRightRadius, s.borderBottomLeftRadius];
+  for (const e of document.querySelectorAll(sel)) {
+    if (!e.getClientRects().length) continue;
+    const nom = `${e.tagName.toLowerCase()}.${[...e.classList].join('.')}`;
+    const rayons = coins(getComputedStyle(e));
+    if (rayons.some((r) => r !== '999px')) fautes.add(`${nom} : ${[...new Set(rayons)].join(' ')}`);
+    if (e.matches('.roue-choix') && coins(getComputedStyle(e, '::before')).some((r) => r !== '999px')) fautes.add(`${nom}::before`);
+  }
+  return [...fautes];
+}, PILULES_PLANCHE);
+
 // v12 (5/9) : sur chaque écran, l'accent (vert en v12, bleu pétrole en v12.1) reste à sa place (spec §5.3, §5.5 et §5.6). La règle de forme : aucun rond sans
 // texte ni icône ne l'a pour fond ou pour contour ; le point de vigilance 3 : aucune trace de lui dans les graphiques, sur les
 // écrans de l'émotion ni sur « Réveil la nuit » ; et, en clair, aucun lien d'accent sur --surface-2 (tests/aides/controle.js).
-// v12.0.1 : les couleurs des familles aussi restent à leur place (ECRANS_FAMILLES).
+// v12.0.1 : les couleurs des familles aussi restent à leur place (ECRANS_FAMILLES). v12.1 : les pilules de la planche, au
+// rayon 999 (PILULES_PLANCHE).
 for (const schema of ['light', 'dark']) {
-  test(`contraste ${schema === 'light' ? 'en clair' : 'en sombre'} : tout texte visible des écrans principaux a au moins 4,5:1 sur son fond ; ni tirets, ni choix fait sans coche ; l'accent à sa place ; les couleurs des familles dans l'Analyse et Réglages › Émotions seulement`, async ({ page }) => {
+  test(`contraste ${schema === 'light' ? 'en clair' : 'en sombre'} : tout texte visible des écrans principaux a au moins 4,5:1 sur son fond ; ni tirets, ni choix fait sans coche ; l'accent à sa place ; les couleurs des familles dans l'Analyse et Réglages › Émotions seulement ; les pilules de la planche au rayon 999`, async ({ page }) => {
     test.setTimeout(240000);
     const t = schema === 'light' ? clair : sombre;
     const accents = [rgb(t.accent), rgb(t['accent-texte'])];
@@ -577,12 +597,41 @@ for (const schema of ['light', 'dark']) {
         ...(await accentHorsDeSaPlace(page, accents)).map((x) => `accent hors de sa place : ${x}`),
         ...(schema === 'light' ? await liensSurSurface2(page, rgb(t['accent-texte']), rgb(t['surface-2'])) : []),
         ...(ECRANS_FAMILLES.includes(nom) ? [] : peints.slice(0, 6).map((x) => `famille hors de sa place : ${x}`)),
+        ...(await pilulesDefaites(page)).map((x) => `pilule défaite : ${x}`),
       ];
     });
     expect(fautes).toEqual({});
     expect(avecFamilles, 'les écrans aux couleurs des familles').toEqual(ECRANS_FAMILLES);
   });
 }
+
+// Le contrôle des pilules lui-même : sur Aujourd'hui, il voit les pilules de la planche (pastilles, segmentés, roues, bande,
+// capsule de la date) et pas « Mémo vocal » ; un rayon défait par une règle d'une autre classe (le 26 de la relecture de la
+// tâche A), ou sur la fenêtre d'une roue, est relevé.
+test('le contrôle des pilules voit un rayon autre que 999 sur une pastille, la capsule de la date ou la fenêtre d\'une roue', async ({ page }) => {
+  await verser(page);
+  await page.reload();
+  await appPrete(page);
+  await aller(page, '#/aujourdhui');
+  await expect(page.locator('.aujourdhui .roue-choix').first()).toBeVisible();
+  await stabiliser(page);
+  const vus = await page.evaluate((sel) => [...document.querySelectorAll(sel)].filter((e) => e.getClientRects().length).map((e) => e.className.split(' ')[0]), PILULES_PLANCHE);
+  for (const c of ['pastille', 'roue-choix', 'action-bande', 'fab', 'sur-titre']) expect(vus, c).toContain(c);
+  expect(vus.length).toBeGreaterThan(20);
+  expect(await page.locator('.btn-memo').count()).toBe(1);
+  expect(await pilulesDefaites(page)).toEqual([]);
+  await page.evaluate(() => {
+    const feuille = document.styleSheets[0];
+    for (const r of ['.carte-champ .pastille { border-radius: 26px !important; }', '.entete-jour .sur-titre { border-radius: 14px !important; }',
+      '.carte-champ > .roue-choix::before { border-radius: 9px !important; }']) feuille.insertRule(r, feuille.cssRules.length);
+  });
+  const abimees = await pilulesDefaites(page);
+  // Une entrée par sorte d'élément (leurs classes), pas par élément.
+  expect(abimees).toContain('button.pastille : 26px');
+  expect(abimees).toContain('span.sur-titre : 14px');
+  expect(abimees.filter((x) => x.endsWith('::before')).length).toBeGreaterThan(0);
+  expect(abimees.filter((x) => x.includes('btn-memo')), '« Mémo vocal » (12), que la planche ne nomme pas').toEqual([]);
+});
 
 // Toute police à empattements calculée sur la page, pseudo-éléments compris.
 const empattements = (page) => page.evaluate(() => {

@@ -137,9 +137,9 @@
   --t-chiffre: 1.647rem;
 
   /* Formes : bouton 12, pastille 10, carte 24 (v12.1, 3a ; 16 en v12, 14 jusqu'à la v11), feuille du bas 24. --r-moyen,
-     --r-bouton et --r-petit ne changent pas en v12.1 : ce qui se touche passe en pilule par sélecteur (rayon 999 :
-     .roue-choix et sa fenêtre, .btn, .puce-reglage select, .action-bande, .fab, .exercice-court ; rayon 26, la moitié de
-     --cible-bouton : .pastille, .segmente button), et ce qui ne se touche pas (les tuiles de l'Analyse) les lit aussi. */
+     --r-bouton et --r-petit ne changent pas en v12.1 : ce qui se touche passe en pilule par sélecteur, au rayon 999 de
+     formes-3a.css (.pastille, .segmente button, .roue-choix et sa fenêtre, .btn, .puce-reglage select, .action-bande, .fab,
+     .exercice-court, et la capsule de la date), et ce qui ne se touche pas (les tuiles de l'Analyse) les lit aussi. */
   --r-petit: 10px;
   --r-moyen: 12px;
   --r-bouton: 12px;

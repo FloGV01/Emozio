@@ -36,9 +36,8 @@ test.beforeEach(async ({ page }) => {
   await viderBase(page);
 });
 
-// Chaque bouton d'un groupe : sa boîte, son style, son rayon vu (26px depuis la relecture de la tâche A, la moitié de
-// --cible-bouton, 999px avant : borné par la moitié de la plus petite dimension, il fait une pilule jusqu'à 52 de haut), sa
-// coche (montrée ou non, sa taille, sa couleur) et ce qui bouge.
+// Chaque bouton d'un groupe : sa boîte, son style, son rayon vu (999px, celui de la planche, ramené par le navigateur à la
+// moitié de la plus petite dimension : une pilule), sa coche (montrée ou non, sa taille, sa couleur) et ce qui bouge.
 const choixDe = (loc) => loc.evaluate(async (g) => {
   const rayonVu = (b) => {
     const r = b.getBoundingClientRect();
@@ -409,9 +408,11 @@ test('v12 (4/9) · point de vigilance 4 : en très grand texte (17 à 53, 390 et
         expect(m.fautes, quoi).toEqual([]);
         expect(m.grand, quoi).toBeCloseTo(Math.min(2.35 * px, 48), 1);
         expect(m.coche, `${quoi} : la coche de « Congé / repos »`).toBe(true);
-        // Relecture de la tâche A : son rayon reste 26 ; passée sur deux lignes (plus de 52 de haut), « Congé / repos » est un
-        // rectangle arrondi et non un ovale, dont la courbe coupait le « / » à 47 et à 53 px.
-        expect(m.rayon[0], `${quoi} : le rayon de « Congé / repos » (${m.rayon[1]} de haut)`).toBe(26);
+        // Son rayon est celui de la planche, 999, à toute taille (décision de l'utilisateur du 16/11 ; 26 depuis la relecture de
+        // la tâche A jusque-là) : passée sur deux lignes, « Congé / repos » est un ovale, dont le bord touche le libellé dès
+        // 40 px, et coupe l'« é » et le « s » à 47 et à 53 px, un défaut accepté (docs/decisions.md, v12.1.0). Le texte ne sort
+        // pas de la boîte de la pastille, ni la pastille de sa rubrique (fautes, plus haut).
+        expect(m.rayon[0], `${quoi} : le rayon de « Congé / repos » (${m.rayon[1]} de haut)`).toBe(999);
         expect(m.navs, `${quoi} : ‹ et › ensemble, à droite`).toEqual({ rangee: true, ordre: true, bord: true });
         // Un jour passé n'a pas d'Émotion : « Moment difficile » et « + Épisode ».
         expect(m.actions.length, quoi).toBe(jour ? 2 : 3);
@@ -451,10 +452,10 @@ test('v12.1 (A) · Aujourd\'hui : l\'en-tête en bandeau bord à bord jusqu\'en 
     return {
       fond: s(entete).backgroundColor, rayon: rayons(entete), boite: [r.left, r.right, Math.round(r.top)], largeur: innerWidth,
       paddingHaut: s(entete).paddingTop, sousBandeau: bandeau ? Math.round(bandeau.getBoundingClientRect().bottom) : 0,
-      // L'interlettrage, en em de sa taille (.03em de 13 px, --t-note). Le rayon : la moitié de sa hauteur sur une ligne, une
-      // pilule (999 jusqu'à la relecture finale, la même pilule sur une ligne ; plus bas, la capsule sur deux lignes).
-      capsule: [s(sur).backgroundColor, Math.abs(parseFloat(s(sur).borderTopLeftRadius) - sur.getBoundingClientRect().height / 2) < 0.5 ? 'pilule' : s(sur).borderTopLeftRadius,
-        s(sur).paddingTop, s(sur).paddingLeft, (parseFloat(s(sur).letterSpacing) / parseFloat(s(sur).fontSize)).toFixed(3)],
+      // L'interlettrage, en em de sa taille (.03em de 13 px, --t-note). Le rayon : 999, celui de la planche (la moitié de sa
+      // hauteur d'une ligne de la relecture finale au 16/11 ; plus bas, la capsule sur deux lignes).
+      capsule: [s(sur).backgroundColor, s(sur).borderTopLeftRadius, s(sur).paddingTop, s(sur).paddingLeft,
+        (parseFloat(s(sur).letterSpacing) / parseFloat(s(sur).fontSize)).toFixed(3)],
       grand: [Math.round(parseFloat(s(grand).fontSize) * 100) / 100, Math.round(parseFloat(s(grand).lineHeight) * 100) / 100, s(grand).fontWeight],
       rubriques, premiere: document.querySelector('.entete-jour + .carte-champ') === document.querySelector('.aujourdhui .carte-champ'),
       carte: s(document.querySelector('.replis.carte')).borderTopLeftRadius,
@@ -480,7 +481,7 @@ test('v12.1 (A) · Aujourd\'hui : l\'en-tête en bandeau bord à bord jusqu\'en 
       // Bord à bord, et jusqu'en haut de l'écran (sous le bandeau « Nouvelle version prête », qui prend la zone sûre).
       expect(m.boite, quoi).toEqual([0, m.largeur, m.sousBandeau]);
       expect(m.paddingHaut, quoi).toBe(bandeauMaj ? '10px' : '57px');
-      expect(m.capsule, quoi).toEqual([rgb(t.bg), 'pilule', '5px', '12px', '0.030']);
+      expect(m.capsule, quoi).toEqual([rgb(t.bg), '999px', '5px', '12px', '0.030']);
       // 2,35 rem et 2,75 rem de 17 px : 40 / 47 (le grand titre de 3a ; 34 / 41 en v12).
       expect(m.grand, quoi).toEqual([39.95, 46.75, '700']);
       // Les rubriques : à plat, rien sur les côtés (de la marge de 16 au bord droit moins 16), un filet au-dessus sauf la première.
@@ -500,12 +501,13 @@ test('v12.1 (A) · Aujourd\'hui : l\'en-tête en bandeau bord à bord jusqu\'en 
   }
 });
 
-// Relecture finale de la v12.1 : en très grand texte, la capsule de la date passe sur deux lignes. Au rayon 999, c'était un ovale,
-// et les lettres droites qui ouvrent ses lignes sortaient de ses courbes (le « L » de LUNDI, le « N » de NOVEMBRE, le lundi 16
-// novembre, à 47 et à 53 px ; rien ne se voyait avec JEUDI / OCTOBRE). Son rayon est la moitié de sa hauteur sur une ligne :
-// la même pilule sur une ligne, un rectangle arrondi sur deux, dont aucune lettre ne sort (les coins de la boîte em de chaque
-// morceau de ligne, dans la forme arrondie). À 390 et à 375, en clair et en sombre.
-test('v12.1 · la capsule de la date sur deux lignes (très grand texte, lundi 16 novembre) : un rectangle arrondi au rayon de la pilule d\'une ligne, dont aucune lettre ne sort ; une pilule sur une ligne', async ({ page }) => {
+// La capsule de la date en très grand texte (relecture finale de la v12.1, puis décision de l'utilisateur du 16/11 : les formes
+// de la planche, à la lettre) : au rayon 999, à toute taille. Sur une ligne (17 px), une pilule, dont aucune lettre ne sort. Sur
+// deux lignes (47 et 53 px, le lundi 16 novembre, le plus long), un ovale : son bord arrondi touche les lettres droites qui
+// ouvrent et ferment ses lignes (le « L » de LUNDI, le « N » de NOVEMBRE), un défaut accepté de la planche (docs/decisions.md,
+// v12.1.0), noté dans les annotations du test ; les lignes restent dans la boîte de la capsule, et la capsule dans le bandeau et
+// dans l'écran. À 390 et à 375, en clair et en sombre.
+test('v12.1 · la capsule de la date en très grand texte (lundi 16 novembre) : au rayon 999 de la planche, une pilule sur une ligne, dont aucune lettre ne sort ; un ovale sur deux lignes, dans le bandeau', async ({ page }) => {
   await page.clock.setSystemTime(new Date(2026, 10, 16, 21, 0));
   await page.reload();
   await appPrete(page);
@@ -513,6 +515,7 @@ test('v12.1 · la capsule de la date sur deux lignes (très grand texte, lundi 1
   const capsule = () => page.evaluate(() => {
     const c = document.querySelector('.sur-titre');
     const r = c.getBoundingClientRect();
+    const b = c.closest('.entete-jour').getBoundingClientRect();
     const s = getComputedStyle(c);
     const rayon = Math.min(parseFloat(s.borderTopLeftRadius), r.width / 2, r.height / 2);
     const taille = parseFloat(s.fontSize);
@@ -522,19 +525,22 @@ test('v12.1 · la capsule de la date sur deux lignes (très grand texte, lundi 1
       return Math.hypot(x - cx, y - cy) - rayon;
     };
     const sorties = [];
+    const horsBoite = [];
     const marcheur = document.createTreeWalker(c, NodeFilter.SHOW_TEXT);
     for (let n = marcheur.nextNode(); n; n = marcheur.nextNode()) {
       const plage = document.createRange();
       plage.selectNodeContents(n);
       for (const q of plage.getClientRects()) {
         if (!q.width) continue;
+        if (q.left < r.left - 0.5 || q.right > r.right + 0.5) horsBoite.push(n.textContent.trim());
         const m = (q.height - taille) / 2;
         for (const [x, y] of [[q.left, q.top + m], [q.right, q.top + m], [q.left, q.bottom - m], [q.right, q.bottom - m]]) {
           if (hors(x, y) > 0) sorties.push(`« ${n.textContent.trim()} » de ${hors(x, y).toFixed(1)} px`);
         }
       }
     }
-    return { lignes: Math.round((r.height - 10) / parseFloat(s.lineHeight)), rayon, uneLigne: (parseFloat(s.lineHeight) + 10) / 2, demi: r.height / 2, sorties };
+    return { lignes: Math.round((r.height - 10) / parseFloat(s.lineHeight)), rayonCss: s.borderTopLeftRadius, rayon, demi: r.height / 2, sorties, horsBoite,
+      dansBandeau: r.left >= b.left - 0.5 && r.right <= b.right + 0.5 && r.top >= b.top - 0.5 && r.bottom <= b.bottom + 0.5 && r.right <= innerWidth + 0.5 };
   });
   for (const [schema] of THEMES) {
     await page.emulateMedia({ colorScheme: schema });
@@ -546,9 +552,12 @@ test('v12.1 · la capsule de la date sur deux lignes (très grand texte, lundi 1
         const m = await capsule();
         const quoi = `${schema} · ${largeur} · ${px} px`;
         expect(m.lignes, quoi).toBe(px === 17 ? 1 : 2);
-        expect(Math.abs(m.rayon - m.uneLigne), `${quoi} : le rayon de la pilule d'une ligne`).toBeLessThan(0.5);
-        if (px === 17) expect(Math.abs(m.rayon - m.demi), `${quoi} : une pilule`).toBeLessThan(0.5);
-        expect(m.sorties, quoi).toEqual([]);
+        expect(m.rayonCss, quoi).toBe('999px');
+        expect(Math.abs(m.rayon - m.demi), `${quoi} : une pilule, ou un ovale`).toBeLessThan(0.5);
+        expect(m.horsBoite, `${quoi} : les lignes dans la boîte de la capsule`).toEqual([]);
+        expect(m.dansBandeau, `${quoi} : la capsule dans le bandeau`).toBe(true);
+        if (px === 17) expect(m.sorties, quoi).toEqual([]);
+        else if (m.sorties.length) test.info().annotations.push({ type: 'défaut accepté (planche)', description: `${quoi} : ${m.sorties.join(', ')}` });
       }
     }
   }

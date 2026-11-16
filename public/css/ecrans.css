@@ -461,13 +461,11 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 /* La virgule d'« Aujourd'hui, Jeudi 15 octobre » : lue par VoiceOver, sans taille à l'écran. Elle reste en ligne : un
    élément caché par position: absolute serait un bloc, et le nom accessible lirait « Aujourd'hui , Jeudi ». */
 .virgule-lue { font-size: 0; line-height: 0; }
-/* La date, en capsule --bg sur le bandeau (v12.1, 3a) : marges 5 × 12, interlettrage .03em. En très grand texte, elle passe sur
-   deux lignes, sans sortir du bandeau. Son rayon, la moitié de sa hauteur sur une ligne ((1,25 em + 2 × 5 px) / 2) et non 999
-   (relecture finale de la v12.1, comme les pastilles) : la même pilule sur une ligne, un rectangle arrondi sur deux, où
-   l'ovale du rayon 999 laissait sortir de ses courbes les lettres droites qui ouvrent ses lignes (le « L » de LUNDI, le « N »
-   de NOVEMBRE, à 47 et à 53 px). */
+/* La date, en capsule --bg sur le bandeau (v12.1, 3a) : marges 5 × 12, rayon 999, interlettrage .03em. En très grand texte,
+   elle passe sur deux lignes, sans sortir du bandeau : un ovale, dont le bord arrondi touche les lettres qui ouvrent et
+   ferment ses lignes, un défaut accepté de la planche (décision de l'utilisateur du 16/11 ; docs/decisions.md, v12.1.0). */
 .sur-titre {
-  max-width: 100%; padding: 5px 12px; border-radius: calc(0.625em + 5px); background: var(--bg);
+  max-width: 100%; padding: 5px 12px; border-radius: 999px; background: var(--bg);
   font: 600 var(--t-note)/1.25 var(--police); letter-spacing: .03em; text-transform: uppercase; color: var(--text-2); overflow-wrap: break-word;
 }
 .fin-titre { white-space: nowrap; }
@@ -1400,7 +1398,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    bouton non rempli (v12, spec §5.2 : --contour, 3:1 sur le fond ; --line, un filet, ne s'y voyait pas), en bordure et non en
    box-shadow, que le halo anime déjà. En pilule (relecture finale de la v12.1, 3a : tout ce qui se touche), au rayon de la
    moitié de leur hauteur minimale (30) : plus hautes en très grand texte, elles deviennent des rectangles arrondis, qui
-   gardent leur mot dedans (un rayon de 999 en ferait des ovales, comme les pastilles). */
+   gardent leur mot dedans. La planche ne les nomme pas parmi les pilules de rayon 999 : elles gardent ce rayon. */
 .etiquettes-noting { display: grid; grid-template-columns: repeat(auto-fit, minmax(max(calc(50% - 5px), 4.2rem), 1fr)); gap: 10px; }
 .etiquette-noting {
   min-width: 0; min-height: 60px; padding: 8px; border: 1px solid var(--contour); border-radius: 30px; background: var(--fond-choix);

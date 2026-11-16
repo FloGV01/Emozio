@@ -82,12 +82,11 @@
 .btn-lien[disabled] { color: var(--line); cursor: default; }
 .lien-discret { color: var(--text-2); text-decoration: underline; border: 0; background: none; font-size: var(--t-sous); min-height: var(--cible); padding: 0; }
 .lien { color: var(--accent-texte); text-decoration: none; min-height: var(--cible); display: inline-flex; align-items: center; font-weight: 600; font-size: var(--t-sous); }
-/* « En consultation » (v8) : en pilule (relecture finale de la v12.1, 3a : tout ce qui se touche ; 12 avant, sous le segmenté
-   en pilules de Soins), au rayon des pastilles, la moitié de --cible-bouton et non 999 : la même pilule sur une ligne ; passée
-   sur deux lignes en très grand texte (47 et 53 px), un rectangle arrondi, quand l'ovale du 999 posait l'icône sur sa courbe. */
+/* « En consultation » (v8) : en pilule de rayon 999, comme un .btn (v12.1, 3a : tout ce qui se touche ; 12 avant, sous le
+   segmenté en pilules de Soins). Passée sur deux lignes en très grand texte, c'est un ovale, comme sur la planche. */
 .pilule {
   display: inline-flex; align-items: center; gap: 6px; min-height: var(--cible); padding: 0 16px 0 12px;
-  border-radius: calc(var(--cible-bouton) / 2); border: 0; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
+  border-radius: 999px; border: 0; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
   font-size: var(--t-sous); font-weight: 600; text-decoration: none;
 }
 .pilule svg { width: 18px; height: 18px; }
@@ -239,8 +238,7 @@ input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 
 /* Sélection commune à tous les choix : pastilles, grilles, choix multiples, segmentés, Oui / Non, période (v12, spec §5.4).
    Non choisi : le fond --fond-choix (--surface depuis la v12.1, transparent en v12), avec le contour (--contour, en
-   box-shadow : sans bordure), en pilule (v12.1, 3a : rayon 26, la moitié de --cible-bouton, pour les pastilles et les
-   segmentés ; 12 en v12), en 400.
+   box-shadow : sans bordure), en pilule (v12.1, 3a : rayon 999, pour les pastilles et les segmentés ; 12 en v12), en 400.
    Choisi : un aplat d'accent, le texte en --sur-accent, graisse 600 (700 pour un chiffre) et une coche ✓ devant le libellé,
    jamais la couleur seule. Dans une famille d'émotions ou une zone (.emo-*, .zone-*), l'aplat prend leur couleur (-fill,
    -on). Rien ne change de taille au toucher. */
@@ -270,11 +268,11 @@ input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 /* Pastilles souples : largeur naturelle, sur plusieurs lignes (filtres, professionnel, effets). */
 .pastilles.souples { display: flex; flex-wrap: wrap; gap: var(--ecart); }
 .pastilles.souples .pastille { min-height: var(--cible); padding: 4px 12px; font-size: var(--t-sous); }
-/* En pilule (v12.1, 3a), mais d'un rayon de 26 (la moitié de --cible-bouton) et non de 999 : à 44, 48 ou 52 de haut, le rayon
-   est borné par la moitié de la hauteur, et la pilule est la même ; passée sur deux lignes en très grand texte, la pastille
-   devient un rectangle arrondi, et son texte reste dedans (avec 999, l'ovale coupait « Congé / repos » à 47 et à 53 px). */
+/* En pilule, rayon 999 (v12.1, formes 3a de Claude Design, suivies à la lettre : décision de l'utilisateur du 16/11). Passée
+   sur deux lignes en très grand texte, la pastille est un ovale, dont le bord arrondi touche son libellé (« Congé / repos »
+   dès 40 px) : un défaut accepté de la planche (docs/decisions.md, v12.1.0). */
 .pastille {
-  min-height: var(--cible-grille); padding: 4px 6px; border-radius: calc(var(--cible-bouton) / 2);
+  min-height: var(--cible-grille); padding: 4px 6px; border-radius: 999px;
   border: 0; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
   display: flex; align-items: center; justify-content: center; gap: 6px;
   font-size: var(--t-corps); line-height: 1.15; text-align: center;
@@ -294,12 +292,12 @@ input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 .ajout-pastille input { flex: 1; }
 
 /* Segmentés et Oui / Non : boutons séparés sur une ligne, de 48 comme une grille ; « large » (choix de vue,
-   période) : 44. En pilule de rayon 26, comme une pastille (v12.1). */
+   période) : 44. En pilule de rayon 999, comme une pastille (v12.1). */
 .segmente { display: flex; gap: var(--ecart); }
 .segmente button {
   flex: 1; min-height: var(--cible-grille); min-width: 56px; padding: 0 var(--esp-3);
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  border: 0; border-radius: calc(var(--cible-bouton) / 2); background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
+  border: 0; border-radius: 999px; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
   font-size: var(--t-corps); transition: background var(--duree), color var(--duree);
 }
 .segmente button[aria-pressed="true"] { background: var(--c-fill, var(--action)); color: var(--c-on, var(--action-on)); box-shadow: none; font-weight: 600; }
