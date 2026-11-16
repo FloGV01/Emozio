@@ -71,13 +71,15 @@ const Tuile = ({ titre, valeur, detail, fragile }) => html`<div class="tuile">
 </div>`;
 
 // Une barre par famille notée, longue comme son nombre de relevés, et ce nombre. Ni pourcentage, ni total, ni famille
-// mise en avant : l'ordre est celui de la roue. Aussi dans « En consultation » (v7).
-export function BarresFamilles({ compte }) {
+// mise en avant : l'ordre est celui de la roue. Aussi dans « En consultation » (v7), où, depuis la v12.0.1, `encre` les met à
+// l'encre des données (.g-barre, --donnee), sans la couleur des familles : celle-ci ne va qu'aux agrégats de l'Analyse et à
+// Réglages › Émotions (CLAUDE.md). Une seule encre : le nom de la famille, devant chaque barre, les distingue.
+export function BarresFamilles({ compte, encre = false }) {
   const familles = FAMILLES.filter((f) => compte[f.cle] > 0);
   const max = Math.max(1, ...familles.map((f) => compte[f.cle]));
-  return html`<ul class="barres-familles">${familles.map((f) => html`<li class=${`emo-${f.cle}`}>
+  return html`<ul class="barres-familles">${familles.map((f) => html`<li class=${encre ? undefined : `emo-${f.cle}`}>
     <span class="nom-famille">${f.libelle}</span>
-    <svg class="barre-famille" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><rect class="g-emo" x="0" y="0" width=${((compte[f.cle] / max) * 100).toFixed(1)} height="10" /></svg>
+    <svg class="barre-famille" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><rect class=${encre ? 'g-barre' : 'g-emo'} x="0" y="0" width=${((compte[f.cle] / max) * 100).toFixed(1)} height="10" /></svg>
     <span class="compte-famille">${compte[f.cle]}</span>
   </li>`)}</ul>`;
 }

@@ -121,7 +121,7 @@ test('vigilance 3 · avec le bandeau « Nouvelle version prête », le soir se d
 // ---------- La Durée ----------
 // v11 (2/11) : la roue de la carte Sommeil, toujours visible (spec §5), remplace « Durée › » et sa rangée de 7 pastilles.
 
-test('la Durée, sur la roue sous Mal · Moyen · Bien : un toucher enregistre la nuit qui précède le jour, le résumé du jour la dit ; un second toucher l\'efface', async ({ page }) => {
+test('la Durée, sur la roue sous Mal · Moyen · Bien : un toucher enregistre la nuit qui précède le jour ; un second toucher l\'efface (v12.1 : plus de résumé du jour sous le titre)', async ({ page }) => {
   const d = duree(page);
   await expect(d.getByRole('button')).toHaveCount(13);
   // Dans la carte Sommeil, sous la qualité, de toute sa largeur, une cible de 44 de haut.
@@ -139,17 +139,19 @@ test('la Durée, sur la roue sous Mal · Moyen · Bien : un toucher enregistre l
   await d.getByRole('button', { name: '6 h', exact: true }).click();
   await expect.poll(async () => (await entreeDuJour(page))?.heuresSommeil).toBe(6);
   await expect(d.getByRole('button', { name: '6 h', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.resume-jour')).toHaveText('nuit 6 h');
   await toucher(page, 'Sommeil', 'Mal');
-  await expect(page.locator('.resume-jour')).toHaveText('nuit mal · 6 h');
+  await expect.poll(async () => (await entreeDuJour(page))?.sommeilRessenti).toBe('sommeil:mal');
+  expect((await entreeDuJour(page)).heuresSommeil).toBe(6);
   // Une erreur se corrige tout de suite : un second toucher efface, un autre note.
   await d.getByRole('button', { name: '6 h', exact: true }).click();
   await expect.poll(async () => (await entreeDuJour(page))?.heuresSommeil ?? null).toBeNull();
-  await expect(page.locator('.resume-jour')).toHaveText('nuit mal');
+  await expect(d.locator('[aria-pressed="true"]')).toHaveCount(0);
   await d.getByRole('button', { name: '4 h ou moins' }).click();
   await expect.poll(async () => (await entreeDuJour(page))?.heuresSommeil).toBe(4);
-  await expect(page.locator('.resume-jour')).toHaveText('nuit mal · 4 h ou moins');
+  expect((await entreeDuJour(page)).sommeilRessenti).toBe('sommeil:mal');
   await expect(d.locator('[aria-pressed="true"]')).toHaveText(['4 h ou moins']);
+  // v12.1 : rien de tout cela n'est résumé sous le titre.
+  await expect(page.locator('.entete-jour')).not.toContainText('nuit');
 });
 
 test('la roue montre la nuit notée de chaque jour, jamais celle d\'un autre, à chaque ouverture et à chaque changement de jour', async ({ page }) => {
@@ -258,7 +260,7 @@ test('Durée en grand texte (21 à 28 px, 390 et 375), notée : rien ne déborde
 // ---------- Les liens des cartes : 2b, AA, cibles ----------
 
 // v11 : le contrôle reste sur Contact et Sport ; le Sommeil n'a plus de lien, sa roue garde sa surface comme les choix.
-test('« Détail › » : sur la première ligne du titre, en couleur action 13/600, AA, des cibles de 44 qu\'on touche en entier, sans hauteur pour la carte ni surface prise aux choix', async ({ page }) => {
+test('« Détail › » : sur la première ligne du titre, en couleur d\'action (--accent-texte en v12.1) 13/600, AA, des cibles de 44 qu\'on touche en entier, sans hauteur pour la carte ni surface prise aux choix', async ({ page }) => {
   await soir(page);
   await toucher(page, 'Sommeil', 'Bien');
   for (const [schema, t] of THEMES) {
@@ -275,13 +277,17 @@ test('« Détail › » : sur la première ligne du titre, en couleur action 13/
         return {
           couleur: s.color, fond: getComputedStyle(c).backgroundColor, taille: Math.round(Number.parseFloat(s.fontSize)), graisse: s.fontWeight,
           dansLaTete: Boolean(b.closest('.tete-rubrique')), premiereLigne: Math.abs((texte.top + texte.bottom) / 2 - (ligne1.top + ligne1.bottom) / 2) < 3,
-          aDroite: texte.right <= c.getBoundingClientRect().right - 8 && texte.left > ligne1.right, debord: b.scrollWidth > b.clientWidth,
+          // v12.1 : la rubrique est à plat, sans marge sur les côtés ; le lien finit à son bord droit, jamais au-delà.
+          aDroite: texte.right <= c.getBoundingClientRect().right + 0.5 && texte.left > ligne1.right, debord: b.scrollWidth > b.clientWidth,
+          dansLaCarte: b.getBoundingClientRect().right <= c.getBoundingClientRect().right + 0.5,
         };
       });
-      expect(m.couleur, quoi).toBe(rgb(t.action));
-      expect(contraste(m.couleur, m.fond), quoi).toBeGreaterThanOrEqual(4.5);
+      // Le texte d'une action est en --accent-texte (v12.1 : plus foncé que l'aplat en clair) ; la rubrique, à plat, laisse voir
+      // le fond de l'écran.
+      expect(m.couleur, quoi).toBe(rgb(t['accent-texte']));
+      expect(contraste(m.couleur, m.fond === 'rgba(0, 0, 0, 0)' ? rgb(t.bg) : m.fond), quoi).toBeGreaterThanOrEqual(4.5);
       expect([m.taille, m.graisse], quoi).toEqual([13, '600']);
-      expect([m.dansLaTete, m.premiereLigne, m.aDroite, m.debord], quoi).toEqual([true, true, true, false]);
+      expect([m.dansLaTete, m.premiereLigne, m.aDroite, m.debord, m.dansLaCarte], quoi).toEqual([true, true, true, false, true]);
       await cibleEntiere(lien, quoi);
       await expect(carteDe(page, carte).locator('.titre-rubrique')).toHaveText(titre);
     }
@@ -328,8 +334,10 @@ test('« Détail › » du Sport et du Contact : fermé au départ, il ouvre le 
   await lienDetail(page, 'Contact').click();
   await expect(page.locator('.carte-detail')).toHaveCount(2);
   expect(await page.locator('.carte-detail').evaluateAll((els) => els.map((e) => e.id))).toEqual(['detail-contact', 'detail-sport']);
-  const [contact, traitement] = await Promise.all([boite(page.locator('#detail-contact')), boite(carteDe(page, 'Traitement pris'))]);
-  expect(contact.y).toBeGreaterThanOrEqual(paire.bas);
+  // Mesurés ensemble, après le défilement d'un toucher plus bas (Marche, que le bandeau de la v12.1 met sous le pli).
+  const [contact, traitement, paireOuverte] = await Promise.all([boite(page.locator('#detail-contact')), boite(carteDe(page, 'Traitement pris')),
+    boite(page.locator('.deux-colonnes'))]);
+  expect(contact.y).toBeGreaterThanOrEqual(paireOuverte.bas);
   expect(traitement.y).toBeGreaterThanOrEqual((await boite(detailSport)).bas);
   await groupe(page, 'Contact 1 : avec qui').getByRole('button', { name: 'Famille' }).click();
   await expect.poll(async () => (await entreeDuJour(page))?.contacts).toEqual([{ avec: ['contactAvec:famille'], effet: null }]);

@@ -7,12 +7,16 @@ import { contraste, ecartTeinte, ecartOklab, oklch, jetons, FAMILLES_ROUE, ZONES
 
 // v7 · Fondations 2b (plan v7, tâche 1) : jetons des 7 familles de la roue des émotions, en clair et en sombre ; contraste
 // AA ; aucune variable CSS sans valeur. v9 (tâche 3) : les 4 zones de la carte des émotions. v12 (tâche 3, spec §5.2 et
-// §5.3) : la base neutre façon iOS, une seule couleur d'accent, le vert B, et plus de couleur de rubrique.
+// §5.3) : une seule couleur d'accent et plus de couleur de rubrique. v12.1 (spec 2026-11-14 §3.1, §3.2 et §5) : la palette
+// « 3a » de Claude Design (docs/design/retour-claude-design-v3/tokens-3a.css), une base presque blanche aux surfaces
+// teintées de bleu pétrole, et l'accent pétrole, à la place de la base neutre façon iOS et du vert B de la v12.
 const CSS = lister(join(RACINE, 'public', 'css'), (p) => p.endsWith('.css'));
 const JS = lister(join(RACINE, 'public', 'js'), (p) => p.endsWith('.js') && !p.includes('/vendor/'));
 const TOKENS = lire(join(RACINE, 'public', 'css', 'tokens.css'));
 const { clair, sombre, sombreSeul } = jetons(TOKENS);
 const THEMES = [['clair', clair], ['sombre', sombre]];
+// v12.1 : un gris, ou une teinte de la base pétrole (teinte de 215 à 230°, saturation sous 0,05) : la base et l'encre.
+const petrole = (v) => { const o = oklch(v); return o.C < 0.02 || (o.C < 0.05 && o.H >= 215 && o.H <= 230); };
 const TOUTES = [...FAMILLES_ROUE.map((f) => `emo-${f}`), ...ZONES_ROUE.map((z) => `zone-${z}`)];
 // Les règles des feuilles, sans commentaires : [sélecteur, déclarations].
 const REGLES = CSS.flatMap((f) => [...sansCommentaires(lire(f)).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -46,35 +50,88 @@ test('v10 : docs/design/integration.md ne donne plus la serif pour l\'état actu
   assert.deepEqual(mentions.filter((l) => !/jusqu'à la v7|police système depuis la v10/.test(l)), []);
 });
 
-// ---------- v12 · La base et l'accent (spec §5.2 et §5.3) ----------
+// ---------- v12 · La base et l'accent (spec §5.2 et §5.3) ; v12.1 : les valeurs 3a ----------
 const BASE = ['bg', 'surface', 'surface-2', 'barre', 'line', 'contour', 'text', 'text-2', 'desactive', 'piste', 'fenetre',
   'accent', 'sur-accent', 'accent-texte', 'donnee', 'donnee-1', 'donnee-2', 'donnee-3'];
+const TOKENS_3A = lire(join(RACINE, 'docs', 'design', 'retour-claude-design-v3', 'tokens-3a.css'));
 
-test('v12 : la base et l\'accent B, aux valeurs exactes de la spec, en clair et en sombre ; --action et --action-on sont les alias de l\'accent', () => {
-  assert.deepEqual(BASE.map((n) => clair[n]), ['#f2f2f7', '#ffffff', '#eeeef0', '#f9f9f9', '#c6c6c8', '#86868b', '#000000', '#6c6c70',
-    '#c7c7cc', '#eeeef0', '#ffffff', '#1c7d36', '#ffffff', '#1c7d36', '#48484a', '#c7c7cc', '#8e8e93', '#3a3a3c']);
-  assert.deepEqual(BASE.map((n) => sombre[n]), ['#000000', '#1c1c1e', '#2c2c2e', '#161618', '#38383a', '#7c7c80', '#ffffff', '#98989f',
-    '#48484a', '#111113', '#48484c', '#30d158', '#000000', '#30d158', '#aeaeb2', '#48484a', '#8e8e93', '#e5e5ea']);
+test('v12.1 : la base et l\'accent pétrole, aux valeurs exactes de tokens-3a.css (README de Claude Design), en clair et en sombre ; --action et --action-on sont les alias de l\'accent ; un choix non fait a le fond --surface', () => {
+  assert.deepEqual(BASE.map((n) => clair[n]), ['#f8f9fa', '#e8f1f4', '#dae8ed', '#f1f6f8', '#c3d6dd', '#627a83', '#0a1c22', '#40535a',
+    '#b7c9d0', '#e8f1f4', '#ffffff', '#2e7f99', '#ffffff', '#1f6c85', '#3c525c', '#bdcfd6', '#657e87', '#1f343c']);
+  assert.deepEqual(BASE.map((n) => sombre[n]), ['#080b0d', '#10252c', '#19353f', '#0c181d', '#24434e', '#6c8c97', '#f3f8f9', '#9fb7bf',
+    '#33505a', '#10252c', '#2f5563', '#62cbe8', '#04161c', '#62cbe8', '#a8bec6', '#2b4751', '#7a939c', '#e2edf0']);
+  // Chaque jeton de tokens-3a.css est reporté à l'identique dans tokens.css, en clair et en sombre (le fichier de Claude
+  // Design en est la source : une valeur changée d'un seul côté se voit).
+  const ref = jetons(TOKENS_3A);
+  for (const [theme, t, r] of [['clair', clair, ref.clair], ['sombre', sombre, ref.sombre]]) {
+    const ecarts = Object.keys(r).filter((n) => t[n] !== r[n]).map((n) => `--${n} : ${t[n]} au lieu de ${r[n]}`);
+    assert.deepEqual(ecarts, [], theme);
+  }
+  assert.ok(Object.keys(ref.sombreSeul).length >= 30, 'les jetons sombres de tokens-3a.css sont lus');
   // Les alias : déclarés une fois, sur la racine, et jamais redéfinis en sombre (ils y suivent l'accent du thème).
   const racine = sansCommentaires(TOKENS).match(/^:root\s*\{([\s\S]*?)\n\}/m)[1];
   assert.match(racine, /--action: var\(--accent\);/);
   assert.match(racine, /--action-on: var\(--sur-accent\);/);
   assert.equal(sombreSeul.action, undefined);
   assert.equal(sombreSeul['action-on'], undefined);
-  for (const [, t] of THEMES) assert.deepEqual([t.action, t['action-on'], t['fond-choix']], [t.accent, t['sur-accent'], 'transparent']);
-  // theme-color et le manifest : le fond du clair.
+  for (const [, t] of THEMES) assert.deepEqual([t.action, t['action-on'], t['fond-choix']], [t.accent, t['sur-accent'], t.surface]);
+  // theme-color et le manifest : le fond de chaque thème (le manifest n'en a qu'un : celui du clair).
   const index = lire(join(RACINE, 'public', 'index.html'));
-  assert.match(index, /<meta name="theme-color" content="#f2f2f7" media="\(prefers-color-scheme: light\)">/);
-  assert.match(index, /<meta name="theme-color" content="#000000" media="\(prefers-color-scheme: dark\)">/);
+  assert.match(index, /<meta name="theme-color" content="#f8f9fa" media="\(prefers-color-scheme: light\)">/);
+  assert.match(index, /<meta name="theme-color" content="#080b0d" media="\(prefers-color-scheme: dark\)">/);
+  assert.deepEqual([clair.bg, sombre.bg], ['#f8f9fa', '#080b0d']);
   const manifest = JSON.parse(lire(join(RACINE, 'public', 'manifest.webmanifest')));
-  assert.deepEqual([manifest.background_color, manifest.theme_color], ['#f2f2f7', '#f2f2f7']);
+  assert.deepEqual([manifest.background_color, manifest.theme_color], ['#f8f9fa', '#f8f9fa']);
 });
 
-// Relecture de la tâche 4 : la marge était restée à 14, celle du lot 2b, au lieu des 16 de la spec.
-test('v12 : les formes de la spec §5.2 : rayon des cartes 16, marge 16, grand titre 34/41 (plafonné à 48), titre de section 22/28, libellé d\'onglet 10', () => {
+// Relecture de la tâche 4 : la marge était restée à 14, celle du lot 2b, au lieu des 16 de la spec. v12.1 (3a) : cartes de 24,
+// grand titre 40/47 ; --r-moyen, --r-bouton et --r-petit ne changent pas (les tuiles de l'Analyse les lisent), ce qui se
+// touche passe en pilule par sélecteur.
+test('v12.1 : les formes : rayon des cartes 24, marge 16, grand titre 40/47 (plafonné à 48), titre de section 22/28, libellé d\'onglet 10 ; les rayons 12, 12 et 10 inchangés', () => {
   assert.deepEqual(['r-carte', 'marge', 't-grand-titre', 'l-grand-titre', 't-titre-section', 'l-titre-section', 't-onglet'].map((n) => clair[n]),
-    ['16px', '16px', 'min(2rem, 48px)', 'min(2.412rem, 58px)', '1.294rem', '1.647rem', '10px']);
-  for (const n of ['r-carte', 'marge']) assert.equal(sombreSeul[n], undefined, n);
+    ['24px', '16px', 'min(2.35rem, 48px)', 'min(2.75rem, 58px)', '1.294rem', '1.647rem', '10px']);
+  assert.deepEqual(['r-moyen', 'r-bouton', 'r-petit', 'r-feuille'].map((n) => clair[n]), ['12px', '12px', '10px', '24px']);
+  for (const n of ['r-carte', 'marge', 't-grand-titre', 'l-grand-titre']) assert.equal(sombreSeul[n], undefined, n);
+});
+
+// v12.1 : les règles de formes-3a.css, fondues dans composants.css et ecrans.css : chacune de leurs déclarations est dans une
+// règle d'un des mêmes sélecteurs. La bande du bas (.action-bande, .fab) a sa règle, plus forte, sous .actions-flottantes : la
+// pilule y est posée (README : « les boutons de la bande en pilule »). Décision de l'utilisateur du 16/11 (« niveau design,
+// fais comme Claude Design a défini ») : aucun écart de forme. La pastille, le bouton de segmenté et la capsule de la date
+// (.sur-titre) reprennent le rayon 999 de la planche (26, puis la moitié de la hauteur d'une ligne, depuis la relecture de la
+// tâche A et la relecture finale), « En consultation » (.pilule) aussi, comme un .btn.
+test('v12.1 : les formes 3a sont fondues dans les feuilles : chaque déclaration de formes-3a.css est dans une règle d\'un de ses sélecteurs, sans écart', () => {
+  const FORMES = sansCommentaires(lire(join(RACINE, 'docs', 'design', 'retour-claude-design-v3', 'formes-3a.css')));
+  const selecteurs = (sel) => sel.split(/,(?![^(]*\))/).map((x) => x.replace(/\s+/g, ' ').trim());
+  const PLUS_FORTS = { '.action-bande': '.actions-flottantes .action-bande', '.fab': '.actions-flottantes .fab' };
+  const fautes = [];
+  let n = 0;
+  for (const [, sel, corps] of FORMES.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    for (const s of selecteurs(sel)) {
+      for (const [, prop, val] of corps.matchAll(/([\w-]+)\s*:\s*([^;]+);/g)) {
+        n += 1;
+        const decl = `${prop}: ${val.trim()};`;
+        // Un élément de la bande : sa règle sous .actions-flottantes, et la sienne seule s'il en a une (.fab, hors de la bande).
+        const cibles = PLUS_FORTS[s] ? [PLUS_FORTS[s], ...(REGLES.some(([x]) => selecteurs(x).includes(s)) ? [s] : [])] : [s];
+        if (!cibles.every((c) => REGLES.some(([x, d]) => selecteurs(x).includes(c) && d.includes(decl)))) fautes.push(`${s} { ${decl} }`);
+      }
+    }
+  }
+  assert.ok(n >= 30, `${n} déclarations lues`);
+  assert.deepEqual(fautes, []);
+  // Aucune règle d'un élément que la planche met en pilule n'y remet un autre rayon que 999 (le segmenté « petit » avait
+  // --r-petit, la pastille et le segmenté 26, la capsule de la date la moitié de sa hauteur, « En consultation » 26) ; une
+  // règle qui vise un de ces éléments par une autre de ses classes est vue par le contrôle global (v7-controle.spec.js,
+  // PILULES_PLANCHE), sur chaque écran du parcours.
+  const PILULES = /\.(pastille|segmente|roue-choix|btn|puce-reglage|action-bande|fab|exercice-court|sur-titre|pilule)(?![\w-])/;
+  const remis = REGLES.filter(([sel, d]) => sel.split(/,(?![^(]*\))/).some((x) => PILULES.test(x)) && /border-radius: (?!999px;)/.test(d)).map(([sel]) => sel);
+  assert.deepEqual(remis, []);
+  for (const sel of ['.pastille', '.segmente button', '.sur-titre', '.pilule', '.btn']) {
+    assert.ok(REGLES.some(([x, d]) => x.split(/,(?![^(]*\))/).map((y) => y.trim()).includes(sel) && d.includes('border-radius: 999px;')), `${sel} : rayon 999`);
+  }
+  // Ce que la planche ne nomme pas garde son rayon : « Mémo vocal » (12) et « Arrêter » (8) restent des rectangles arrondis.
+  const rayonDe = (sel) => REGLES.filter(([x]) => x.split(/,(?![^(]*\))/).map((y) => y.trim()).includes(sel)).flatMap(([, d]) => [...d.matchAll(/border-radius: ([^;]+);/g)].map((m) => m[1]));
+  assert.deepEqual([rayonDe('.btn-memo'), rayonDe('.btn-arreter')], [['var(--r-bouton)'], ['8px']]);
 });
 
 test('v12 : AA du texte et du texte secondaire sur le fond, la carte et --surface-2 ; l\'accent et le texte posé dessus à 4,5:1 au moins', () => {
@@ -87,15 +144,44 @@ test('v12 : AA du texte et du texte secondaire sur le fond, la carte et --surfac
   }
 });
 
-test('v12 : un lien vert (--accent-texte) à 4,5:1 au moins sur le fond, la carte et la barre ; en clair, jamais sur --surface-2 (sous 4,5)', () => {
+// v12.1 : --accent-texte, plus foncé que --accent en clair, tient 4,5:1 sur les surfaces teintées, --surface-2 comprise
+// (4,73:1 ; 4,49:1 en v12, d'où la règle « jamais un lien sur --surface-2 », gardée par prudence : tests/aides/controle.js).
+test('v12.1 : un lien (--accent-texte) à 4,5:1 au moins sur le fond, la carte, --surface-2 et la barre, en clair et en sombre', () => {
   for (const [theme, t] of THEMES) {
-    for (const fond of ['bg', 'surface', 'barre']) {
+    for (const fond of ['bg', 'surface', 'surface-2', 'barre']) {
       assert.ok(contraste(t['accent-texte'], t[fond]) >= 4.5, `${theme} : lien sur ${fond} (${contraste(t['accent-texte'], t[fond]).toFixed(2)})`);
     }
   }
-  // La raison de la règle « un lien ne se pose jamais sur --surface-2 » : en clair, il y passe sous 4,5.
-  assert.ok(contraste(clair['accent-texte'], clair['surface-2']) < 4.5);
-  assert.ok(contraste(sombre['accent-texte'], sombre['surface-2']) >= 4.5);
+  assert.equal(contraste(clair['accent-texte'], clair['surface-2']).toFixed(2), '4.73');
+});
+
+// v12.1 : --accent (l'aplat) est plus clair que --accent-texte en clair (4,32:1 sur le fond, 3,97:1 sur --surface) : un
+// texte ou une icône qui ouvre quelque chose prend --accent-texte, jamais --accent ni son alias --action (relevé par le
+// contrôle de contraste de v12-spotify.spec.js : « Retour », « Modifier », « Coller un lien » sous 4,5:1).
+test('v12.1 : aucun texte à l\'aplat de l\'accent : color ne lit jamais --accent ni --action, seulement --accent-texte', () => {
+  const fautes = REGLES.filter(([, d]) => /(^|[\s;{])color:\s*var\(--(accent|action)\)/.test(d)).map(([sel, , f]) => `${f} : ${sel}`);
+  assert.deepEqual(fautes, []);
+  assert.ok(contraste(clair.accent, clair.bg) < 4.5, 'en clair, l\'aplat seul ne tient pas 4,5:1 sur le fond');
+  assert.ok(REGLES.some(([sel, d]) => sel === 'a' && d.includes('color: var(--accent-texte);')));
+});
+
+// v12.1 : les contrastes que donne le README de Claude Design (docs/design/retour-claude-design-v3/README.md), recalculés depuis
+// les jetons, au centième près. Le texte posé sur l'accent en clair est très juste (4,55:1) : --accent ne s'éclaircit pas sans
+// que --sur-accent passe au foncé.
+test('v12.1 : les contrastes du README de Claude Design, recalculés depuis les jetons, en clair et en sombre ; --sur-accent sur --accent en clair à 4,55:1', () => {
+  const ATTENDUS = [
+    ['text', 'bg', 16.57, 18.43], ['text', 'surface', 15.24, 14.82], ['text-2', 'bg', 7.65, 9.40], ['text-2', 'surface', 7.04, 7.56],
+    ['text-2', 'surface-2', 6.43, 6.16], ['sur-accent', 'accent', 4.55, 9.88], ['accent-texte', 'bg', 5.62, 10.55],
+    ['accent-texte', 'surface', 5.17, 8.49], ['accent-texte', 'surface-2', 4.73, 6.92], ['accent-texte', 'barre', 5.44, 9.64],
+    ['contour', 'bg', 4.30, 5.48], ['contour', 'surface', 3.96, 4.41], ['contour', 'surface-2', 3.62, 3.60], ['donnee-2', 'surface', 3.75, 4.90],
+  ];
+  const fautes = ATTENDUS.flatMap(([a, b, c, s]) => [['clair', clair, c], ['sombre', sombre, s]]
+    .filter(([, t, v]) => contraste(t[a], t[b]).toFixed(2) !== v.toFixed(2))
+    .map(([theme, t, v]) => `${theme} : --${a} sur --${b}, ${contraste(t[a], t[b]).toFixed(2)} au lieu de ${v.toFixed(2)}`));
+  assert.deepEqual(fautes, []);
+  // Le README les écrit tels quels (« 4,55:1 »).
+  const readme = lire(join(RACINE, 'docs', 'design', 'retour-claude-design-v3', 'README.md'));
+  assert.match(readme, /\| --sur-accent sur --accent \| 4,55:1 \| 9,88:1 \|/);
 });
 
 test('v12 : le contour (choix non faits, champs, roues) à 3:1 au moins sur le fond, la carte et --surface-2', () => {
@@ -121,20 +207,41 @@ test('v12 : la nuit aussi, le contour de .parcours.ecran-noir à 3:1 au moins su
   assert.ok(contraste(nuit.contour, nuit.bg) < contraste(nuit.text, nuit.bg), 'nuit : le contour moins clair que le texte');
 });
 
-test('v12 : l\'accent clair est loin de la menthe des zones (ΔE OKLab ≥ 0,12) ; l\'encre des graphiques, sans teinte, se voit sur la carte', () => {
+// v12.1 : l'accent pétrole est loin de la menthe dans les deux thèmes (en v12, le vert iPhone sombre en était à 0,07). Il est
+// plus près de la zone bleue (≈ 0,11 en clair), dont sa teinte reste à plus de 40° : c'est la forme qui les sépare (jamais un
+// rond ni un point d'accent) et les lieux (pas d'accent sur les écrans de l'émotion ni dans les graphiques, plus bas).
+test('v12.1 : l\'accent est loin de la menthe des zones (ΔE OKLab ≥ 0,12), en clair et en sombre, et à 40° au moins de la teinte de la zone bleue ; l\'encre des graphiques, de la teinte de la base, se voit sur la carte', () => {
   // La menthe : le plein de la zone verte (bulles, points, cases), son accent et son texte en sombre.
   const menthe = [clair['c-zone-vert-fill'], sombre['c-zone-vert'], sombre['c-zone-vert-text']];
   assert.deepEqual(menthe, ['#4ce39b', '#4ce39b', '#44dd95']);
-  for (const m of menthe) {
-    for (const n of ['accent', 'accent-texte']) assert.ok(ecartOklab(clair[n], m) >= 0.12, `${n} clair et ${m} : ${ecartOklab(clair[n], m).toFixed(3)}`);
-  }
-  // En sombre, le vert iPhone est plus près de la menthe (≈ 0,07) : c'est la forme qui les sépare (jamais un rond ni un
-  // point d'accent) et les lieux (pas d'accent sur les écrans de l'émotion ni dans les graphiques, plus bas).
-  assert.ok(ecartOklab(sombre.accent, menthe[0]) < 0.12);
   for (const [theme, t] of THEMES) {
-    for (const n of ['donnee', 'donnee-1', 'donnee-2', 'donnee-3']) assert.ok(oklch(t[n]).C < 0.02, `${theme} : --${n} sans teinte`);
+    for (const m of menthe) {
+      for (const n of ['accent', 'accent-texte']) assert.ok(ecartOklab(t[n], m) >= 0.12, `${n} ${theme} et ${m} : ${ecartOklab(t[n], m).toFixed(3)}`);
+    }
+    for (const b of [t['c-zone-bleu'], t['c-zone-bleu-fill']]) assert.ok(ecartTeinte(t.accent, b) >= 40, `${theme} : accent et zone bleue ${b}, ${ecartTeinte(t.accent, b).toFixed(0)}°`);
+  }
+  for (const [theme, t] of THEMES) {
+    // L'encre (v12.1) : à peine teintée, de la teinte de la base pétrole, jamais aussi saturée que l'accent.
+    for (const n of ['donnee', 'donnee-1', 'donnee-2', 'donnee-3']) assert.ok(petrole(t[n]), `${theme} : --${n} (${t[n]}), une encre de la base`);
     assert.ok(contraste(t.donnee, t.surface) >= 4.5, `${theme} : --donnee sur la carte`);
     assert.ok(contraste(t['donnee-2'], t.surface) >= 3, `${theme} : --donnee-2, contour du pas le plus discret, sur la carte`);
+  }
+});
+
+// Relecture finale de la v12.1 : l'accent pétrole est voisin de Sérénité (turquoise), surtout en sombre (teintes à 26°, même
+// clarté). Ce sont la forme et les lieux qui les séparent : l'accent n'est jamais une marque de graphique, Sérénité jamais un
+// contrôle. Les jetons, définitifs (spec v12.1 §3.1), ne changent pas sans l'accord de l'utilisateur (docs/decisions.md,
+// v12.1.0, « En attente de l'utilisateur ») ; ce garde-fou fige les écarts d'aujourd'hui (ΔE OKLab au plus près : 0,058 en
+// clair, entre --accent-texte et --c-emo-serenite-text ; 0,048 en sombre, entre l'accent et --c-emo-serenite-text), pour
+// qu'ils ne rétrécissent pas.
+test('v12.1 : l\'accent ne se rapproche pas de Sérénité : ΔE OKLab de l\'accent et du texte d\'action à 0,055 au moins de ses rôles --c, -fill et -text en clair, à 0,045 au moins en sombre', () => {
+  for (const [theme, t, plancher] of [['clair', clair, 0.055], ['sombre', sombre, 0.045]]) {
+    for (const a of ['accent', 'accent-texte']) {
+      for (const r of ['', '-fill', '-text']) {
+        const d = ecartOklab(t[a], t[`c-emo-serenite${r}`]);
+        assert.ok(d >= plancher, `${theme} : --${a} et --c-emo-serenite${r}, ΔE OKLab ${d.toFixed(3)}`);
+      }
+    }
   }
 });
 
@@ -144,10 +251,14 @@ test('v12 : les rubriques n\'ont plus de couleur : ni --c-<rubrique>, ni --chart
   const fautes = [];
   for (const f of CSS) for (const m of sansCommentaires(lire(f)).matchAll(motif)) fautes.push(`${rel(f)} : ${m[0]}`);
   assert.deepEqual(fautes, []);
-  // Les couleurs de la base, des familles et des zones seulement : aucune autre couleur de jeton n'a de teinte, hors
-  // l'accent, --danger et les écrans de l'émotion (la carte et ses bulles).
-  const teintes = Object.entries(clair).filter(([n, v]) => /^#[0-9a-f]{6}$/i.test(v) && oklch(v).C >= 0.03 && !/^c-(emo|zone)-|^(accent|accent-texte|action)$/.test(n));
-  assert.deepEqual(teintes.map(([n]) => n), ['danger']);
+  // Les couleurs de la base, des familles et des zones seulement : hors des familles, des zones et de l'accent, chaque
+  // couleur de jeton est un gris ou une teinte de la base pétrole (v12.1 : teinte de 215 à 230°, saturation sous 0,05), sauf
+  // --danger. L'accent a la même teinte, bien plus saturé (0,08 au moins).
+  for (const [theme, t] of THEMES) {
+    const teintes = Object.entries(t).filter(([n, v]) => /^#[0-9a-f]{6}$/i.test(v) && !/^c-(emo|zone)-|^(accent|accent-texte|action)$/.test(n) && !petrole(v));
+    assert.deepEqual(teintes.map(([n]) => n), ['danger'], theme);
+    for (const n of ['accent', 'accent-texte']) assert.ok(oklch(t[n]).C >= 0.08 && oklch(t[n]).H >= 215 && oklch(t[n]).H <= 230, `${theme} : --${n}`);
+  }
 });
 
 // v12 (9/9), contrôle global : les 12 couleurs de rubrique du lot 2b et la rampe du sommeil, telles que la v11.0.0 les
@@ -205,25 +316,31 @@ test('v12 : pas d\'accent dans .moment-plein ni dans .ecran-noir : l\'accent y e
     return Object.fromEntries(r.flatMap(([, d]) => [...d.matchAll(/--([\w-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()])));
   };
   const neutre = (v, quoi) => assert.ok(/^#[0-9a-f]{6}$/.test(v) && oklch(v).C < 0.02, `${quoi} : ${v}, une encre sans teinte`);
-  // Les écrans de l'émotion : l'accent est le plein des ronds (Continuer, Terminer), à l'encre dans les deux thèmes.
+  // Les écrans de l'émotion : l'accent est le plein des ronds (Continuer, Terminer), à l'encre dans les deux thèmes (v12.1 :
+  // l'encre et le fond de la base, à peine teintés de pétrole, jamais l'accent).
   const moment = declare('.moment-plein');
   assert.deepEqual(ACCENTS.map((n) => moment[n]), ['var(--moment-plein)', 'var(--moment-plein-on)', 'var(--moment-plein)', 'var(--moment-plein)', 'var(--moment-plein-on)']);
-  for (const [theme, t] of THEMES) for (const n of ['moment-plein', 'moment-plein-on']) neutre(t[n], `${theme} --${n}`);
-  // La nuit : des valeurs, sans var() (un var(--accent) y serait lu avant d'être redéclaré, sur la racine, en vert).
+  for (const [theme, t] of THEMES) {
+    for (const n of ['moment-plein', 'moment-plein-on']) {
+      assert.ok(/^#[0-9a-f]{6}$/.test(t[n]) && petrole(t[n]), `${theme} --${n} : ${t[n]}, une encre de la base`);
+      assert.notEqual(t[n], t.accent);
+    }
+  }
+  // La nuit : des valeurs, sans var() (un var(--accent) y serait lu avant d'être redéclaré, sur la racine, au pétrole de l'accent).
   for (const sel of ['.ecran-noir', '.parcours.ecran-noir']) {
     const d = declare(sel);
     for (const n of ACCENTS) if (d[n] !== undefined) neutre(d[n], `${sel} --${n}`);
   }
   assert.deepEqual(ACCENTS.filter((n) => declare('.ecran-noir')[n] === undefined), []);
   assert.deepEqual(['accent', 'accent-texte', 'action'].filter((n) => declare('.parcours.ecran-noir')[n] === undefined), []);
-  // Aucune règle de ces écrans ne lit l'accent, et le vert de l'accent n'est écrit que dans tokens.css.
+  // Aucune règle de ces écrans ne lit l'accent, et la valeur de l'accent n'est écrite que dans tokens.css.
   const fautes = REGLES.filter(([sel, d]) => /\.moment-plein|\.ecran-noir/.test(sel) && /var\(\s*--(accent|sur-accent|accent-texte)\b/.test(d)).map(([sel]) => sel);
   assert.deepEqual(fautes, []);
-  const verts = new RegExp([clair.accent, sombre.accent].join('|'), 'i');
-  assert.deepEqual(CSS.filter((f) => !f.endsWith('tokens.css') && verts.test(sansCommentaires(lire(f)))).map(rel), []);
+  const accents = new RegExp([clair.accent, sombre.accent, clair['accent-texte']].join('|'), 'i');
+  assert.deepEqual(CSS.filter((f) => !f.endsWith('tokens.css') && accents.test(sansCommentaires(lire(f)))).map(rel), []);
 });
 
-test('v12 : un choix fait est un aplat d\'accent (ou de sa famille, de sa zone) au texte --sur-accent, en 600, avec sa coche ; non fait, transparent avec son contour ; rien ne change de taille au toucher', () => {
+test('v12 : un choix fait est un aplat d\'accent (ou de sa famille, de sa zone) au texte --sur-accent, en 600, avec sa coche ; non fait, le fond --fond-choix (--surface en v12.1) avec son contour, en pilule ; rien ne change de taille au toucher', () => {
   // Les déclarations de toutes les règles d'un sélecteur, à la suite.
   const decl = (selecteur) => {
     const r = REGLES.filter(([sel]) => sel.split(/,(?![^(]*\))/).map((x) => x.trim()).includes(selecteur));
@@ -232,6 +349,7 @@ test('v12 : un choix fait est un aplat d\'accent (ou de sa famille, de sa zone) 
   };
   for (const sel of ['.pastille', '.segmente button']) {
     assert.match(decl(sel), /background: var\(--fond-choix\);/, sel);
+    assert.match(decl(sel), /border-radius: 999px;/, `${sel} : en pilule de 999 (v12.1, formes 3a ; décision du 16/11)`);
     assert.match(decl(sel), /box-shadow: inset 0 0 0 1px var\(--contour\);/, sel);
     assert.doesNotMatch(decl(sel), /font-weight/, `${sel} : en 400`);
     const fait = decl(`${sel}[aria-pressed="true"]`);
@@ -282,6 +400,53 @@ test('AA : -on sur -fill, -text sur le fond, les cartes et la teinte ; l\'accent
       assert.ok(contraste(v(''), t.bg) >= 3, `${theme} ${c} : accent sur le fond`);
     }
   }
+});
+
+// Relecture finale de la v12.1 : les barres de « Tes émotions » (Analyse › Ma semaine) sont posées sur --surface-2. Depuis les
+// jetons 3a, en clair, Joie (2,95:1) et Sérénité (3,00:1, 2,998 avant l'arrondi) y passaient sous le 3:1 d'un graphique
+// (WCAG 1.4.11). Les jetons des familles sont figés (test précédent) : un liseré au -text de la famille porte le 3:1, comme
+// celui des marques de zone. Chaque famille, par --c ou par son liseré, à 3:1 au moins sur --surface-2, en clair et en sombre.
+test('v12.1 : chaque barre de « Tes émotions » se voit sur --surface-2 à 3:1 au moins, par sa couleur ou par son liseré au -text de sa famille, en clair et en sombre', () => {
+  const ecrans = sansCommentaires(lire(join(RACINE, 'public', 'css', 'ecrans.css')));
+  const regle = (sel) => {
+    const r = [...ecrans.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[1].split(/,(?![^(]*\))/).map((x) => x.replace(/\s+/g, ' ').trim()).includes(sel));
+    assert.equal(r.length, 1, sel);
+    return r[0][2].replace(/\s+/g, ' ');
+  };
+  // Les tuiles de Ma semaine sont sur --surface-2 ; leurs barres de famille ont le liseré, d'un pixel quel que soit
+  // l'étirement du SVG, sans être coupé à son bord.
+  assert.match(regle('.tuiles-semaine .tuile'), /background: var\(--surface-2\);/);
+  assert.match(regle('.tuile-emotions .g-emo'), /stroke: var\(--c-text\); stroke-width: 1px; vector-effect: non-scaling-stroke;/);
+  assert.match(regle('.tuile-emotions .barre-famille'), /overflow: visible;/);
+  for (const [theme, t] of THEMES) {
+    for (const f of FAMILLES_ROUE) {
+      const [c, lisere] = [t[`c-emo-${f}`], t[`c-emo-${f}-text`]];
+      const vu = Math.max(contraste(c, t['surface-2']), contraste(lisere, t['surface-2']));
+      assert.ok(vu >= 3, `${theme} ${f} : ${contraste(c, t['surface-2']).toFixed(2)}:1, liseré ${contraste(lisere, t['surface-2']).toFixed(2)}:1`);
+      assert.ok(contraste(lisere, t['surface-2']) >= 3, `${theme} ${f} : le liseré seul`);
+    }
+  }
+  // Ce que le liseré corrige : sans lui, deux familles passaient sous 3:1 en clair.
+  assert.deepEqual(FAMILLES_ROUE.filter((f) => contraste(clair[`c-emo-${f}`], clair['surface-2']) < 3), ['joie', 'serenite']);
+});
+
+// Relecture finale de la v12.1 : ce qui se touche est en pilule (3a), une carte a le rayon des cartes. Quatre éléments touchables
+// gardaient l'ancien rayon de 12 (ou 8) à côté de pilules, et une carte le sien : « Ajouter » (un .btn, que sa règle défaisait),
+// « En consultation » (.pilule, au rayon 999 des .btn depuis la décision du 16/11 ; 26 à la relecture finale), la loupe
+// de l'Historique (un rond de 44, au --contour), les étiquettes du noting (la moitié de leurs 60), la carte des questions d'un
+// rendez-vous et la carte « Après coup · TCC » (24).
+test('v12.1 : relecture finale, ce qui se touche est en pilule et une carte a 24 : « Ajouter », « En consultation », la loupe, le noting, les questions et « Après coup »', () => {
+  const regles = (sel) => REGLES.filter(([x]) => x.split(/,(?![^(]*\))/).map((y) => y.trim()).includes(sel)).map(([, d]) => d);
+  const rayon = (sel) => regles(sel).flatMap((d) => [...d.matchAll(/border-radius: ([^;]+);/g)].map((m) => m[1]));
+  assert.deepEqual(rayon('.bouton-ajouter'), [], '« Ajouter » prend le rayon de .btn');
+  assert.ok(rayon('.btn').includes('999px'));
+  assert.deepEqual(rayon('.pilule'), ['999px']);
+  assert.deepEqual(rayon('.bouton-loupe'), ['999px']);
+  assert.ok(regles('.bouton-loupe').some((d) => d.includes('border: 1px solid var(--contour);')), 'la loupe au --contour');
+  assert.deepEqual(rayon('.etiquette-noting'), ['30px']);
+  assert.ok(regles('.etiquette-noting').some((d) => d.includes('min-height: 60px;')));
+  assert.deepEqual(rayon('.carte-questions'), ['var(--r-carte)']);
+  assert.deepEqual(rayon('.ligne-carte.bouton-apres-coup'), ['var(--r-carte)']);
 });
 
 test('roue des émotions : 7 familles, dans l\'ordre ; -text lisible aussi sur -tint-2 ; une classe emo-<famille> par famille', () => {

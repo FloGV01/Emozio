@@ -1,9 +1,10 @@
-/* Jetons de design. v12 (spec docs/superpowers/specs/2026-11-09-emozio-v12-design.md, §5) : une base neutre comme iOS, en
-   clair un fond gris très pâle et des cartes blanches, en sombre un fond noir et des cartes gris foncé, à la police système
-   (choix de l'utilisateur, 20/10 : rien à télécharger). Une seule couleur d'accent, le vert « B » (§5.3), qui veut dire
-   « choisi » ou « agir », jamais une valeur, jamais « fait » ni « réussi ». Les rubriques n'ont plus de couleur à elles :
-   la couleur ne dit qu'une émotion (les 4 zones, et les 7 familles dans l'Analyse et Réglages › Émotions), en plus de
-   l'accent et de --danger. Le thème suit le réglage de l'iPhone (prefers-color-scheme).
+/* Jetons de design. v12.1 (spec docs/superpowers/specs/2026-11-14-emozio-v12-1-design.md, §3.1 ; valeurs de Claude Design,
+   docs/design/retour-claude-design-v3/tokens-3a.css, « 3a · Bandeau, tout en rondeur ») : une base presque blanche, des
+   surfaces teintées d'un bleu pétrole pâle (en sombre, un fond presque noir et des surfaces pétrole profond), à la police
+   système (choix de l'utilisateur, 20/10 : rien à télécharger). Une seule couleur d'accent, le bleu pétrole (v12.1 ; le vert
+   « B » de la v12 avant), qui veut dire « choisi » ou « agir », jamais une valeur, jamais « fait » ni « réussi ». Les
+   rubriques n'ont plus de couleur à elles : la couleur ne dit qu'une émotion (les 4 zones, et les 7 familles dans l'Analyse
+   et Réglages › Émotions), en plus de l'accent et de --danger. Le thème suit le réglage de l'iPhone (prefers-color-scheme).
 
    Les familles et les zones ont six rôles, lus par leurs classes (.emo-*, .zone-*) sous des noms courts :
    --c-X         icône, point, graphique (≥ 3:1 sur le fond) ;
@@ -16,47 +17,51 @@
 :root {
   color-scheme: light dark;
 
-  /* Base (spec §5.2). --surface-2 : un remplissage discret, jamais un choix, et jamais le fond d'un lien vert (4,49:1 en
-     clair, sous 4,5). --barre : la bande du bas et les onglets. --line : les filets décoratifs. --contour : ce qui se
-     touche sans être choisi (choix non faits, champs, roues), à 3:1 au moins sur le fond, la carte et --surface-2.
-     --text-2 : AA sur le fond, la carte et --surface-2. */
-  --bg: #f2f2f7;
-  --surface: #ffffff;
-  --surface-2: #eeeef0;
-  --barre: #f9f9f9;
-  --line: #c6c6c8;
-  --contour: #86868b;
-  --text: #000000;
-  --text-2: #6c6c70;
-  --desactive: #c7c7cc;
-  /* La roue de choix : une piste, et au milieu une fenêtre, neutre tant que rien n'est noté, détachée par une ombre légère
-     (la maquette ; un contour de plus doublerait celui de la piste). */
-  --piste: #eeeef0;
+  /* Base (spec v12 §5.2 ; valeurs 3a en v12.1). --surface : les cartes, le bandeau d'Aujourd'hui, et le fond d'un choix non
+     fait. --surface-2 : un remplissage discret, jamais un choix ; un lien (--accent-texte) y garde 4,73:1 en clair (v12.1 :
+     4,49:1 en v12, sous 4,5 ; la règle « jamais sur --surface-2 » est gardée, par prudence). --barre : la bande du bas et les
+     onglets. --line : les filets décoratifs. --contour : ce qui se touche sans être choisi (choix non faits, champs, roues), à
+     3:1 au moins sur le fond, la carte et --surface-2. --text-2 : AA sur le fond, la carte et --surface-2. */
+  --bg: #f8f9fa;
+  --surface: #e8f1f4;
+  --surface-2: #dae8ed;
+  --barre: #f1f6f8;
+  --line: #c3d6dd;
+  --contour: #627a83;
+  --text: #0a1c22;
+  --text-2: #40535a;
+  --desactive: #b7c9d0;
+  /* La roue de choix : une piste (la teinte de --surface, en pilule depuis la v12.1), et au milieu une fenêtre, neutre tant
+     que rien n'est noté, détachée par une ombre légère (la maquette ; un contour de plus doublerait celui de la piste). */
+  --piste: #e8f1f4;
   --fenetre: #ffffff;
   --fenetre-ombre: 0 1px 3px rgba(0, 0, 0, .16), 0 0 0 .5px rgba(0, 0, 0, .08);
-  /* Un rond neutre autour d'une icône (‹ › de l'en-tête d'Aujourd'hui, v12) : la carte, détachée par une ombre légère en
-     clair, par un filet en sombre. Jamais l'accent : un rond appartient aux émotions (spec §5.3). */
+  /* Un rond neutre autour d'une icône (‹ › de l'en-tête d'Aujourd'hui, v12) : blanc sur le bandeau en clair, détaché par une
+     ombre légère, par un filet en sombre. Jamais l'accent : un rond appartient aux émotions (spec §5.3). */
   --rond: #ffffff;
   --rond-ombre: 0 1px 3px rgba(0, 0, 0, .10), 0 0 0 .5px rgba(0, 0, 0, .10);
-  /* L'accent, le rendu B (spec §5.3) : l'aplat d'un choix fait ou d'une action, le texte et la coche posés dessus, et le
-     texte d'un lien ou d'une icône qui ouvre quelque chose (AA sur le fond, la carte et la barre). Jamais un rond ni un
-     point sans icône : ronds et bulles appartiennent aux émotions ; seul un bouton rond qui porte une icône (le ▶ du
-     lecteur) peut le porter. */
-  --accent: #1c7d36;
+  /* L'accent, le bleu pétrole (v12.1, spec §3.2 ; le vert B de la v12 avant) : l'aplat d'un choix fait ou d'une action, le
+     texte et la coche posés dessus (--sur-accent : 4,55:1 en clair, très juste : ne pas éclaircir --accent sans passer
+     --sur-accent au foncé), et le texte d'un lien ou d'une icône qui ouvre quelque chose (--accent-texte, plus foncé que
+     --accent en clair : AA sur le fond, les surfaces teintées et la barre). Jamais un rond ni un point sans icône : ronds et
+     bulles appartiennent aux émotions ; seul un bouton rond qui porte une icône (le ▶ du lecteur) peut le porter. */
+  --accent: #2e7f99;
   --sur-accent: #ffffff;
-  --accent-texte: #1c7d36;
+  --accent-texte: #1f6c85;
   /* Alias gardés : leurs usages basculent sur l'accent sans être touchés. Les écrans de l'émotion (.moment-plein) et
      « Réveil la nuit » (.ecran-noir) les redéclarent à l'encre, avec l'accent. */
   --action: var(--accent);
   --action-on: var(--sur-accent);
-  /* Fond d'un choix ou d'un champ non fait : transparent ; son contour (--contour) passe par box-shadow: inset. */
-  --fond-choix: transparent;
+  /* Fond d'un choix ou d'un champ non fait : --surface (v12.1 ; transparent en v12) ; son contour (--contour) passe par
+     box-shadow: inset. Sur une carte (--surface), il a la couleur de la carte : seul son contour le détache, c'est voulu. */
+  --fond-choix: var(--surface);
   /* L'encre des graphiques (spec §5.5) : tout ce qui n'est pas une émotion. Une rampe à 3 pas, du plus discret au plus
-     marqué ; le pas le plus discret prend un contour en --donnee-2. */
-  --donnee: #48484a;
-  --donnee-1: #c7c7cc;
-  --donnee-2: #8e8e93;
-  --donnee-3: #3a3a3c;
+     marqué ; le pas le plus discret prend un contour en --donnee-2. v12.1 : à peine teintée de la base pétrole, jamais
+     l'accent. */
+  --donnee: #3c525c;
+  --donnee-1: #bdcfd6;
+  --donnee-2: #657e87;
+  --donnee-3: #1f343c;
 
   /* Roue des émotions (v7, spec §4.1) : la teinte de chaque famille vient de la roue de l'utilisateur, ajustée
      pour AA, sur la recette du lot 2b (OKLCH : accent L 0,60 en clair et 0,78 en sombre, texte 0,46 et 0,80).
@@ -84,24 +89,24 @@
   --c-zone-vert: #009860; --c-zone-vert-fill: #4ce39b; --c-zone-vert-on: #09140e; --c-zone-vert-tint: #dff5e7; --c-zone-vert-tint-2: #c2ebd2; --c-zone-vert-text: #006941;
 
   /* Les écrans de l'émotion (v11, spec §9) : ils suivent le thème, comme le reste de l'app. En clair, le fond d'Aujourd'hui,
-     des cartes blanches, le verre blanc translucide, les ronds pleins à l'encre (prototype-clair.css ; v12 : l'encre et le
-     voile suivent la base) ; en sombre, le noir de How We Feel, aux valeurs de la v9, inchangées. Les bulles et leur texte
-     noir n'en dépendent pas. Ils n'ont pas d'accent (spec v12, §5.6 ; .moment-plein, ecrans.css).
+     des cartes blanches, le verre blanc translucide, les ronds pleins à l'encre (prototype-clair.css ; v12 puis v12.1 :
+     l'encre et le voile suivent la base) ; en sombre, la base pétrole profond (v12.1 ; le noir de How We Feel avant). Les
+     bulles et leur texte noir n'en dépendent pas. Ils n'ont pas d'accent (spec v12, §5.6 ; .moment-plein, ecrans.css).
      --moment-voile se lit en rgba(var(--moment-voile), alpha) : le voile du haut de la carte, à la couleur du fond. */
-  --moment-texte: #000000;
+  --moment-texte: #0a1c22;
   --moment-gris: var(--text-2);
   --moment-verre: rgba(255, 255, 255, .78);
   --moment-verre-carte: rgba(255, 255, 255, .78);
-  --moment-verre-texte: #000000;
-  --moment-voile: 242, 242, 247;
+  --moment-verre-texte: #0a1c22;
+  --moment-voile: 248, 249, 250;
   --moment-carte-bas: #ffffff;
   /* Le rond « Continuer », « Terminer » et le rond d'« Ajouter mon mot » : le plein, et son texte (ou sa flèche). */
-  --moment-plein: #000000;
-  --moment-plein-on: #ffffff;
+  --moment-plein: #0a1c22;
+  --moment-plein-on: #f8f9fa;
   --moment-choix: var(--surface);
-  --moment-contour: #7d8087;
+  --moment-contour: var(--contour);
   --moment-filet: var(--line);
-  --moment-focus: #000000;
+  --moment-focus: #0a1c22;
 
   /* « Effacer définitivement », dernier pas de « Tout effacer » : le seul bouton rouge de l'app, hors du lot 2b, gardé
      (v7, tâche 9) parce qu'il signale une action sans retour, jamais une valeur. AA : 6,7:1 en clair, 8,3:1 en sombre.
@@ -114,8 +119,8 @@
   --police: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
   --police-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --t-ecran: 1.765rem; --l-ecran: 2.235rem;       /* 30 / 38 : titre d'écran, question d'un parcours */
-  /* Le grand titre d'Aujourd'hui (v12, spec §5.2 et §5.4) : 34 / 41 en 700, plafonné à 48 px en très grand texte. */
-  --t-grand-titre: min(2rem, 48px); --l-grand-titre: min(2.412rem, 58px);
+  /* Le grand titre d'Aujourd'hui (v12.1, 3a : 40 / 47 en 700 ; 34 / 41 en v12), plafonné à 48 px en très grand texte. */
+  --t-grand-titre: min(2.35rem, 48px); --l-grand-titre: min(2.75rem, 58px);
   --t-titre-section: 1.294rem; --l-titre-section: 1.647rem; /* 22 / 28 : titre de section (Ma journée, v12) */
   --t-parcours: 1.471rem; --l-parcours: 1.882rem; /* 25 / 32 : titre d'un parcours */
   --t-bloc: 1rem; --l-bloc: 1.294rem;             /* 17 / 22 : titre de bloc ou de rubrique */
@@ -131,11 +136,14 @@
   --t-tuile: 1.882rem;                            /* 32 : tuile chiffrée (2b) */
   --t-chiffre: 1.647rem;
 
-  /* Formes : bouton 12, pastille 10, carte 16 (v12, spec §5.2 ; 14 jusqu'à la v11), feuille du bas 24 */
+  /* Formes : bouton 12, pastille 10, carte 24 (v12.1, 3a ; 16 en v12, 14 jusqu'à la v11), feuille du bas 24. --r-moyen,
+     --r-bouton et --r-petit ne changent pas en v12.1 : ce qui se touche passe en pilule par sélecteur, au rayon 999 de
+     formes-3a.css (.pastille, .segmente button, .roue-choix et sa fenêtre, .btn, .puce-reglage select, .action-bande, .fab,
+     .exercice-court, et la capsule de la date), et ce qui ne se touche pas (les tuiles de l'Analyse) les lit aussi. */
   --r-petit: 10px;
   --r-moyen: 12px;
   --r-bouton: 12px;
-  --r-carte: 16px;
+  --r-carte: 24px;
   --r-feuille: 24px;
 
   /* Espacements : 6 entre deux boutons, 8 entre deux blocs, marge latérale de 16 (v12, spec §5.2 ; 14 jusqu'à la v11) */
@@ -177,27 +185,27 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #000000;
-    --surface: #1c1c1e;
-    --surface-2: #2c2c2e;
-    --barre: #161618;
-    --line: #38383a;
-    --contour: #7c7c80;
-    --text: #ffffff;
-    --text-2: #98989f;
-    --desactive: #48484a;
-    --piste: #111113;
-    --fenetre: #48484c;
+    --bg: #080b0d;
+    --surface: #10252c;
+    --surface-2: #19353f;
+    --barre: #0c181d;
+    --line: #24434e;
+    --contour: #6c8c97;
+    --text: #f3f8f9;
+    --text-2: #9fb7bf;
+    --desactive: #33505a;
+    --piste: #10252c;
+    --fenetre: #2f5563;
     --fenetre-ombre: inset 0 0 0 .5px rgba(255, 255, 255, .10);
-    --rond: #2c2c2e;
+    --rond: #19353f;
     --rond-ombre: inset 0 0 0 .5px rgba(255, 255, 255, .10);
-    --accent: #30d158;
-    --sur-accent: #000000;
-    --accent-texte: #30d158;
-    --donnee: #aeaeb2;
-    --donnee-1: #48484a;
-    --donnee-2: #8e8e93;
-    --donnee-3: #e5e5ea;
+    --accent: #62cbe8;
+    --sur-accent: #04161c;
+    --accent-texte: #62cbe8;
+    --donnee: #a8bec6;
+    --donnee-1: #2b4751;
+    --donnee-2: #7a939c;
+    --donnee-3: #e2edf0;
 
     --c-emo-colere: #ff968a; --c-emo-colere-tint: #321411; --c-emo-colere-tint-2: #461d19; --c-emo-colere-text: #ffa196;
     --c-emo-degout: #ff9b5a; --c-emo-degout-tint: #301605; --c-emo-degout-tint-2: #442007; --c-emo-degout-text: #ffa56d;
@@ -212,19 +220,19 @@
     --c-zone-bleu: #789fff; --c-zone-bleu-tint: #131d36; --c-zone-bleu-tint-2: #1c2a4c; --c-zone-bleu-text: #a0bcff;
     --c-zone-vert: #4ce39b; --c-zone-vert-tint: #032515; --c-zone-vert-tint-2: #03351f; --c-zone-vert-text: #44dd95;
 
-    --moment-texte: #ffffff;
-    --moment-gris: #909090;
-    --moment-verre: #1b1b1b;
-    --moment-verre-carte: rgba(32, 32, 32, .85);
-    --moment-verre-texte: #f2f2f2;
-    --moment-voile: 0, 0, 0;
-    --moment-carte-bas: #2c2c2e;
-    --moment-plein: #ffffff;
-    --moment-plein-on: #000000;
-    --moment-choix: #2c2c2e;
-    --moment-contour: #6e6e73;
-    --moment-filet: #1f1f1f;
-    --moment-focus: #ffffff;
+    --moment-texte: #f3f8f9;
+    --moment-gris: #9fb7bf;
+    --moment-verre: #10252c;
+    --moment-verre-carte: rgba(16, 37, 44, .85);
+    --moment-verre-texte: #f3f8f9;
+    --moment-voile: 8, 11, 13;
+    --moment-carte-bas: #19353f;
+    --moment-plein: #f3f8f9;
+    --moment-plein-on: #080b0d;
+    --moment-choix: #19353f;
+    --moment-contour: #6c8c97;
+    --moment-filet: #24434e;
+    --moment-focus: #f3f8f9;
 
     --danger: #E8A195;
     --danger-texte: #1A1917;
@@ -234,10 +242,11 @@
   :root { --duree: 0ms; --duree-anim: 0ms; --duree-glisse: 0ms; }
 }
 /* Un écran noir dans les deux thèmes : « Réveil la nuit » (v10, spec §5.2), dont le noir sert à ne pas éclairer la chambre.
-   Les jetons de base y prennent leurs valeurs du thème sombre (ci-dessus), pour les choix et les textes qu'ils portent,
-   sauf l'accent (v12, spec §5.2) : la nuit ne s'éclaire jamais en vert, ses actions restent à l'encre. --action et
-   --action-on sont redéclarés ici, en valeurs : sur la racine, ils valent déjà le vert. Les écrans de l'émotion, noirs ainsi
-   de la v9 à la v10, suivent le thème depuis la v11 (--moment-*, ci-dessus). */
+   Les jetons de base y gardent le noir neutre du thème sombre de la v12, sans la teinte pétrole de la v12.1 (spec v12.1
+   §3.1 : .ecran-noir ne change pas), pour les choix et les textes qu'ils portent, et l'accent n'y entre pas (v12, spec
+   §5.2) : la nuit ne s'éclaire jamais à l'accent, ses actions restent à l'encre. --action et --action-on sont redéclarés
+   ici, en valeurs : sur la racine, ils valent déjà l'accent. Un choix non fait y reste transparent. Les écrans de
+   l'émotion, noirs ainsi de la v9 à la v10, suivent le thème depuis la v11 (--moment-*, ci-dessus). */
 .ecran-noir {
   color-scheme: dark;
   --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e; --barre: #161618; --line: #38383a; --contour: #7c7c80;

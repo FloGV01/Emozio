@@ -43,10 +43,7 @@ test('zonesDuJour : chaque zone une fois, dans l\'ordre rouge, jaune, bleu, vert
     { date: '2026-10-15', heure: '14:00', energie: 'energie:basse' }, // énergie seule (v8)
     { date: '2026-10-15', heure: '15:00', emotion: 'roue:aucune:fatigue' }, // bleu, sans famille
   ];
-  assert.deepEqual(zonesDuJour(releves), [
-    { cle: 'rouge', libelle: 'Énergie haute · désagréable' }, { cle: 'bleu', libelle: 'Énergie basse · désagréable' },
-    { cle: 'vert', libelle: 'Énergie basse · agréable' },
-  ]);
+  assert.deepEqual(zonesDuJour(releves), [{ cle: 'rouge' }, { cle: 'bleu' }, { cle: 'vert' }]);
   assert.deepEqual(zonesDuJour([{ emotion: 'roue:joie:fier' }, { emotion: 'roue:colere:enrage' }]).map((z) => z.cle), ['rouge', 'jaune']);
   // Accablé, bleu en v8, est rouge en v9.
   assert.deepEqual(zonesDuJour([{ emotion: 'roue:peur:accable' }]).map((z) => z.cle), ['rouge']);
@@ -61,7 +58,7 @@ test('zonesDuJour, texteReleve, resumeEmotions : un mot à soi prend la zone et 
   const releve = { date: '2026-10-15', heure: '10:00', emotion: id, energie: 'energie:basse' };
   assert.deepEqual(zonesDuJour([releve], perso).map((z) => z.cle), ['bleu']);
   assert.equal(texteReleve(releve, carte, perso), 'Flottant · énergie basse');
-  assert.deepEqual(resumeEmotions([releve], 2, perso), { mots: ['flottant'], plus: false, zones: [{ cle: 'bleu', libelle: 'Énergie basse · désagréable' }] });
+  assert.deepEqual(resumeEmotions([releve], 2, perso), { mots: ['flottant'], plus: false, zones: [{ cle: 'bleu' }] });
   // Mis de côté, il reste lisible et garde sa zone ; sans la méta, ni libellé ni zone.
   const deCote = { [id]: { ...perso[id], archive: true } };
   assert.deepEqual(zonesDuJour([releve], deCote).map((z) => z.cle), ['bleu']);
@@ -80,7 +77,7 @@ test('resumeEmotions (Historique) : deux mots au plus, dans l\'ordre de la journ
   // Une famille seule (Joie, v7) a son mot, mais pas de zone.
   assert.deepEqual(resumeEmotions(jour), {
     mots: ['irrité', 'calme'], plus: true,
-    zones: [{ cle: 'rouge', libelle: 'Énergie haute · désagréable' }, { cle: 'vert', libelle: 'Énergie basse · agréable' }],
+    zones: [{ cle: 'rouge' }, { cle: 'vert' }],
   });
   assert.deepEqual(resumeEmotions([r('09:00', 'roue:peur'), r('10:00', 'roue:peur:sans-valeur')]).mots, ['peur', 'sans valeur'], 'une famille seule, en minuscules');
   assert.equal(resumeEmotions([r('09:00', 'roue:peur'), r('10:00', 'roue:joie')]).plus, false);

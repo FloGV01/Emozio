@@ -1,8 +1,9 @@
 // Émotion du moment (v9, spec §4, §7 et §13 ; v8 : la carte dans un panneau, v7 : la roue en familles, « Humeur du
 // moment » de la v4 à la v6.1) : comme How We Feel, en plein écran, sans barre d'onglets ni en-tête de l'app. Sur fond
 // noir dans les deux thèmes jusqu'à la v10 ; depuis la v11 (spec §9), l'écran suit le thème du système, par le CSS seul
-// (ecrans.css, jetons --moment-*) : en sombre, le noir de How We Feel ; en clair, le fond d'Aujourd'hui, et le mot choisi
-// en noir sur une capsule de la couleur de sa case.
+// (ecrans.css, jetons --moment-*) : en sombre, le fond sombre de l'app (le noir de How We Feel jusqu'à la v12, la base
+// pétrole depuis la v12.1) ; en clair, le fond d'Aujourd'hui, et le mot choisi en noir sur une capsule de la couleur de sa
+// case.
 // - Écran 1 : ✕, le titre, les quatre bulles (ui/composants/quatre-bulles.js) et, dessous, « Maintenant ▾ », qui ouvre
 //   les heures de « C'était vers… » (heuresVers). Toucher une bulle n'écrit rien : il ouvre la carte, sur sa zone.
 // - Écran 2 : la carte (ui/composants/carte-emotions.js), ← vers l'écran 1. Toucher un mot écrit le relevé tout de suite

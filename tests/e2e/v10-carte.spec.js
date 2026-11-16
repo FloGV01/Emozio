@@ -84,12 +84,12 @@ test('glisser de deux pas : le mot du milieu mesure 156 pt, ses voisins 120 puis
   const [x, y] = await centreDe(page, en(5, 9));
   expect(Math.abs(x - 195)).toBeLessThanOrEqual(PAS / 2 + 1);
   expect(Math.abs(y - 422)).toBeLessThanOrEqual(PAS / 2 + 1);
-  // Des cercles : les moitiés gardent leur arrondi de 48 pt, sans .choisi.
+  // Des cercles : la bulle elle-même, au rayon de 50 % (v12.1 : plus de moitiés), sans .choisi.
   const forme = await page.evaluate((n) => {
     const b = [...document.querySelectorAll('.bulle-mot')].find((e) => e.textContent === n);
-    return [b.getAttribute('aria-pressed'), b.classList.contains('choisi'), getComputedStyle(b.querySelector('.demi.gauche')).borderTopLeftRadius];
+    return [b.getAttribute('aria-pressed'), b.classList.contains('choisi'), getComputedStyle(b).borderTopLeftRadius];
   }, en(5, 9));
-  expect(forme).toEqual(['false', false, '48px']);
+  expect(forme).toEqual(['false', false, '50%']);
   await rienDEcrit(page, vue, 'glissé');
   expect(await page.evaluate(() => [...window.__attributs])).toEqual(['style']);
   expect(await page.evaluate(() => window.__csp)).toEqual([]);
@@ -422,7 +422,10 @@ test('un doigt reprend la carte pendant le recentrage : la lentille le suit auss
   await expect.poll(() => releves(page)).toMatchObject([{ emotion: loin.id }]);
 });
 
-test('avec un mot choisi, glisser ne change rien au relevé : le mot garde sa double capsule, aria-pressed et la carte du bas, à la taille que la lentille lui donne ; toucher un autre mot le remplace et recentre', async ({ page }) => {
+// v12.1 (spec §2 point 3) : le mot choisi est un disque, comme les autres bulles ; ailleurs que sous la lentille, il en prend
+// la taille, et garde aria-pressed, son rang au-dessus des autres et la carte du bas (la double capsule de la v9 à la v12
+// n'existe plus).
+test('avec un mot choisi, glisser ne change rien au relevé : le mot reste un disque, avec aria-pressed et la carte du bas, à la taille que la lentille lui donne ; toucher un autre mot le remplace et recentre', async ({ page }) => {
   const vue = await ouvrir(page, 'vert');
   await toucherMot(vue, 'Calme');
   await expect.poll(() => centreDe(page, 'Calme')).toEqual([195, 422]);
@@ -437,11 +440,11 @@ test('avec un mot choisi, glisser ne change rien au relevé : le mot garde sa do
   const forme = await page.evaluate(() => {
     const b = document.querySelector('.bulle-mot.choisi');
     const centre = [...document.querySelectorAll('.bulle-mot')].find((e) => Math.round(e.getBoundingClientRect().width) === 156);
-    return { mot: b.textContent, presse: b.getAttribute('aria-pressed'), z: getComputedStyle(b).zIndex,
-      demis: [...b.querySelectorAll('.demi')].map((d) => getComputedStyle(d).borderTopLeftRadius),
-      centre: [centre.classList.contains('choisi'), centre.getAttribute('aria-pressed'), getComputedStyle(centre.querySelector('.demi.gauche')).borderTopLeftRadius] };
+    return { mot: b.textContent, presse: b.getAttribute('aria-pressed'), z: getComputedStyle(b).zIndex, rayon: getComputedStyle(b).borderTopLeftRadius,
+      enfants: [...b.children].map((e) => e.className),
+      centre: [centre.classList.contains('choisi'), centre.getAttribute('aria-pressed'), getComputedStyle(centre).borderTopLeftRadius] };
   });
-  expect(forme).toEqual({ mot: 'Calme', presse: 'true', z: '2', demis: ['24px', '24px'], centre: [false, 'false', '48px'] });
+  expect(forme).toEqual({ mot: 'Calme', presse: 'true', z: '2', rayon: '50%', enfants: ['etiquette-mot'], centre: [false, 'false', '50%'] });
   await expect(carte(vue).getByRole('button', { pressed: true })).toHaveText(['Calme']);
   await expect(carteDuBas(vue).locator('.mot-carte-du-bas')).toHaveText('Calme');
   expect(await releves(page)).toEqual(avant);
@@ -452,7 +455,7 @@ test('avec un mot choisi, glisser ne change rien au relevé : le mot garde sa do
   // Revenu au milieu : 156.
   await glisser(page, -4 * PAS, -3 * PAS);
   expect((await largeurs(page)).Calme).toBe(156);
-  // Un autre mot : il prend la capsule, le relevé change, il vient au milieu.
+  // Un autre mot : il devient le disque agrandi, le relevé change, il vient au milieu.
   const autre = en(8, 4);
   await toucherMot(vue, autre);
   await expect(mot(vue, autre)).toHaveAttribute('aria-pressed', 'true');
@@ -517,7 +520,7 @@ test('un rendu de la carte après un glissement ne remet aucune bulle ailleurs :
   expect((await largeurs(page))[en(8, 5)]).toBe(156);
 });
 
-test('un mot à soi hors du carré : le repère du milieu le compte, la lentille s\'y pose ; touché, il prend sa double capsule, au milieu', async ({ page }) => {
+test('un mot à soi hors du carré : le repère du milieu le compte, la lentille s\'y pose ; touché, il devient le disque agrandi, au milieu', async ({ page }) => {
   await page.evaluate(() => window.__carnet.repo.meta.ecrire('motsPerso', {
     'roue:perso:u-0a1b2c3d': { libelle: 'Flottant', zone: 'rouge', famille: null, definition: null, archive: false, createdAt: '2026-10-01T08:00:00.000Z' },
   }));
@@ -539,6 +542,9 @@ test('un mot à soi hors du carré : le repère du milieu le compte, la lentille
   await expect(mot(vue, 'Flottant')).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(() => centreDe(page, 'Flottant')).toEqual([195, 422]);
   await expect.poll(async () => (await releves(page)).length).toBe(1);
+  await finMouvements(page);
+  expect((await largeurs(page)).Flottant).toBe(156);
+  expect(await mot(vue, 'Flottant').evaluate((b) => getComputedStyle(b).borderTopLeftRadius)).toBe('50%');
 });
 
 test('la fenêtre change de taille : les bulles suivent la nouvelle marge, et le milieu se calcule sur elle', async ({ page }) => {
@@ -565,7 +571,8 @@ test('très grand texte (17, 19, 21, 23) : après un glissement, chaque libellé
     const fautes = [];
     if (document.documentElement.scrollWidth > innerWidth + 0.5) fautes.push('page');
     const plage = document.createRange();
-    for (const e of document.querySelectorAll('.bulle-mot:not(.choisi) .etiquette-mot')) {
+    // Le mot choisi aussi (v12.1 : un disque, plus une double capsule).
+    for (const e of document.querySelectorAll('.bulle-mot .etiquette-mot')) {
       const r = e.closest('.bulle-mot').getBoundingClientRect();
       const [cx, cy, rayon] = [r.left + r.width / 2, r.top + r.height / 2, r.width / 2];
       plage.selectNodeContents(e);
@@ -583,16 +590,9 @@ test('très grand texte (17, 19, 21, 23) : après un glissement, chaque libellé
     await toucherMot(vue, 'Désillusionné');
     await expect(carteDuBas(vue).locator('.mot-carte-du-bas')).toHaveText('Désillusionné');
     await finMouvements(page);
+    expect(await hors(), `${taille} px, mot choisi`).toEqual([]);
     await glisser(page, 2 * PAS, PAS);
     expect(await hors(), `${taille} px, mot choisi, glissé`).toEqual([]);
-    // Le libellé du mot choisi, à sa petite échelle, reste dans sa capsule.
-    const dedans = await page.evaluate(() => {
-      const b = document.querySelector('.bulle-mot.choisi');
-      const e = b.querySelector('.etiquette-mot').getBoundingClientRect();
-      const r = b.getBoundingClientRect();
-      return e.left >= r.left - 0.5 && e.right <= r.right + 0.5;
-    });
-    expect(dedans, `${taille} px`).toBe(true);
     await aller(page, '#/aujourdhui');
     await expect(page.locator('nav.onglets')).toBeVisible();
     await page.evaluate(() => window.__carnet.repo.humeurs.tous().then((hs) => Promise.all(hs.map((h) => window.__carnet.repo.humeurs.supprimer(h.id)))));

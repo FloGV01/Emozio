@@ -37,7 +37,8 @@ test('un jour passé noté le soir garde son champ Humeur ; Réglages › Le soi
   await repo(page, () => window.__carnet.repo.journal.patch('2026-10-13', { humeur: 5, lieu: 'lieu:bureau' }));
   await aller(page, '#/jour/2026-10-13');
   await expect(groupe(page, 'Humeur').getByRole('button', { name: 'Humeur 5' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.resume-jour')).toHaveText('Bureau · humeur 5');
+  // v12.1 : plus de résumé sous le titre.
+  await expect(page.locator('.entete-jour')).not.toContainText('humeur');
   await page.getByRole('button', { name: 'Jour suivant' }).click();
   await expect(groupe(page, 'Lieu')).toHaveCount(1);
   await expect(groupe(page, 'Humeur')).toHaveCount(0);
@@ -50,7 +51,7 @@ test('un jour passé noté le soir garde son champ Humeur ; Réglages › Le soi
   await expect.poll(async () => (await entreeDuJour(page))?.humeur).toBe(7);
 });
 
-test('l\'humeur du jour partout : résumé, Historique, trait du plus bas au plus haut dans Mes jours (v7 : rangée « Humeur (notes) », plus de moyenne dans Ma semaine)', async ({ page }) => {
+test('l\'humeur du jour partout : Historique, trait du plus bas au plus haut dans Mes jours (v7 : rangée « Humeur (notes) », plus de moyenne dans Ma semaine ; v12.1 : plus de résumé sous le titre d\'Aujourd\'hui)', async ({ page }) => {
   await repo(page, async () => {
     const r = window.__carnet.repo;
     // Le 13 : un soir à 9 (jamais mêlé) et cinq relevés, dont un « vers » et un à 01:00 le 14.
@@ -61,9 +62,10 @@ test('l\'humeur du jour partout : résumé, Historique, trait du plus bas au plu
     }
   });
   await aller(page, '#/jour/2026-10-13');
-  await expect(page.locator('.resume-jour')).toHaveText('Bureau · humeur 5,6');
-  // Le champ du soir reste là (il porte une valeur), mais le résumé dit l'humeur du jour.
+  // Le champ du soir reste là (il porte une valeur) ; l'humeur du jour, elle, n'est plus résumée sous le titre (v12.1) :
+  // l'Historique la dit.
   await expect(groupe(page, 'Humeur').getByRole('button', { name: 'Humeur 9' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.entete-jour')).not.toContainText('humeur');
 
   await aller(page, '#/historique');
   await expect(page.locator('.puce')).toHaveText(['Bureau', 'humeur 5,6']);

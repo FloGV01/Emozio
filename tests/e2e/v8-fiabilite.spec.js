@@ -31,6 +31,8 @@ const geometrieSoir = (page) => page.evaluate(() => {
   const bande = r('.actions-flottantes');
   return {
     large: document.documentElement.scrollWidth > window.innerWidth, entete: r('.entete-jour').top, premiere: r('main.aujourdhui > .carte-champ').top,
+    // Le contenu de l'en-tête (v12.1 : son bandeau teinté monte jusqu'en haut de l'écran, sous l'encoche ; son contenu reste dessous).
+    contenu: r('.entete-jour > :first-child').top,
     bande: [bande.top, bande.bottom], onglets: [r('.onglets').top, r('.onglets').bottom],
     bandeau: document.querySelector('.bandeau') ? [r('.bandeau').bottom, r('.bandeau > span').top] : null,
   };
@@ -67,8 +69,10 @@ test('Q27 · avec les zones sûres de l\'iPhone (47 en haut, 34 en bas, 390 × 8
       await expect.poll(async () => (await entreeDuJour(page))?.traitementPris, quoi).toBe('traitementPris:oui');
       const g = await geometrieSoir(page);
       expect(g.large, quoi).toBe(false);
-      // L'en-tête sous l'encoche, la bande du bas collée aux onglets, les onglets au-dessus de la barre d'accueil.
-      expect(g.entete, quoi).toBeGreaterThanOrEqual(47);
+      // L'en-tête sous l'encoche (v12.1 : son contenu ; le bandeau, lui, part du haut de l'écran), la bande du bas collée aux
+      // onglets, les onglets au-dessus de la barre d'accueil.
+      expect(g.contenu, quoi).toBeGreaterThanOrEqual(47);
+      expect(Math.round(g.entete), `${quoi} : le bandeau jusqu'en haut`).toBe(0);
       expect(Math.abs(g.bande[1] - g.onglets[0]), quoi).toBeLessThanOrEqual(0.5);
       expect(g.onglets[1] - g.onglets[0], quoi).toBe(50 + 34);
       expect(await margeAFondDePage(page), `${quoi} : la dernière carte au-dessus de la bande, la page défilée`).toBeGreaterThanOrEqual(0);

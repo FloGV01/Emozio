@@ -36,7 +36,10 @@ test('couleurs : un mot à soi, hors du carré, a la couleur de la case du bord 
   assert.equal(couleurCase(15, 7), couleurCase(12, 7));
 });
 
-test('AA : le texte noir sur chaque case (144 et les colonnes des mots à soi) ; le mot de la carte du bas sur #2c2c2e', () => {
+test('AA : le texte noir sur chaque case (144 et les colonnes des mots à soi) ; le mot de la carte du bas sur son fond, --moment-carte-bas en sombre (v12.1 : #19353f)', () => {
+  // Le fond de la carte du bas en sombre, tel que tokens.css le déclare : couleurLisible éclaircit le mot pour ce fond-là.
+  const { sombre } = jetons(lire(join(RACINE, 'public', 'css', 'tokens.css')));
+  assert.equal(FOND_CARTE_DU_BAS, sombre['moment-carte-bas']);
   for (let col = -2; col <= 15; col++) {
     for (let rang = 1; rang <= 12; rang++) {
       const c = couleurCase(col, rang);
@@ -124,51 +127,40 @@ test('disposition avec un mot choisi : la fenêtre visible suit la table mesuré
   proche(a(3, 3), [192.2 + PAS, 192.2 + PAS], '(3, 3)');
 });
 
-// Le mot choisi est une double capsule : deux capsules verticales de 78 × 156 (rayon 39) accolées ; les autres, des disques.
-const distanceSegment = ([px, py], [ax, ay], [bx, by]) => {
-  const [dx, dy] = [bx - ax, by - ay];
-  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
-  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
-};
-// Le plus petit écart entre une double capsule à son échelle (le centre de chaque moitié à 24 pt × échelle) et un disque.
-const ecartCapsule = (q, [x, y, r]) => Math.min(...[-1, 1].map((sens) => {
-  const demi = 24 * q.echelle;
-  return distanceSegment([x, y], [q.x + sens * demi, q.y - demi], [q.x + sens * demi, q.y + demi]) - demi - r;
-}));
-const disquesDe = (p, sauf = null) => [...p.entries()].filter(([i]) => i !== sauf).map(([, q]) => [q.x, q.y, 48 * q.echelle]);
-test('aucune bulle n\'en chevauche une autre, quel que soit le centre (chacun des mots, ou aucun), en cercles comme avec la double capsule, mots à soi compris', () => {
+// Chaque bulle est un disque : [x, y, rayon]. Une garde de la lentille (v10) : elle ne lit que disposition(), les places et les
+// tailles, jamais la forme peinte d'une bulle. La forme du mot choisi, un disque depuis la v12.1, est prouvée par l'e2e
+// « v12.1 (B) » de v12-design.spec.js (relecture finale de la v12.1 : ce test passait déjà sur la double capsule).
+const disquesDe = (p) => [...p.values()].map((q) => [q.x, q.y, 48 * q.echelle]);
+test('lentille : aucune bulle n\'en chevauche une autre, quel que soit le centre (chacun des mots, ou aucun), mots à soi compris', () => {
   const mots = motsDeLaCarte(PERSO);
   for (const centre of [null, ...mots.map((m) => m.id)]) {
-    const p = disposition(mots, centre);
-    // Le centre en cercle de 156 (le mot du milieu, pendant le glissement) ; les autres, des disques.
-    const disques = disquesDe(p);
+    // Le centre en disque de 156 (le mot touché, ou le mot du milieu pendant le glissement) ; les autres, plus petits.
+    const disques = disquesDe(disposition(mots, centre));
     for (let i = 0; i < disques.length; i++) {
       for (let j = i + 1; j < disques.length; j++) {
         const [a, b] = [disques[i], disques[j]];
         assert.ok(Math.hypot(a[0] - b[0], a[1] - b[1]) >= a[2] + b[2] - 0.01, `${centre} : deux disques se chevauchent`);
       }
     }
-    if (!centre) continue;
-    // Le centre en double capsule (le mot touché).
-    for (const d of disquesDe(p, centre)) assert.ok(ecartCapsule(p.get(centre), d) >= -0.01, `${centre} : la double capsule chevauche un disque`);
   }
 });
 
-// Spec §4.1 : la lentille suit le milieu, le mot choisi ailleurs garde sa double capsule, à l'échelle qu'elle lui donne.
-// Ses coins sortent du disque que la lentille a prévu pour lui : là où elle resserre ses voisins, ils peuvent mordre sur
-// eux d'un point au plus, sans cacher de libellé.
-test('un mot choisi hors du centre de la lentille : sa double capsule mord d\'un point au plus sur ses voisins', () => {
+// Une garde de la lentille (v10) : son centre (le mot touché) a 156, nettement plus que ses voisines (120 au plus), à 4 pt au
+// moins de chacune. Comme le test précédent, elle ne lit que disposition() et passait déjà sur la double capsule (v9 à
+// v12.0.1) : elle protège les tailles et les écarts, pas la forme. Que le mot choisi soit peint en disque (spec v12.1 §2
+// point 3), c'est l'e2e « v12.1 (B) » de v12-design.spec.js qui le prouve (relecture finale de la v12.1).
+test('lentille : son centre a 156, contre 120 au plus pour ses voisines, à 4 pt au moins de chacune, mots à soi compris', () => {
   const mots = motsDeLaCarte(PERSO);
-  for (const centre of mots) {
-    const p = disposition(mots, centre.id);
-    for (const choisi of mots) {
-      if (choisi.id === centre.id) continue;
-      const q = p.get(choisi.id);
-      for (const d of disquesDe(p, choisi.id)) {
-        // Un disque à plus de deux diamètres ne peut pas la toucher : le calcul est évité (146 × 146 × 145 paires).
-        if (Math.abs(d[0] - q.x) > 200 || Math.abs(d[1] - q.y) > 200) continue;
-        assert.ok(ecartCapsule(q, d) >= -1, `centre ${centre.libelle}, choisi ${choisi.libelle}`);
-      }
+  for (const choisi of mots) {
+    const p = disposition(mots, choisi.id);
+    const c = p.get(choisi.id);
+    assert.equal(96 * c.echelle, 156, choisi.libelle);
+    for (const [autre, q] of p) {
+      if (autre === choisi.id) continue;
+      assert.ok(96 * q.echelle <= 120, `${choisi.libelle} : une voisine de ${96 * q.echelle}`);
+      // À plus de 300 pt, une voisine est loin des 4 pt : le calcul est évité.
+      if (Math.abs(q.x - c.x) > 300 || Math.abs(q.y - c.y) > 300) continue;
+      assert.ok(Math.hypot(q.x - c.x, q.y - c.y) - 78 - 48 * q.echelle >= 4, `${choisi.libelle} : une voisine à moins de 4 pt`);
     }
   }
 });

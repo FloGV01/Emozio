@@ -3,7 +3,7 @@
 // méta `motsPerso`, fait connaître les mots à soi (sans elle, un mot à soi n'a ni libellé ni zone).
 import { libelle } from './libelles.js';
 import { libelleEmotion } from './roue.js';
-import { ZONES, NOMS_ZONES, zoneDe } from './carte-roue.js';
+import { ZONES, zoneDe } from './carte-roue.js';
 import { minusculeInitiale } from './phrase.js';
 
 // Libellés d'une liste en minuscules, séparés par des virgules : « travail, trajet ».
@@ -36,9 +36,10 @@ export function resumeEmotions(releves, max = 2, perso) {
 }
 
 // Les zones des mots notés dans ces relevés (v9, spec §13.4) : chacune une fois, dans l'ordre fixe rouge, jaune, bleu,
-// vert, et non dans celui de la journée (un point par zone présente, sans doublon) : [{ cle, libelle }]. Un relevé sans
-// zone (ancienne note, énergie seule, famille seule de la v7, mot à soi inconnu) n'en donne pas.
+// vert, et non dans celui de la journée (un point par zone présente, sans doublon) : [{ cle }]. Un relevé sans zone
+// (ancienne note, énergie seule, famille seule de la v7, mot à soi inconnu) n'en donne pas. v12.1 : plus de libellé, il
+// ne servait qu'aux points lus sous le titre d'Aujourd'hui, partis avec la ligne du jour.
 export function zonesDuJour(releves, perso) {
   const vues = new Set((releves || []).map((h) => h && zoneDe(h.emotion, perso)).filter(Boolean));
-  return ZONES.filter((z) => vues.has(z)).map((cle) => ({ cle, libelle: NOMS_ZONES[cle] }));
+  return ZONES.filter((z) => vues.has(z)).map((cle) => ({ cle }));
 }

@@ -43,10 +43,11 @@ const lineaire = (v) => { const x = v / 255; return x <= 0.04045 ? x / 12.92 : (
 const luminance = (h) => { const [r, g, b] = canaux(h).map(lineaire); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 export const contraste = (a, b) => { const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
-// Le mot de la carte du bas, à la couleur de sa bulle sur #2c2c2e (visuel §2.8), éclairci vers le blanc (par 5 %)
-// jusqu'à 4,5:1 : les cases profondes du rouge et du bleu n'y seraient pas lisibles telles quelles. How We Feel
-// l'éclaircit aussi un peu (#a1fcb6 pour une bulle #95ffae).
-export const FOND_CARTE_DU_BAS = '#2c2c2e';
+// Le mot de la carte du bas, à la couleur de sa bulle sur le fond de la carte du bas en sombre (visuel §2.8), éclairci vers
+// le blanc (par 5 %) jusqu'à 4,5:1 : les cases profondes du rouge et du bleu n'y seraient pas lisibles telles quelles. How We
+// Feel l'éclaircit aussi un peu (#a1fcb6 pour une bulle #95ffae). Ce fond est --moment-carte-bas en sombre (tokens.css :
+// #19353f depuis la v12.1, #2c2c2e jusqu'à la v12) ; tests/unit/carte-geometrie.test.js vérifie qu'ils restent égaux.
+export const FOND_CARTE_DU_BAS = '#19353f';
 export function couleurLisible(couleur, fond = FOND_CARTE_DU_BAS) {
   const rgb = canaux(couleur);
   for (let t = 0; t <= 1; t += 0.05) {
@@ -58,8 +59,9 @@ export function couleurLisible(couleur, fond = FOND_CARTE_DU_BAS) {
 
 // ---------- Disposition (visuel §2.2 et §2.3) ----------
 
-// Autour du mot choisi, la taille suit la distance de Manhattan d = |Δcol| + |Δrang| : d = 0, la double capsule de
-// 156 ; 1, 120 ; 2, 108 ; 3 et plus, 96. ECHELLES : le facteur sur une bulle de 96.
+// Autour du mot choisi, la taille suit la distance de Manhattan d = |Δcol| + |Δrang| : d = 0, le disque de 156 (une
+// double capsule jusqu'à la v12 ; v12.1 : une bulle ronde agrandie, à 4 pt de ses voisines dans l'axe) ; 1, 120 ; 2, 108 ;
+// 3 et plus, 96. ECHELLES : le facteur sur une bulle de 96.
 const ECHELLES = [1.625, 1.25, 1.125, 1];
 
 // La lentille mesurée sur la capture de How We Feel (visuel §2.2), codée en dur comme il le conseille : le centre de

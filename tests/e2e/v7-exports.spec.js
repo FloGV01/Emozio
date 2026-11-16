@@ -82,6 +82,9 @@ test('En consultation : les émotions des 30 jours par famille ; « Humeur (note
   const familles = chiffres.locator('.barres-familles li');
   await expect(familles.locator('.nom-famille')).toHaveText(['Colère', 'Tristesse', 'Joie', 'Peur', 'Sérénité']);
   await expect(familles.locator('.compte-famille')).toHaveText(['1', '1', '2', '1', '1']);
+  // v12.0.1 : les barres à l'encre des données (.g-barre, --donnee), sans la couleur des familles, qui reste à l'Analyse.
+  await expect(familles.locator('rect.g-barre')).toHaveCount(5);
+  await expect(chiffres.locator('.g-emo, [class*="emo-"]')).toHaveCount(0);
   await expect(chiffres).not.toContainText(/Humeur moyenne|%/);
   // Sans ancienne note : trois chiffres, sur toute la largeur.
   await repo(page, async () => {

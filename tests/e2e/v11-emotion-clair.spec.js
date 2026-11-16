@@ -13,16 +13,23 @@ import { couleurCase, couleurLisible } from '../../public/js/ui/carte-geometrie.
 // Mon mot suivent le thème du système. En clair, le fond gris clair d'Aujourd'hui, le verre blanc translucide, la carte du
 // bas blanche au rond « Continuer » foncé, « Terminer » foncé, et le mot choisi en noir sur une capsule de la couleur de sa
 // case (à la carte du bas et à l'écran 3). En sombre, rien ne change (les attentes noires de v9-emotion, v9-mot-perso,
-// v10-apres-emotion et v7-fondations). Les 144 bulles gardent leur couleur et leur texte noir dans les deux thèmes ; rien
+// v10-apres-emotion et v7-fondations ; v12.1 : le fond sombre et l'encre de la base 3a, lus dans les jetons). Les 144 bulles gardent leur couleur et leur texte noir dans les deux thèmes ; rien
 // n'est recalculé quand le thème change, écran ouvert. « Réveil la nuit » reste noir (v10-lecteur, v10-crise, v10-bien-etre).
 // Données inventées. Horloge : jeudi 15 octobre 2026, 21:00 (390 × 844).
-const { clair } = jetons(readFileSync(new URL('../../public/css/tokens.css', import.meta.url), 'utf8'));
+const { clair, sombre } = jetons(readFileSync(new URL('../../public/css/tokens.css', import.meta.url), 'utf8'));
 const rgb = (hex) => `rgb(${canaux(hex).join(', ')})`;
-// v12 (3/9) : le fond du clair et l'encre suivent la base (#f2f2f7, #000000).
-const FOND_CLAIR = 'rgb(242, 242, 247)';
-const FONCE = 'rgb(0, 0, 0)';
+// v12 (3/9) : le fond du clair et l'encre suivent la base (#f2f2f7, #000000 en v12) ; v12.1 : la base 3a (#f8f9fa et l'encre
+// #0a1c22 en clair ; en sombre, #080b0d et #f3f8f9 au lieu du noir et du blanc de How We Feel), lues dans les jetons.
+const FOND_CLAIR = rgb(clair.bg);
+const FONCE = rgb(clair['moment-plein']);
+// Le texte (ou la flèche) posé sur le plein foncé du clair : le fond du clair.
+const SUR_FONCE = rgb(clair['moment-plein-on']);
 const BLANC = 'rgb(255, 255, 255)';
+// Le texte des bulles et des capsules, noir dans les deux thèmes.
 const NOIR = 'rgb(0, 0, 0)';
+const FOND_SOMBRE = rgb(sombre.bg);
+const ENCRE_SOMBRE = rgb(sombre['moment-plein']);
+const BAS_SOMBRE = rgb(sombre['moment-carte-bas']);
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 const MOTS_CARTE = motsDeLaCarte(null);
 const caseDe = (libelle) => { const m = MOTS_CARTE.find((x) => x.libelle === libelle); return couleurCase(m.col, m.rang); };
@@ -55,18 +62,18 @@ test('en clair, le fond gris clair d\'Aujourd\'hui sur l\'écran 1, la carte, l\
   await expect(carte(vue)).toBeVisible();
   expect(await fondEcran(page), 'carte').toBe(FOND_CLAIR);
   // Le voile du haut prend la couleur du fond ; le verre de la carte, blanc translucide aussi.
-  expect((await style(vue.locator('.carte-fondu'), 'backgroundImage'))[0]).toMatch(/^linear-gradient\(rgba\(242, 242, 247, 0\.6\)/);
+  expect((await style(vue.locator('.carte-fondu'), 'backgroundImage'))[0]).toMatch(new RegExp(`^linear-gradient\\(rgba\\(${clair['moment-voile']}, 0\\.6\\)`));
   expect(await style(vue.locator('.ecran-carte .verre').first(), 'backgroundColor')).toEqual(['rgba(255, 255, 255, 0.78)']);
   await toucherMot(vue, 'Calme');
   await expect(carteDuBas(vue)).toBeVisible();
   expect(await style(carteDuBas(vue), 'backgroundColor')).toEqual([BLANC]);
   expect(await style(carteDuBas(vue).locator('.definition-carte-du-bas'), 'color')).toEqual([FONCE]);
-  expect(await style(continuer(vue), 'backgroundColor', 'color')).toEqual([FONCE, BLANC]);
+  expect(await style(continuer(vue), 'backgroundColor', 'color')).toEqual([FONCE, SUR_FONCE]);
 
   await continuer(vue).click();
   await expect(faisais(vue)).toBeVisible();
   expect(await fondEcran(page), 'écran 3').toBe(FOND_CLAIR);
-  expect(await style(terminer(vue), 'backgroundColor', 'color')).toEqual([FONCE, BLANC]);
+  expect(await style(terminer(vue), 'backgroundColor', 'color')).toEqual([FONCE, SUR_FONCE]);
   expect(await style(vue.locator('.titre-faisais'), 'color')).toEqual([FONCE]);
   // Une activité non choisie, sur une carte blanche, comme les choix d'Aujourd'hui.
   expect(await style(activite(vue, 'Travail'), 'backgroundColor')).toEqual([rgb(clair.surface)]);
@@ -104,7 +111,7 @@ test('en clair, le fond gris clair d\'Aujourd\'hui sur l\'écran 1, la carte, l\
 
   // « Ajouter mon mot « … » », derrière un rond foncé au « + » blanc.
   await champLoupe(vue).fill('brumeux');
-  expect(await style(vue.locator('.rond-ajouter'), 'backgroundColor', 'color')).toEqual([FONCE, BLANC]);
+  expect(await style(vue.locator('.rond-ajouter'), 'backgroundColor', 'color')).toEqual([FONCE, SUR_FONCE]);
   expect(await style(ajouterMot(vue), 'color')).toEqual([FONCE]);
 
   // Mon mot : le titre foncé ; la couleur choisie cerclée de foncé (3:1 sur le fond) ; le rond « Continuer » foncé.
@@ -117,7 +124,7 @@ test('en clair, le fond gris clair d\'Aujourd\'hui sur l\'écran 1, la carte, l\
   const [anneau, trait] = await style(couleurMot(vue, 'bleu'), 'outlineColor', 'outlineStyle');
   expect([anneau, trait]).toEqual([FONCE, 'solid']);
   expect(contraste(anneau, FOND_CLAIR)).toBeGreaterThanOrEqual(3);
-  expect(await style(continuer(vue), 'backgroundColor', 'color')).toEqual([FONCE, BLANC]);
+  expect(await style(continuer(vue), 'backgroundColor', 'color')).toEqual([FONCE, SUR_FONCE]);
 });
 
 test('en clair, le mot choisi s\'écrit en noir sur une capsule de la couleur de sa case, à la carte du bas et à l\'écran 3 (Gai, un jaune ; Enragé, un profond) ; en sombre, sans capsule, comme avant', async ({ page }) => {
@@ -160,7 +167,7 @@ test('les 144 bulles gardent la couleur de leur case et leur texte noir, et les 
     expect(faces, schema).toEqual([['rgb(254, 76, 64)', NOIR], ['rgb(255, 208, 76)', NOIR], ['rgb(120, 159, 255)', NOIR], ['rgb(76, 227, 155)', NOIR]]);
     await bulle(vue, 'bleu').click();
     await expect(carte(vue).getByRole('button')).toHaveCount(144);
-    const vus = await carte(vue).getByRole('button').evaluateAll((bs) => bs.map((b) => [b.textContent, getComputedStyle(b.querySelector('.demi.gauche')).backgroundColor,
+    const vus = await carte(vue).getByRole('button').evaluateAll((bs) => bs.map((b) => [b.textContent, getComputedStyle(b).backgroundColor,
       getComputedStyle(b.querySelector('.etiquette-mot')).color]));
     expect(vus).toHaveLength(144);
     for (const [nom, fond, texte] of vus) expect([fond, texte], `${schema} ${nom}`).toEqual([attendu[nom], NOIR]);
@@ -177,7 +184,8 @@ test('en clair, un mot à soi sans couleur se lit en noir, sans capsule ; « Auc
   await page.reload();
   await appPrete(page);
   const vue = vueMoment(page);
-  for (const [schema, fond, texteSoi, gris] of [['light', FOND_CLAIR, NOIR, rgb(clair['text-2'])], ['dark', NOIR, BLANC, 'rgb(144, 144, 144)']]) {
+  // En clair, le mot en noir (celui des capsules) ; en sombre, à l'encre de l'écran (--moment-texte).
+  for (const [schema, fond, texteSoi, gris] of [['light', FOND_CLAIR, NOIR, rgb(clair['text-2'])], ['dark', FOND_SOMBRE, ENCRE_SOMBRE, rgb(sombre['moment-gris'])]]) {
     await page.emulateMedia({ colorScheme: schema });
     await aller(page, `#/moment/${soi}`);
     const nuageux = vue.getByRole('heading', { name: 'Nuageux', level: 1, exact: true });
@@ -218,9 +226,9 @@ test('bascule à chaud : le thème qui change, écran ouvert, change le fond, la
     etats.push([schema, await fondEcran(page), ...(await style(carteDuBas(vue), 'backgroundColor')), ...(await style(motBas, 'color', 'backgroundColor'))]);
   }
   expect(etats).toEqual([
-    ['dark', NOIR, 'rgb(44, 44, 46)', rgb(couleurLisible(caseDe('Gai'))), TRANSPARENT],
+    ['dark', FOND_SOMBRE, BAS_SOMBRE, rgb(couleurLisible(caseDe('Gai'))), TRANSPARENT],
     ['light', FOND_CLAIR, BLANC, NOIR, rgb(caseDe('Gai'))],
-    ['dark', NOIR, 'rgb(44, 44, 46)', rgb(couleurLisible(caseDe('Gai'))), TRANSPARENT],
+    ['dark', FOND_SOMBRE, BAS_SOMBRE, rgb(couleurLisible(caseDe('Gai'))), TRANSPARENT],
   ]);
   expect(await carteDuBas(vue).getAttribute('style')).toBe(styleBas);
   expect(await page.evaluate(() => window.__reecritures)).toEqual([]);
@@ -241,7 +249,7 @@ test('bascule à chaud : le thème qui change, écran ouvert, change le fond, la
   }
   expect(vus).toEqual([
     ['light', FOND_CLAIR, NOIR, rgb(caseDe('Gai')), FONCE],
-    ['dark', NOIR, rgb(couleurLisible(caseDe('Gai'))), TRANSPARENT, BLANC],
+    ['dark', FOND_SOMBRE, rgb(couleurLisible(caseDe('Gai'))), TRANSPARENT, ENCRE_SOMBRE],
     ['light', FOND_CLAIR, NOIR, rgb(caseDe('Gai')), FONCE],
   ]);
   expect(await ecran3.evaluate((e) => e.style.getPropertyValue('--c-mot'))).toBe(cMot);
@@ -254,7 +262,7 @@ test('bascule à chaud : le thème qui change, écran ouvert, change le fond, la
 
 // Au clavier : le contour du focus foncé sur le clair (3:1 au moins), blanc sur le noir, comme avant.
 test('au clavier, le contour du focus d\'un bouton en verre et d\'une bulle de l\'écran 1 : foncé en clair, blanc en sombre, à 3:1 au moins sur le fond', async ({ page }) => {
-  for (const [schema, attendu, fond] of [['light', FONCE, FOND_CLAIR], ['dark', BLANC, NOIR]]) {
+  for (const [schema, attendu, fond] of [['light', FONCE, FOND_CLAIR], ['dark', ENCRE_SOMBRE, FOND_SOMBRE]]) {
     await page.emulateMedia({ colorScheme: schema });
     const vue = await ouvrir(page);
     await expect(bulles(vue)).not.toHaveAttribute('aria-disabled', 'true');

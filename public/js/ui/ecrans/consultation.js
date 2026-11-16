@@ -1,7 +1,8 @@
 // « En consultation » : le rendez-vous en plein écran, à garder sous les yeux pendant l'échange.
 // « La dernière fois » en haut, chiffres des 30 derniers jours, questions en grand (« Voir » ouvre la fiche liée en
-// lecture seule), compte rendu, prochaine étape, mémo. v7 : les émotions du moment des 30 jours, par famille ;
-// « Humeur (notes) » seulement si ces 30 jours ont d'anciennes notes de 1 à 10.
+// lecture seule), compte rendu, prochaine étape, mémo. v7 : les émotions du moment des 30 jours, par famille (v12.0.1 : à
+// l'encre des données, les couleurs des familles restant à l'Analyse) ; « Humeur (notes) » seulement si ces 30 jours ont
+// d'anciennes notes de 1 à 10.
 // Tout est enregistré au fil des touchers : Fermer et Terminer ferment simplement.
 import { html, useState } from '../lib.js';
 import { CadreParcours } from '../composants/parcours.js';
@@ -73,7 +74,7 @@ export function Consultation({ id: idRoute }) {
         <div class="grille-chiffres">${cellules.map((c) => html`<div class="cellule-chiffre">
           <span class=${c.valeur == null ? 'valeur-chiffre vide-chiffre' : 'valeur-chiffre'}>${c.valeur ?? '·'}</span>
           <span class="libelle-chiffre">${c.libelle}</span></div>`)}</div>
-        ${nombreDeReleves(emotions) > 0 && html`<div class="emotions-consultation"><span class="legende-chiffres">Émotions</span><${BarresFamilles} compte=${emotions} /></div>`}
+        ${nombreDeReleves(emotions) > 0 && html`<div class="emotions-consultation"><span class="legende-chiffres">Émotions</span><${BarresFamilles} compte=${emotions} encre /></div>`}
       </section>
       ${traitement.lignes.length > 0 && html`<section class="carte bloc-consultation" aria-label="Traitement actuel">
         <h2 class="titre-carte">Traitement actuel</h2><${TableauTraitement} traitement=${traitement} /></section>`}

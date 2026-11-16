@@ -128,9 +128,10 @@ export const mouvements = (page) => page.evaluate(() => {
   return fautes;
 });
 
-// ---------- L'accent vert, à sa place (v12, spec §5.3, §5.5 et §5.6 ; point de vigilance 3) ----------
-// Trois contrôles, qui lisent les styles calculés de l'écran affiché, pseudo-éléments ::before et ::after compris, et rendent
-// leurs fautes. `accents` : les valeurs calculées de l'accent du thème (--accent et --accent-texte de la racine, « rgb(r, g, b) »).
+// ---------- L'accent, à sa place (v12, spec §5.3, §5.5 et §5.6 ; point de vigilance 3 ; le vert en v12, le bleu pétrole en v12.1) ----------
+// Trois contrôles (et, depuis la v12.0.1, celui des couleurs des familles, plus bas), qui lisent les styles calculés de l'écran
+// affiché, pseudo-éléments ::before et ::after compris, et rendent leurs fautes. `accents` : les valeurs calculées de l'accent
+// du thème (--accent et --accent-texte de la racine, « rgb(r, g, b) »).
 // Un seul page.evaluate, sans code fabriqué dans la page (la CSP refuse eval) : `quoi` choisit le contrôle.
 const controlerAccent = (page, quoi, accents, surface2 = null) => page.evaluate(([q, acc, gris]) => {
   // « rgb(r, g, b) » d'une couleur calculée opaque ; null pour une couleur transparente ou à demi.
@@ -147,7 +148,7 @@ const controlerAccent = (page, quoi, accents, surface2 = null) => page.evaluate(
     ...(s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0 ? [['outline', s.outlineColor]] : []),
     ...(s.boxShadow.match(/rgba?\([^)]*\)/g) || []).map((c) => ['box-shadow', c]),
   ];
-  const vert = (c) => acc.includes(opaque(c));
+  const aLAccent = (c) => acc.includes(opaque(c));
   const nom = (el, pseudo) => `${el.tagName.toLowerCase()}.${String(el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className).trim().split(/\s+/).join('.')}${pseudo || ''}`;
   const vu = (el, s) => s.display !== 'none' && s.visibility !== 'hidden' && el.getClientRects().length > 0;
   const pseudos = (el) => [null, '::before', '::after'].map((p) => [p, getComputedStyle(el, p)])
@@ -163,7 +164,7 @@ const controlerAccent = (page, quoi, accents, surface2 = null) => page.evaluate(
       if (el instanceof SVGElement) {
         const s = getComputedStyle(el);
         if (!['circle', 'ellipse'].includes(el.tagName) || !vu(el, s)) continue;
-        for (const [prop, c] of [['fill', s.fill], ['stroke', s.stroke]]) if (vert(c)) fautes.push(`${nom(el)} : ${prop} à l'accent`);
+        for (const [prop, c] of [['fill', s.fill], ['stroke', s.stroke]]) if (aLAccent(c)) fautes.push(`${nom(el)} : ${prop} à l'accent`);
         continue;
       }
       if (contenu(el)) continue;
@@ -176,7 +177,7 @@ const controlerAccent = (page, quoi, accents, surface2 = null) => page.evaluate(
           return v.endsWith('%') ? (parseFloat(v) / 100) * Math.min(l, h) : parseFloat(v) || 0;
         }));
         if (!(rayon >= Math.min(l, h) / 2 - 0.5 && Math.abs(l - h) <= 2) && !(l < 16 && h < 16)) continue;
-        for (const [prop, c] of peintes(s, { texte: false })) if (vert(c)) fautes.push(`${nom(el, pseudo)} (${Math.round(l)} × ${Math.round(h)}) : ${prop} à l'accent`);
+        for (const [prop, c] of peintes(s, { texte: false })) if (aLAccent(c)) fautes.push(`${nom(el, pseudo)} (${Math.round(l)} × ${Math.round(h)}) : ${prop} à l'accent`);
       }
     }
   } else if (q === 'lieux') {
@@ -188,12 +189,23 @@ const controlerAccent = (page, quoi, accents, surface2 = null) => page.evaluate(
       for (const el of [zone, ...zone.querySelectorAll('*')]) {
         if (graphe && el.closest('a, button')) continue;
         for (const [pseudo, s] of pseudos(el)) {
-          for (const [prop, c] of peintes(s)) if (vert(c)) fautes.push(`${zone.className.split(' ')[0]} › ${nom(el, pseudo)} : ${prop} à l'accent`);
+          for (const [prop, c] of peintes(s)) if (aLAccent(c)) fautes.push(`${zone.className.split(' ')[0]} › ${nom(el, pseudo)} : ${prop} à l'accent`);
         }
       }
     }
+  } else if (q === 'familles') {
+    // v12.0.1 : les couleurs des 7 familles ne vont qu'aux agrégats de l'Analyse et à Réglages › Émotions (spec §5.6, CLAUDE.md).
+    // Ici, `acc` porte les valeurs calculées de leurs six rôles (hors de celles qu'une zone partage) : tout élément visible de
+    // l'écran qui en est peint, pseudo-éléments compris (texte, fond, bord, contour, ombre, remplissage, trait).
+    const deFamille = (c) => acc.includes(opaque(c));
+    for (const el of document.querySelectorAll('body *')) {
+      for (const [pseudo, s] of pseudos(el)) {
+        for (const [prop, c] of peintes(s)) if (deFamille(c)) fautes.push(`${nom(el, pseudo)} : ${prop} à la couleur d'une famille`);
+      }
+    }
   } else {
-    // Un lien vert (un texte à --accent-texte) ne se pose jamais sur --surface-2 en clair (spec §5.3 : 4,49:1, sous 4,5). Le
+    // Un lien (un texte à --accent-texte) ne se pose jamais sur --surface-2 en clair (spec v12 §5.3 : 4,49:1, sous 4,5, avec le
+    // vert de la v12). v12.1 : 4,73:1 avec les jetons 3a, au-dessus de 4,5 mais de peu ; la règle est gardée, par prudence. Le
     // fond est celui du premier ancêtre opaque.
     const fond = (el) => {
       for (let e = el; e; e = e.parentElement) {
@@ -205,7 +217,7 @@ const controlerAccent = (page, quoi, accents, surface2 = null) => page.evaluate(
     for (const el of document.querySelectorAll('body *')) {
       if (el instanceof SVGElement || ![...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.data.trim())) continue;
       const s = getComputedStyle(el);
-      if (vu(el, s) && vert(s.color) && fond(el) === gris) fautes.push(`« ${el.textContent.trim().slice(0, 30)} » (${nom(el)}) : un lien vert sur --surface-2`);
+      if (vu(el, s) && aLAccent(s.color) && fond(el) === gris) fautes.push(`« ${el.textContent.trim().slice(0, 30)} » (${nom(el)}) : un lien d'accent sur --surface-2`);
     }
   }
   return [...new Set(fautes)];
@@ -214,6 +226,9 @@ export const rondsAccent = (page, accents) => controlerAccent(page, 'ronds', acc
 export const accentHorsDeSaPlace = (page, accents) => controlerAccent(page, 'lieux', accents);
 // `lien` : la couleur calculée de --accent-texte ; `surface2` : celle de --surface-2.
 export const liensSurSurface2 = (page, lien, surface2) => controlerAccent(page, 'liens', [lien], surface2);
+// v12.0.1 : `familles`, les couleurs calculées des rôles des 7 familles du thème (« rgb(r, g, b) ») ; v7-controle.spec.js les
+// tire de tokens.css. Le même passage que l'accent, pour ne lire qu'une fois les styles de la même façon.
+export const couleursDeFamille = (page, familles) => controlerAccent(page, 'familles', familles);
 
 // Le plan et les données du contrôle global (v7-controle.spec.js, déplacés ici en v12 : la hauteur de la page du soir,
 // v12-design.spec.js, se mesure sur les mêmes).

@@ -6,7 +6,7 @@ import { canaux, contraste, jetons, FAMILLES_ROUE } from '../aides/couleurs.js';
 // v7 (1/9) · Fondations 2b : la sélection commune (fond -fill, texte -on, 600, coche, AA) sur tous les choix, en
 // clair et en sombre, avec la couleur de la famille d'émotions, et la couleur action sans teinte ; la barre d'onglets
 // neutre. v12 (3/9) : les rubriques et les parcours n'ont plus de couleur, un choix fait est un aplat d'accent (l'action),
-// et un choix non fait est transparent, avec son contour. Données inventées. Horloge : jeudi 15 octobre 2026, 21:00
+// et un choix non fait est transparent, avec son contour (v12.1 : le fond --surface, avec son contour). Données inventées. Horloge : jeudi 15 octobre 2026, 21:00
 // (390 × 844).
 const { clair, sombre } = jetons(readFileSync(new URL('../../public/css/tokens.css', import.meta.url), 'utf8'));
 const rgb = (hex) => `rgb(${canaux(hex).join(', ')})`;
@@ -22,7 +22,6 @@ const TEINTES = {
 const attendu = (t, couleur) => (couleur
   ? { fond: rgb(t[`c-${couleur}-fill`]), texte: rgb(t[`c-${couleur}-on`]) }
   : { fond: rgb(t.action), texte: rgb(t['action-on']) });
-const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 const contourDe = (t) => `${rgb(t.contour)} 0px 0px 0px 1px inset`;
 
 test.beforeEach(async ({ page }) => {
@@ -55,14 +54,16 @@ function verifierChoisi(s, { fond, texte }, quoi, graisse = '600') {
   expect(contraste(s.fond, s.texte), `${quoi} : AA`).toBeGreaterThanOrEqual(4.5);
   if (s.petit) expect(contraste(s.petit, s.fond), `${quoi} : précision`).toBeGreaterThanOrEqual(4.5);
 }
-// Non choisi (v12) : transparent sur le fond qui est dessous (`dessous`), avec son contour, en 400, sans coche. Sur les
-// écrans de l'émotion, un fond plein (`fond`), sans contour.
-function verifierNonChoisi(s, quoi, { t, dessous, fond = TRANSPARENT }) {
+// Non choisi (v12) : le fond d'un choix non fait (--fond-choix : transparent en v12, --surface en v12.1, sur une carte comme
+// sur le fond de l'écran), avec son contour, en 400, sans coche ; son texte AA sur ce fond. Sur les écrans de l'émotion, un
+// fond plein (`plein`), sans contour.
+function verifierNonChoisi(s, quoi, { t, plein = null }) {
+  const fond = plein || rgb(t.surface);
   expect(s.fond, `${quoi} : fond`).toBe(fond);
-  if (fond === TRANSPARENT) expect(s.contour, `${quoi} : contour`).toBe(contourDe(t));
+  if (!plein) expect(s.contour, `${quoi} : contour`).toBe(contourDe(t));
   expect(s.graisse, `${quoi} : graisse`).toBe('400');
   expect(s.coche, `${quoi} : sans coche`).toBe(false);
-  expect(contraste(fond === TRANSPARENT ? dessous : fond, s.texte), `${quoi} : AA`).toBeGreaterThanOrEqual(4.5);
+  expect(contraste(fond, s.texte), `${quoi} : AA`).toBeGreaterThanOrEqual(4.5);
 }
 
 // Un choix fait, construit dans la page pour chaque teinte (et sans teinte), avec une précision ; sa coche est celle
@@ -94,7 +95,7 @@ const choixParTeinte = async (page) => {
   }), [...Object.keys(TEINTES), null]);
 };
 
-test('sélection commune, en clair et en sombre : l\'accent (une famille : -fill, -on), 600 (700 pour un chiffre), coche, AA ; non choisi : transparent, contour, sans coche, en 400', async ({ page }) => {
+test('sélection commune, en clair et en sombre : l\'accent (une famille : -fill, -on), 600 (700 pour un chiffre), coche, AA ; non choisi : le fond --surface (v12.1), contour, sans coche, en 400', async ({ page }) => {
   const id = await creerEpisode(page, COLERE);
   for (const schema of ['light', 'dark']) {
     const t = schema === 'dark' ? sombre : clair;
@@ -113,9 +114,9 @@ test('sélection commune, en clair et en sombre : l\'accent (une famille : -fill
     verifierChoisi(await styleDe(bureau), attendu(t, null), `${schema} Bureau`);
     verifierChoisi(await styleDe(moyen), attendu(t, null), `${schema} Moyen`);
     verifierChoisi(await styleDe(oui), attendu(t, null), `${schema} Oui`);
-    // Non choisi, dans la carte de sa rubrique : transparent, son contour en box-shadow, sans bordure (v12).
+    // Non choisi, dans sa rubrique : le fond --surface (v12.1), son contour en box-shadow, sans bordure (v12).
     const teletravail = groupe(page, 'Lieu').getByRole('button', { name: 'Télétravail' });
-    verifierNonChoisi(await styleDe(teletravail), `${schema} Télétravail`, { t, dessous: rgb(t.surface) });
+    verifierNonChoisi(await styleDe(teletravail), `${schema} Télétravail`, { t });
     expect(await teletravail.evaluate((e) => getComputedStyle(e).borderTopWidth)).toBe('0px');
     // 44 de haut au moins : la cible (sur Aujourd'hui, les choix des cartes font 44 ; jusqu'à la v10, le soir tenait ainsi
     // sans défiler).
@@ -124,14 +125,14 @@ test('sélection commune, en clair et en sombre : l\'accent (une famille : -fill
     await toucher(page, 'Sommeil', 'Moyen');
     await toucher(page, 'Contact humain', 'Oui');
     await expect(bureau).toHaveAttribute('aria-pressed', 'false');
-    verifierNonChoisi(await styleDe(bureau), `${schema} Bureau effacé`, { t, dessous: rgb(t.surface) });
+    verifierNonChoisi(await styleDe(bureau), `${schema} Bureau effacé`, { t });
 
     // Période de l'Analyse, sur le fond de l'écran : couleur action, avec la coche.
     await aller(page, '#/analyse');
     const periode = groupe(page, 'Période');
     await periode.getByRole('button', { name: 'Période : 7 j' }).click();
     verifierChoisi(await styleDe(periode.getByRole('button', { name: 'Période : 7 j' })), attendu(t, null), `${schema} 7 j`);
-    verifierNonChoisi(await styleDe(periode.getByRole('button', { name: 'Période : Tout' })), `${schema} Tout`, { t, dessous: rgb(t.bg) });
+    verifierNonChoisi(await styleDe(periode.getByRole('button', { name: 'Période : Tout' })), `${schema} Tout`, { t });
 
     // Dans un parcours : l'accent (v12 : plus de couleur de l'épisode) ; une précision en petit reste lisible ; un chiffre
     // choisi est en 700.
@@ -155,7 +156,7 @@ test('sélection commune, en clair et en sombre : l\'accent (une famille : -fill
   }
 });
 
-test('v12 : un choix non fait et un champ sont transparents, avec leur contour, dans une carte comme sur le fond de l\'écran', async ({ page }) => {
+test('v12.1 : un choix non fait et un champ ont le fond --surface, avec leur contour, dans une carte (rayon 24) comme sur le fond de l\'écran', async ({ page }) => {
   for (const schema of ['light', 'dark']) {
     const t = schema === 'dark' ? sombre : clair;
     await page.emulateMedia({ colorScheme: schema });
@@ -174,12 +175,12 @@ test('v12 : un choix non fait et un champ sont transparents, avec leur contour, 
       carte.remove();
       return r;
     });
-    const transparent = ['rgba(0, 0, 0, 0)', `${rgb(t.contour)} 0px 0px 0px 1px inset`];
-    expect(fonds).toEqual({ carte: rgb(t.surface), bordure: '0px', rayon: '16px', choix: transparent, champ: transparent });
-    // Aujourd'hui (tâche 4) : la zone des points positifs est dans sa carte, « Mémo vocal » sur le fond de l'écran.
+    const nonFait = [rgb(t.surface), `${rgb(t.contour)} 0px 0px 0px 1px inset`];
+    expect(fonds).toEqual({ carte: rgb(t.surface), bordure: '0px', rayon: '24px', choix: nonFait, champ: nonFait });
+    // Aujourd'hui (tâche 4) : la zone des points positifs dans sa rubrique, « Mémo vocal » sur le fond de l'écran.
     const style = (loc) => loc.evaluate((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).boxShadow]);
-    expect(await style(page.locator('#points-positifs'))).toEqual(transparent);
-    expect(await style(page.getByRole('button', { name: 'Mémo vocal' }))).toEqual(transparent);
+    expect(await style(page.locator('#points-positifs'))).toEqual(nonFait);
+    expect(await style(page.getByRole('button', { name: 'Mémo vocal' }))).toEqual(nonFait);
     // Le fond de la page, sans texture.
     expect(await page.evaluate(() => [getComputedStyle(document.documentElement).backgroundColor, getComputedStyle(document.body).backgroundImage]))
       .toEqual([rgb(t.bg), 'none']);
@@ -319,7 +320,7 @@ test('boutons à coche faits à la main, en clair et en sombre : « C\'était ve
     await vers.getByRole('button', { name: '12 h', exact: true }).click();
     verifierChoisi(await styleDe(vers.getByRole('button', { name: '12 h', exact: true })), encre, `${schema} vers 12 h`);
     const maintenant = await styleDe(vers.getByRole('button', { name: 'Maintenant', exact: true }));
-    verifierNonChoisi(maintenant, `${schema} vers Maintenant non choisi`, { t, fond: rgb(t.surface) });
+    verifierNonChoisi(maintenant, `${schema} vers Maintenant non choisi`, { t, plein: rgb(t.surface) });
     expect(maintenant.contour, `${schema} vers Maintenant non choisi : sans contour`).toMatch(/^rgba\(0, 0, 0, 0\) /);
     await vue.getByRole('button', { name: 'Fermer', exact: true }).click();
 
@@ -330,11 +331,11 @@ test('boutons à coche faits à la main, en clair et en sombre : « C\'était ve
     await dix.click();
     await expect(dix).toHaveAttribute('aria-pressed', 'true');
     verifierChoisi(await styleDe(dix), attendu(t, null), `${schema} Rappels 10 h`);
-    verifierNonChoisi(await styleDe(heures.getByRole('button', { name: '11 h', exact: true })), `${schema} Rappels 11 h`, { t, dessous: rgb(t.bg) });
+    verifierNonChoisi(await styleDe(heures.getByRole('button', { name: '11 h', exact: true })), `${schema} Rappels 11 h`, { t });
     await dix.click();
     await expect(dix).toHaveAttribute('aria-pressed', 'false');
 
-    // Filtres de l'Historique (dans leur carte : non choisi transparent, avec son contour) : sans teinte, couleur action.
+    // Filtres de l'Historique (dans leur carte : non choisi au fond --surface, avec son contour) : sans teinte, couleur action.
     await aller(page, '#/historique');
     const filtrer = page.getByRole('button', { name: 'Filtrer' });
     if (await filtrer.getAttribute('aria-expanded') !== 'true') await filtrer.click();
@@ -342,7 +343,7 @@ test('boutons à coche faits à la main, en clair et en sombre : « C\'était ve
     await avec.click();
     await expect(avec).toHaveAttribute('aria-pressed', 'true');
     verifierChoisi(await styleDe(avec), attendu(t, null), `${schema} Avec notes`);
-    verifierNonChoisi(await styleDe(groupe(page, 'Avec').getByRole('button', { name: 'Avec explosions', exact: true })), `${schema} Avec explosions`, { t, dessous: rgb(t.surface) });
+    verifierNonChoisi(await styleDe(groupe(page, 'Avec').getByRole('button', { name: 'Avec explosions', exact: true })), `${schema} Avec explosions`, { t });
     await avec.click();
     await expect(avec).toHaveAttribute('aria-pressed', 'false');
   }

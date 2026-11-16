@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '../aides/gardes.js';
 import { viderBase, aller, appPrete, groupe } from '../aides/saisie.js';
-import { canaux, contraste, jetons } from '../aides/couleurs.js';
+import { canaux, contraste, jetons, FAMILLES_ROUE, ZONES_ROUE, ROLES } from '../aides/couleurs.js';
 import { vueMoment, toucherMot, noter, continuer, terminer } from '../aides/emotion.js';
 import { installerParole, cacher, montrer } from '../aides/lecteur.js';
 import { stabiliser, contrastesFaibles, ciblesPetites, motsInterdits, ecouterMouvements, mouvements, verserControle as verser, rondsAccent, accentHorsDeSaPlace,
-  liensSurSurface2 } from '../aides/controle.js';
+  liensSurSurface2, couleursDeFamille } from '../aides/controle.js';
 
 // v7 (9/9) · Contrôle global (plan v6.2, tâches 6 et 7) : on parcourt les écrans principaux, avec des données inventées,
 // en clair et en sombre.
@@ -45,9 +45,9 @@ import { stabiliser, contrastesFaibles, ciblesPetites, motsInterdits, ecouterMou
 // v12 (6/9) : Mes refuges, une simple liste : vide, puis plein avec ses morceaux et « La suite est dans Spotify. » ; ses
 // réglages (la saisie de la v11) ; en très grand texte, un titre de morceau de 70 signes sans espace. v12 (7/9) : Moment
 // difficile avec ses morceaux, après Mon plan ; le Diagnostic et « Ouvrir un morceau ».
-// v12 (5/9) : sur chaque écran du parcours, l'accent vert reste à sa place (spec §5.3, §5.5 et §5.6) : aucun rond sans texte ni
+// v12 (5/9) : sur chaque écran du parcours, l'accent (vert en v12, bleu pétrole en v12.1) reste à sa place (spec §5.3, §5.5 et §5.6) : aucun rond sans texte ni
 // icône ne l'a pour fond ou pour contour, aucun graphique, écran de l'émotion ni « Réveil la nuit » n'en a de trace, et en clair,
-// aucun lien vert ne se pose sur --surface-2. Le parcours passe aussi par un jour de Mes jours touché, son détail ouvert.
+// aucun lien d'accent ne se pose sur --surface-2. Le parcours passe aussi par un jour de Mes jours touché, son détail ouvert.
 // Réglages et Le soir ont des icônes sans carré. v12 (9/9) : le débordement de côté, sur le parcours entier, en clair et en
 // sombre, jusqu'au très grand texte (33 à 53), hors des écrans hérités de la v11 (HERITES), à partir de leur taille d'alors.
 // Horloge : jeudi 15 octobre 2026, 21:00.
@@ -102,8 +102,12 @@ const tirets = (page) => page.evaluate(() => [...document.querySelectorAll('body
 }).map((el) => `${el.tagName.toLowerCase()}.${String(el.className).split(' ').join('.')}`));
 
 // Les choix faits visibles sans leur coche (jamais la couleur seule). Une question cochée a sa propre case ; le mot choisi
-// de la carte des émotions (v9) a sa forme, la double capsule de 156 au lieu d'un disque de 96 (visuel §2.4) ; la couleur
-// choisie d'un mot à soi (v9, les quatre bulles en petit), son anneau autour du disque (blanc sur le noir du relevé, foncé
+// de la carte des émotions (v9) a sa taille : la double capsule de 156 jusqu'à la v12 ; depuis la v12.1, un disque de 156,
+// le plus gros de la carte, au lieu d'un disque de 96 (visuel §2.4 ; spec v12.1 §2 point 3). Ce contrôle ne voit que les
+// choix faits (aria-pressed="true"), et le parcours ne fait jamais glisser la carte : il voit le mot choisi au repos, la
+// lentille sur lui. Une bulle non choisie à 156 (le mot du milieu à l'ouverture sans mot choisi, après un glissement, ou le
+// mot choisi effacé) n'y est pas cherchée : réserve de la v12.1, à trancher par l'utilisateur (relecture de la tâche B).
+// La couleur choisie d'un mot à soi (v9, les quatre bulles en petit), son anneau autour du disque (blanc sur le noir du relevé, foncé
 // sur son gris clair en clair depuis la v11, couleur du texte dans Réglages). Relecture de la tâche 8 : cet anneau ne vaut coche que s'il se voit, un contour plein
 // d'au moins 2 px, à 2 px au moins du disque, à 3:1 au moins sur son fond (le premier ancêtre opaque, comme plus haut).
 // L'épingle allumée (v10) a sa forme aussi : son dessin se remplit ; sa couleur est mesurée par `epinglesFaibles`. La valeur
@@ -136,7 +140,12 @@ const sansCoche = (page) => page.evaluate(() => {
   };
   return [...document.querySelectorAll('[aria-pressed="true"]')].filter((b) => {
     if (b.getBoundingClientRect().width < 1 || b.closest('.visuellement-cache') || b.classList.contains('question-case')) return false;
-    if (b.classList.contains('bulle-mot') || (b.matches('.quatre-bulles.petites .bulle-zone') && anneauVu(b))) return false;
+    if (b.classList.contains('bulle-mot')) {
+      const l = b.getBoundingClientRect().width;
+      const disque = getComputedStyle(b).borderTopLeftRadius === '50%';
+      if (disque && [...document.querySelectorAll('.bulle-mot')].every((x) => x === b || x.getBoundingClientRect().width < l - 0.5)) return false;
+    }
+    if (b.matches('.quatre-bulles.petites .bulle-zone') && anneauVu(b)) return false;
     if (b.classList.contains('epingle') && getComputedStyle(b.querySelector('svg')).fill !== 'none') return false;
     if (b.classList.contains('roue-valeur')) {
       const [d, r] = [b.closest('.roue-defile').getBoundingClientRect(), b.getBoundingClientRect()];
@@ -389,8 +398,8 @@ const ECRANS = (ids) => [
     }
   }, '.aujourdhui .roue-choix.notee'],
   // v9 (4/8) : les écrans de l'émotion, comme How We Feel (noirs ; selon le thème depuis la v11) : les quatre bulles et
-  // « C'était vers… » ouvert, puis la carte ouverte par une bulle, puis un mot au sens corrigé, choisi : la double capsule et
-  // sa carte du bas (en clair, le mot sur sa capsule).
+  // « C'était vers… » ouvert, puis la carte ouverte par une bulle, puis un mot au sens corrigé, choisi : son disque agrandi
+  // (la double capsule jusqu'à la v12) et sa carte du bas (en clair, le mot sur sa capsule).
   ['Émotion du moment', async (p) => {
     await aller(p, '#/moment');
     await p.getByRole('button', { name: 'Maintenant', exact: true }).click();
@@ -524,26 +533,105 @@ test.beforeEach(async ({ page }) => {
   await viderBase(page);
 });
 
-// v12 (5/9) : sur chaque écran, l'accent vert reste à sa place (spec §5.3, §5.5 et §5.6). La règle de forme : aucun rond sans
+// v12.0.1 : les écrans du parcours où les couleurs des 7 familles sont permises, et vues : l'Analyse (Comprendre compris, où
+// mènent ses portes) et Réglages › Émotions, seulement (spec v12 §5.6, CLAUDE.md ; docs/decisions.md, entrée v12.0.1). Une
+// couleur de famille peinte ailleurs fait échouer le contrôle, comme les barres « Émotions » d'En consultation jusqu'à la
+// v12.0.0. La liste est exacte, dans l'ordre du parcours : un écran qui n'en montre plus doit en sortir ; et seul un écran de
+// l'Analyse, de Comprendre ou de Réglages › Émotions peut y entrer (y mettre un autre écran, c'est changer la règle, avec son
+// accord). Comprendre › Explosions et le tableau d'« Émotions selon ce que je faisais » n'en peignent pas. La Vue soignants
+// dessine les siennes dans sa page A4 (canvas, B3), que ce contrôle des styles ne lit pas.
+const ECRANS_FAMILLES = [
+  'Analyse', 'Analyse, un jour de Mes jours touché', 'Analyse, Tes zones en tableau', 'Comprendre, Énergie', 'Comprendre, Rythmes',
+  'Comprendre, Mes nuits en tableau', 'Analyse, Tes gratitudes ouvert', 'Réglages › Émotions', 'Réglages › Émotions, un sens corrigé',
+  'Réglages › Émotions, Mes mots',
+];
+// Les couleurs calculées des six rôles des 7 familles d'un thème, hors de celles qu'une zone partage (en clair, la teinte 2 de
+// la Colère est celle de la zone rouge) : une zone, qui dit un relevé, a sa place sur bien d'autres écrans.
+const couleursFamilles = (t) => {
+  const zones = new Set(ZONES_ROUE.flatMap((z) => ROLES.map((r) => rgb(t[`c-zone-${z}${r}`]))));
+  return [...new Set(FAMILLES_ROUE.flatMap((f) => ROLES.map((r) => rgb(t[`c-emo-${f}${r}`]))))].filter((c) => !zones.has(c));
+};
+
+// v12.1, décision de l'utilisateur du 16/11 (« niveau design, fais comme Claude Design a défini ») : tout ce que formes-3a.css
+// met en pilule l'est au rayon 999, ses quatre coins, sur chaque écran du parcours, quelle que soit la règle d'une autre de
+// ses classes : la pastille, le bouton de segmenté, la roue et sa fenêtre, .btn, la puce d'un réglage, la bande du bas et
+// .fab, les exercices courts, la capsule de la date ; « En consultation » (.pilule) aussi, comme un .btn. Ce que la planche ne
+// nomme pas (« Mémo vocal », « Arrêter », le noting, les tuiles de l'Analyse…) n'est pas vu ici.
+const PILULES_PLANCHE = '.pastille, .segmente button, .roue-choix, .btn, .puce-reglage select, .action-bande, .fab, .exercice-court, .sur-titre, .pilule';
+const pilulesDefaites = (page) => page.evaluate((sel) => {
+  const fautes = new Set();
+  const coins = (s) => [s.borderTopLeftRadius, s.borderTopRightRadius, s.borderBottomRightRadius, s.borderBottomLeftRadius];
+  for (const e of document.querySelectorAll(sel)) {
+    if (!e.getClientRects().length) continue;
+    const nom = `${e.tagName.toLowerCase()}.${[...e.classList].join('.')}`;
+    const rayons = coins(getComputedStyle(e));
+    if (rayons.some((r) => r !== '999px')) fautes.add(`${nom} : ${[...new Set(rayons)].join(' ')}`);
+    if (e.matches('.roue-choix') && coins(getComputedStyle(e, '::before')).some((r) => r !== '999px')) fautes.add(`${nom}::before`);
+  }
+  return [...fautes];
+}, PILULES_PLANCHE);
+
+// v12 (5/9) : sur chaque écran, l'accent (vert en v12, bleu pétrole en v12.1) reste à sa place (spec §5.3, §5.5 et §5.6). La règle de forme : aucun rond sans
 // texte ni icône ne l'a pour fond ou pour contour ; le point de vigilance 3 : aucune trace de lui dans les graphiques, sur les
-// écrans de l'émotion ni sur « Réveil la nuit » ; et, en clair, aucun lien vert sur --surface-2 (tests/aides/controle.js).
+// écrans de l'émotion ni sur « Réveil la nuit » ; et, en clair, aucun lien d'accent sur --surface-2 (tests/aides/controle.js).
+// v12.0.1 : les couleurs des familles aussi restent à leur place (ECRANS_FAMILLES). v12.1 : les pilules de la planche, au
+// rayon 999 (PILULES_PLANCHE).
 for (const schema of ['light', 'dark']) {
-  test(`contraste ${schema === 'light' ? 'en clair' : 'en sombre'} : tout texte visible des écrans principaux a au moins 4,5:1 sur son fond ; ni tirets, ni choix fait sans coche ; l'accent vert à sa place`, async ({ page }) => {
+  test(`contraste ${schema === 'light' ? 'en clair' : 'en sombre'} : tout texte visible des écrans principaux a au moins 4,5:1 sur son fond ; ni tirets, ni choix fait sans coche ; l'accent à sa place ; les couleurs des familles dans l'Analyse et Réglages › Émotions seulement ; les pilules de la planche au rayon 999`, async ({ page }) => {
     test.setTimeout(240000);
     const t = schema === 'light' ? clair : sombre;
     const accents = [rgb(t.accent), rgb(t['accent-texte'])];
-    const fautes = await parcourir(page, schema, async (nom) => [
-      ...await contrastesFaibles(page, nom.startsWith('Confirmation') ? '.boite-confirmation' : 'body'),
-      ...await epinglesFaibles(page),
-      ...(await tirets(page)).map((x) => `tirets : ${x}`),
-      ...(await sansCoche(page)).map((x) => `choix fait sans coche : ${x}`),
-      ...(await rondsAccent(page, accents)).map((x) => `rond à l'accent : ${x}`),
-      ...(await accentHorsDeSaPlace(page, accents)).map((x) => `accent hors de sa place : ${x}`),
-      ...(schema === 'light' ? await liensSurSurface2(page, rgb(t['accent-texte']), rgb(t['surface-2'])) : []),
-    ]);
+    expect(ECRANS_FAMILLES.filter((nom) => !/^(Analyse|Comprendre|Réglages › Émotions)(,|$)/.test(nom)), 'les familles hors de l\'Analyse et de Réglages › Émotions').toEqual([]);
+    const familles = couleursFamilles(t);
+    expect(familles.length, 'les couleurs des familles, hors de celles des zones').toBeGreaterThan(30);
+    const avecFamilles = [];
+    const fautes = await parcourir(page, schema, async (nom) => {
+      const peints = await couleursDeFamille(page, familles);
+      if (peints.length) avecFamilles.push(nom);
+      return [
+        ...await contrastesFaibles(page, nom.startsWith('Confirmation') ? '.boite-confirmation' : 'body'),
+        ...await epinglesFaibles(page),
+        ...(await tirets(page)).map((x) => `tirets : ${x}`),
+        ...(await sansCoche(page)).map((x) => `choix fait sans coche : ${x}`),
+        ...(await rondsAccent(page, accents)).map((x) => `rond à l'accent : ${x}`),
+        ...(await accentHorsDeSaPlace(page, accents)).map((x) => `accent hors de sa place : ${x}`),
+        ...(schema === 'light' ? await liensSurSurface2(page, rgb(t['accent-texte']), rgb(t['surface-2'])) : []),
+        ...(ECRANS_FAMILLES.includes(nom) ? [] : peints.slice(0, 6).map((x) => `famille hors de sa place : ${x}`)),
+        ...(await pilulesDefaites(page)).map((x) => `pilule défaite : ${x}`),
+      ];
+    });
     expect(fautes).toEqual({});
+    expect(avecFamilles, 'les écrans aux couleurs des familles').toEqual(ECRANS_FAMILLES);
   });
 }
+
+// Le contrôle des pilules lui-même : sur Aujourd'hui, il voit les pilules de la planche (pastilles, segmentés, roues, bande,
+// capsule de la date) et pas « Mémo vocal » ; un rayon défait par une règle d'une autre classe (le 26 de la relecture de la
+// tâche A), ou sur la fenêtre d'une roue, est relevé.
+test('le contrôle des pilules voit un rayon autre que 999 sur une pastille, la capsule de la date ou la fenêtre d\'une roue', async ({ page }) => {
+  await verser(page);
+  await page.reload();
+  await appPrete(page);
+  await aller(page, '#/aujourdhui');
+  await expect(page.locator('.aujourdhui .roue-choix').first()).toBeVisible();
+  await stabiliser(page);
+  const vus = await page.evaluate((sel) => [...document.querySelectorAll(sel)].filter((e) => e.getClientRects().length).map((e) => e.className.split(' ')[0]), PILULES_PLANCHE);
+  for (const c of ['pastille', 'roue-choix', 'action-bande', 'fab', 'sur-titre']) expect(vus, c).toContain(c);
+  expect(vus.length).toBeGreaterThan(20);
+  expect(await page.locator('.btn-memo').count()).toBe(1);
+  expect(await pilulesDefaites(page)).toEqual([]);
+  await page.evaluate(() => {
+    const feuille = document.styleSheets[0];
+    for (const r of ['.carte-champ .pastille { border-radius: 26px !important; }', '.entete-jour .sur-titre { border-radius: 14px !important; }',
+      '.carte-champ > .roue-choix::before { border-radius: 9px !important; }']) feuille.insertRule(r, feuille.cssRules.length);
+  });
+  const abimees = await pilulesDefaites(page);
+  // Une entrée par sorte d'élément (leurs classes), pas par élément.
+  expect(abimees).toContain('button.pastille : 26px');
+  expect(abimees).toContain('span.sur-titre : 14px');
+  expect(abimees.filter((x) => x.endsWith('::before')).length).toBeGreaterThan(0);
+  expect(abimees.filter((x) => x.includes('btn-memo')), '« Mémo vocal » (12), que la planche ne nomme pas').toEqual([]);
+});
 
 // Toute police à empattements calculée sur la page, pseudo-éléments compris.
 const empattements = (page) => page.evaluate(() => {

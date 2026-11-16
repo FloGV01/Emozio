@@ -76,7 +76,7 @@ test('vide : 13 valeurs dans l\'ordre, rien de marqué, 7 h au milieu sur un fon
   expect(await lue(page)).toBeNull();
 });
 
-test('glisser jusqu\'à 7 h 30 le note à l\'arrêt de la bande, 150 ms après le doigt levé ; le résumé du jour le dit', async ({ page }) => {
+test('glisser jusqu\'à 7 h 30 le note à l\'arrêt de la bande, 150 ms après le doigt levé (v12.1 : plus de résumé du jour sous le titre)', async ({ page }) => {
   await figer(page);
   await glisserRoue(roue(page), '7 h 30');
   await page.clock.runFor(149);
@@ -86,10 +86,12 @@ test('glisser jusqu\'à 7 h 30 le note à l\'arrêt de la bande, 150 ms après l
   await expect.poll(() => heures(page)).toBe(7.5);
   await expect(valeur(page, '7 h 30')).toHaveAttribute('aria-pressed', 'true');
   await expect(presses(page)).toHaveCount(1);
-  await expect(page.locator('.resume-jour')).toHaveText('nuit 7 h 30');
   await centree(page, '7 h 30');
   await toucher(page, 'Sommeil', 'Mal');
-  await expect(page.locator('.resume-jour')).toHaveText('nuit mal · 7 h 30');
+  await expect(groupe(page, 'Sommeil').getByRole('button', { name: /Mal$/ })).toHaveAttribute('aria-pressed', 'true');
+  // La nuit notée reste notée ; rien n'en est résumé sous le titre.
+  expect(await heures(page)).toBe(7.5);
+  await expect(page.locator('.entete-jour')).not.toContainText('nuit');
 });
 
 test('toucher une valeur la note et la centre ; la retoucher l\'efface, et la bande revient sur 7 h ; le fond du milieu suit, en clair et en sombre', async ({ page }) => {
@@ -735,6 +737,9 @@ test('la rangée Contact et Sport n\'a que 60 px de plus avec ses roues ; aucune
       await page.getByRole('button', { name: 'Sport en détail', exact: true }).click();
       await page.getByRole('button', { name: 'Contact en détail', exact: true }).click();
       await expect(page.locator('.carte-detail .roue-choix')).toHaveCount(2);
+      // Mesuré à l'arrêt : le chevron de « Détail › » tourne en 150 ms ; à mi-course, son carré tourné de 45° dépasse de 2,5 px
+      // le bord de sa rubrique, qui n'a plus de marge sur les côtés depuis la v12.1.
+      await page.evaluate(() => Promise.all(document.getAnimations().filter((x) => Number.isFinite(x.effect.getComputedTiming().endTime)).map((x) => x.finished.catch(() => {}))));
     }
     for (const largeur of [390, 375]) {
       await page.setViewportSize({ width: largeur, height: 844 });

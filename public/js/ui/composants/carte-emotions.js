@@ -2,14 +2,20 @@
 // à soi hors du carré de leur zone (domain/carte-roue.js, motsDeLaCarte), en bulles de 96 pt à la couleur de leur case,
 // dans un cadre plein écran qui défile librement dans les deux sens ; la page, elle, ne défile jamais de côté.
 // - Ouverte depuis une bulle de l'écran 1, elle est centrée sur le milieu de sa zone (`centre`).
-// - Un mot choisi (`choisi`) devient la double capsule de 156 pt ; ses voisines passent à 120 puis 108 pt (la lentille de
-//   ui/carte-geometrie.js) et la carte glisse jusqu'à lui, au milieu de l'écran. Les bulles changent de place et de
-//   taille en 450 ms ; avec « Réduire les animations », tout est immédiat (base.css), recentrage compris.
+// - Un mot choisi (`choisi`) reste une bulle ronde, agrandie à 156 pt, son libellé dessus (v12.1, spec §2 point 3 : plus
+//   de « double capsule ») ; ses voisines passent à 120 puis 108 pt (la lentille de ui/carte-geometrie.js) et la carte
+//   glisse jusqu'à lui, au milieu de l'écran. Les bulles changent de place et de taille en 450 ms, jamais de forme ; avec
+//   « Réduire les animations », tout est immédiat (base.css), recentrage compris.
 // - La lentille suit le glissement (v10, spec §4.1) : son centre est le mot du milieu de la fenêtre (motDuMilieu), des
 //   cercles de 156, 120, 108 et 96 pt. Ses changements sont posés par CSSOM, une fois par image au plus, sans rendu des 144
-//   bulles. Glisser n'écrit rien : ni .choisi, ni aria-pressed, ni relevé. Le mot choisi garde sa double capsule, à
-//   l'échelle que la lentille lui donne. Avec « Réduire les animations », rien n'est branché : seul le mot choisi a sa
-//   lentille, comme en v9.
+//   bulles. Glisser n'écrit rien : ni .choisi, ni aria-pressed, ni relevé. Le mot choisi prend, comme les autres, la
+//   taille que la lentille lui donne (la carte du bas le dit toujours). Avec « Réduire les animations », rien n'est
+//   branché : seul le mot choisi a sa lentille, comme en v9.
+//   v12.1 : sans la double capsule, la taille seule distingue le mot choisi, et le centre de la lentille a la même, choisi
+//   ou non (156). À l'ouverture sans mot choisi, après un glissement, ou une fois le mot choisi effacé, une bulle non
+//   choisie a donc l'air choisie (pas avec « Réduire les animations », où seul le mot choisi est agrandi) ; seule la carte
+//   du bas dit le mot choisi. Réserve de la v12.1, à trancher par l'utilisateur (relecture de la tâche B) : rien n'est
+//   changé ici sans son accord.
 // - Toucher un mot appelle `surMot(id)`, qui écrit (le mot, ou rien s'il était déjà choisi). Pendant la garde (`enGarde`,
 //   350 ms après un changement de vue ou un mot choisi), la carte ignore les touchers et est aria-disabled. Les bulles
 //   peuvent bouger sous un doigt posé (la lentille, de 36 à 48 pt) : seul compte le mot sous le doigt quand il se pose, et
@@ -33,12 +39,15 @@ const MARGE_PX = 3;
 const RECENTRAGE_MS = 1200;
 // Entre le doigt levé et le clic, moins que ça : au-delà, l'appui n'a pas donné de clic (un toucher entre deux bulles).
 const APPUI_MS = 500;
-// Le disque d'une bulle, en px de l'écran ; aucun pour le mot choisi (la double capsule, plus large que son libellé).
+// Le libellé du mot choisi est à 0,923 de sa bulle (ecrans.css : 18 pt sur 156, au lieu de 12 sur 96).
+const LIBELLE_CHOISI = 0.923;
+// Le disque d'une bulle, en px de l'écran. Celui du mot choisi est réduit comme son libellé : le corps trouvé tient
+// ainsi dans la bulle choisie, et encore quand elle redevient une bulle comme les autres.
 const disque = (e) => {
   const b = e.closest('.bulle-mot');
-  if (b.classList.contains('choisi')) return null;
   const r = b.getBoundingClientRect();
-  return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, r: r.width / 2 - MARGE_PX * (r.width / DIAMETRE) };
+  const k = b.classList.contains('choisi') ? LIBELLE_CHOISI : 1;
+  return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, r: (r.width / 2 - MARGE_PX * (r.width / DIAMETRE)) * k };
 };
 const reduit = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -189,7 +198,7 @@ export function CarteEmotions({ mots, choisi = null, centre = null, enGarde = fa
     const style = { '--c': m.couleur, transform: transformDe(places.get(m.id)) };
     return html`<button type="button" key=${m.id} class=${est ? 'bulle-mot choisi' : 'bulle-mot'} data-mot=${m.id} aria-pressed=${est ? 'true' : 'false'} style=${style}
       onClick=${() => toucher(m.id)}>
-      <span class="demi droite" aria-hidden="true"></span><span class="demi gauche"><span class="etiquette-mot">${m.libelle}</span></span>
+      <span class="etiquette-mot">${m.libelle}</span>
     </button>`;
   };
   // Dans chaque zone, l'ordre de lecture de la carte : du rang le plus haut au plus bas, de gauche à droite.

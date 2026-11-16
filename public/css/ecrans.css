@@ -4,7 +4,7 @@
 .guide-intro { font-size: var(--t-corps); line-height: 1.4; color: var(--text-2); text-wrap: pretty; }
 .guide-etapes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 28px; }
 .guide-etape { display: flex; gap: 16px; align-items: flex-start; }
-.guide-icone { width: 48px; height: 48px; flex: none; border-radius: var(--r-bouton); background: var(--surface); display: grid; place-items: center; color: var(--action); }
+.guide-icone { width: 48px; height: 48px; flex: none; border-radius: var(--r-bouton); background: var(--surface); display: grid; place-items: center; color: var(--accent-texte); }
 .guide-icone svg { width: 24px; height: 24px; }
 .guide-texte { display: flex; flex-direction: column; gap: 2px; padding-top: 2px; font-size: var(--t-corps); line-height: 1.4; text-wrap: pretty; }
 .guide-numero { font-size: var(--t-note); font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
@@ -21,11 +21,14 @@
 
 /* Historique */
 .barre-recherche { display: flex; align-items: center; gap: var(--esp-2); margin-top: var(--esp-3); }
+/* La loupe : un rond de 44 (relecture finale de la v12.1 : tout ce qui se touche en pilule, 3a), au contour de ce qui se touche
+   sans être choisi (--contour, 3:1 ; --line, un filet décoratif, avant). Elle porte son icône : un rond sans icône reste aux
+   émotions. */
 .bouton-loupe {
   flex: none; width: var(--cible); height: var(--cible); display: grid; place-items: center;
-  border: 1px solid var(--line); border-radius: var(--r-moyen); background: var(--surface); color: var(--text);
+  border: 1px solid var(--contour); border-radius: 999px; background: var(--surface); color: var(--text);
 }
-.bouton-loupe[aria-expanded="true"] { border-color: var(--action); color: var(--action); }
+.bouton-loupe[aria-expanded="true"] { border-color: var(--action); color: var(--accent-texte); }
 .bouton-loupe svg { width: 20px; height: 20px; }
 .champ-recherche {
   flex: 1; min-width: 0; min-height: var(--cible); padding: 0 12px; border-radius: var(--r-moyen);
@@ -127,13 +130,13 @@
   display: grid; place-items: center; color: var(--surface);
 }
 .case-question svg { width: 14px; height: 14px; }
-/* Une question abordée est à l'encre, jamais en vert (v12, spec §5.3) : un « fait » vert sonnerait comme une récompense. */
+/* Une question abordée est à l'encre, jamais à l'accent (v12, spec §5.3) : un « fait » d'accent sonnerait comme une récompense. */
 .question-case[aria-pressed="true"] .case-question { background: var(--text); border-color: var(--text); }
 .question-case[aria-pressed="true"] .texte-question { color: var(--text-2); }
 .questions-grandes .question-case { min-height: 56px; padding: 8px 0; gap: 14px; font-size: 1.118rem; }
 .questions-grandes .case-question { width: 28px; height: 28px; border-radius: 8px; border-width: 2px; }
 .questions-grandes .case-question svg { width: 16px; height: 16px; }
-.carte-questions { background: var(--surface); border-radius: var(--r-bouton); padding: 0 4px 0 12px; }
+.carte-questions { background: var(--surface); border-radius: var(--r-carte); padding: 0 4px 0 12px; }
 .voir-question { flex: none; padding: 0 4px 0 12px; font-weight: 600; }
 /* Fiche d'un rendez-vous (v8) : la case seule coche (cible de 44, le carré à sa place), le texte se modifie sur place,
    dans une zone à sa taille ; « Parler de… » et ses sujets sous le champ des questions. */
@@ -247,6 +250,12 @@
 .tuiles-semaine .tuile { background: var(--surface-2); min-height: 0; padding: 12px 12px 14px; gap: 8px; }
 .tuiles-semaine .tuile-valeur { font-size: var(--t-tuile); color: var(--text); }
 .tuile-emotions { grid-column: 1 / -1; }
+/* Ses barres, à la couleur de leur famille (--c), sur --surface-2 : en clair, Joie (2,95:1) et Sérénité (3,00:1) y passaient
+   sous le 3:1 d'un graphique depuis les jetons 3a (relecture finale de la v12.1). Un liseré de 1 px au -text de la famille
+   (5,32:1 et 5,43:1) porte le 3:1, comme celui des marques de zone ; en sombre, il se fond dans la barre. Il ne grossit pas
+   avec la barre étirée (preserveAspectRatio="none"), et sa moitié extérieure n'est pas coupée au bord du SVG. */
+.tuile-emotions .barre-famille { overflow: visible; }
+.tuile-emotions .g-emo { stroke: var(--c-text); stroke-width: 1px; vector-effect: non-scaling-stroke; }
 /* Tes zones (v9) : les quatre bulles, puis la barre par semaine dans la même carte (son cadre de graphique s'y fond). */
 .tes-zones { display: flex; flex-direction: column; gap: 14px; }
 .tes-zones .carte-entete { margin: 0; }
@@ -345,7 +354,8 @@ rect:is(.g-sommeil-1, .g-energie-1) { stroke: var(--donnee-2); stroke-width: 1; 
 .action-liste { font-size: var(--t-sous); padding: 0 10px; }
 .ajout-element { display: flex; gap: var(--esp-2); }
 .ajout-element input { flex: 1; border-radius: var(--r-moyen); }
-.bouton-ajouter { min-height: var(--cible); border-radius: var(--r-moyen); }
+/* « Ajouter » est un .btn : en pilule, comme eux (relecture finale de la v12.1 ; le champ d'à côté garde le rayon des champs). */
+.bouton-ajouter { min-height: var(--cible); }
 .listes .libelle-section { padding: 8px 0 0; margin-bottom: -6px; }
 
 /* Rappel du soir, aide iPhone */
@@ -399,13 +409,14 @@ rect:is(.g-sommeil-1, .g-energie-1) { stroke: var(--donnee-2); stroke-width: 1; 
 .parcours.relecture, .parcours.relecture .parcours-corps,
 .moment-plein.relecture, .moment-plein.relecture .corps-faisais { touch-action: pan-y pinch-zoom; }
 
-/* Aujourd'hui (2b, v7 ; façon Apple en v12, spec §5.4) : en-tête, rubriques du soir en cartes, ligne Mémo vocal / J'ai fini,
-   replis en liste groupée, Ma journée, bande du bas. Le soir défile (v11) ; « J'ai fini pour ce soir » (P3) et la ligne
-   Après coup (P2) s'atteignent au-dessus de la bande. v12 : l'en-tête et les cartes s'aèrent, et la page remplie ne grandit
-   que de 120 px au plus depuis la v11 (390 × 844, texte par défaut ; v12-design.spec.js) : cartes de 12 px de marge haute et
-   basse (14 sur les côtés), 8 entre la tête et les choix, choix de 44 (la cible minimale, au lieu des 48 du lot), 10 entre
-   deux cartes et 6 entre les autres blocs. Avant 4 h, « Encore jeudi jusqu'à 4 h. » est dans la ligne du résumé, sans
-   hauteur. Le geste horizontal reste à la page (changer de jour en glissant), le défilement vertical à iOS. */
+/* Aujourd'hui (2b, v7 ; façon Apple en v12, spec §5.4 ; « 3a » en v12.1) : en-tête en bandeau teinté, rubriques du soir à
+   plat séparées d'un filet, ligne Mémo vocal / J'ai fini, replis en liste groupée, Ma journée, bande du bas. Le soir défile
+   (v11) ; « J'ai fini pour ce soir » (P3) et la ligne Après coup (P2) s'atteignent au-dessus de la bande. v12 : la page
+   remplie ne grandit que de 120 px au plus depuis la v11 (390 × 844, texte par défaut ; v12-design.spec.js) : 8 entre la tête
+   d'une rubrique et ses choix, choix de 44 (la cible minimale, au lieu des 48 du lot), 10 entre deux rubriques et 6 entre
+   les autres blocs. Avant 4 h, « Encore jeudi jusqu'à 4 h. » a sa ligne sous le titre (v12.1 : la ligne du résumé, qui
+   l'accueillait sans hauteur de plus, a disparu) : la page grandit alors de 22 px, au-delà des 120 (réserve de la v12.1,
+   docs/decisions.md). Le geste horizontal reste à la page (changer de jour en glissant), le défilement vertical à iOS. */
 /* Un champ qui reçoit le focus (clavier, VoiceOver) défile au-dessus de la bande et des onglets, jamais dessous. */
 html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) + var(--h-bande) + var(--zone-bas)); }
 .aujourdhui {
@@ -424,24 +435,39 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .bandeau + .aujourdhui { gap: 4px; }
 
 /* En-tête façon App Store (v12, spec §5.4) : le sur-titre en capitales, 13/600 en --text-2 (« JEUDI 15 OCTOBRE ⌄ »), au-dessus
-   du grand titre, 34/41 en 700 (« Aujourd'hui »), plafonné à 48 px en très grand texte (--t-grand-titre). Dans le h1, le
-   grand titre vient d'abord (le nom accessible ne change pas, entete-jour.js) : column-reverse le met dessous. Le sélecteur
-   de date couvre le titre entier, sur-titre et grand titre (67 de haut au texte par défaut, une cible de 44 au moins) : le
-   sur-titre seul aurait demandé une rangée de 44, et la page du soir ne doit pas grandir de plus de 120 px (spec §5.4). ‹ ›
-   sont des ronds neutres de 36 (la carte, une ombre légère en clair, un filet en sombre) dans des cibles de 44, à droite du
-   grand titre, centrées sur sa dernière ligne ; › prend --desactive sur aujourd'hui. Dessous, en 15 : « Encore jeudi
-   jusqu'à 4 h. » avant 4 h, les zones du jour en points et le résumé. */
-.entete-jour { display: flex; flex-direction: column; }
+   du grand titre, 40/47 en 700 (« Aujourd'hui » ; v12.1, 3a : 34/41 en v12), plafonné à 48 px en très grand texte
+   (--t-grand-titre). Dans le h1, le grand titre vient d'abord (le nom accessible ne change pas, entete-jour.js) :
+   column-reverse le met dessous. Le sélecteur de date couvre le titre entier, sur-titre et grand titre (une cible de 44 au
+   moins) : le sur-titre seul aurait demandé une rangée de 44, et la page du soir ne doit pas grandir de plus de 120 px (spec
+   v12 §5.4). ‹ › sont des ronds neutres de 36 (--rond, une ombre légère en clair, un filet en sombre) dans des cibles de 44,
+   à droite du grand titre, centrées sur sa dernière ligne ; › prend --desactive sur aujourd'hui. Dessous, en 15, seulement
+   avant 4 h : « Encore jeudi jusqu'à 4 h. » (v12.1 : plus de points des zones ni de résumé sous le titre).
+   v12.1 (spec §3.1, formes 3a) : l'en-tête est un bandeau teinté (--surface), bord à bord et jusqu'en haut de l'écran, barre
+   d'état comprise (marges négatives : la zone sûre du haut, et --marge sur les côtés), coins du bas à 30, 8 sous lui ; ses
+   marges intérieures, zone sûre + 10 en haut, --marge sur les côtés et 18 en bas. Avec « ‹ Retour », la barre de retour est
+   dans le bandeau ; sous le bandeau « Nouvelle version prête », qui prend la zone sûre (--zone-haut à 0 dans main), il part
+   juste sous lui. */
+.entete-jour {
+  display: flex; flex-direction: column;
+  margin: calc(-1 * var(--zone-haut)) calc(-1 * var(--marge)) 8px; padding: calc(var(--zone-haut) + 10px) var(--marge) 18px;
+  background: var(--surface); border-radius: 0 0 30px 30px;
+}
 /* En très grand texte, quand le grand titre et ‹ › ne tiennent plus sur une ligne (« Aujourd'hui » à 48 px sur 375), ‹ ›
    passent dessous, à droite, plutôt que de couper le mot : ensemble, dans un même bloc (.navs-jour). */
 .ligne-jour { display: flex; flex-wrap: wrap; align-items: flex-end; margin-right: -4px; }
 .titre-jour { position: relative; flex: 0 1 auto; max-width: 100%; padding-top: 6px; }
-.titre-jour h1 { display: flex; flex-direction: column-reverse; align-items: flex-start; gap: 2px; min-width: 0; color: var(--text); }
+.titre-jour h1 { display: flex; flex-direction: column-reverse; align-items: flex-start; gap: 6px; min-width: 0; color: var(--text); }
 .grand-titre { max-width: 100%; font: 700 var(--t-grand-titre)/var(--l-grand-titre) var(--police); letter-spacing: .01em; overflow-wrap: break-word; }
 /* La virgule d'« Aujourd'hui, Jeudi 15 octobre » : lue par VoiceOver, sans taille à l'écran. Elle reste en ligne : un
    élément caché par position: absolute serait un bloc, et le nom accessible lirait « Aujourd'hui , Jeudi ». */
 .virgule-lue { font-size: 0; line-height: 0; }
-.sur-titre { max-width: 100%; font: 600 var(--t-note)/1.25 var(--police); letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); overflow-wrap: break-word; }
+/* La date, en capsule --bg sur le bandeau (v12.1, 3a) : marges 5 × 12, rayon 999, interlettrage .03em. En très grand texte,
+   elle passe sur deux lignes, sans sortir du bandeau : un ovale, dont le bord arrondi touche les lettres qui ouvrent et
+   ferment ses lignes, un défaut accepté de la planche (décision de l'utilisateur du 16/11 ; docs/decisions.md, v12.1.0). */
+.sur-titre {
+  max-width: 100%; padding: 5px 12px; border-radius: 999px; background: var(--bg);
+  font: 600 var(--t-note)/1.25 var(--police); letter-spacing: .03em; text-transform: uppercase; color: var(--text-2); overflow-wrap: break-word;
+}
 .fin-titre { white-space: nowrap; }
 .fin-titre svg { display: inline-block; vertical-align: -.12em; width: 1em; height: 1em; margin-left: 4px; }
 .choix-date { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; }
@@ -456,37 +482,37 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .nav-jour svg { position: relative; width: 18px; height: 18px; }
 .nav-jour[disabled] { color: var(--desactive); cursor: default; }
 .entete-jour > .barre-retour { margin: 0 -8px; }
-/* La ligne n'a que du texte : elle laisse passer les touchers (v11, contrôle des 44 pt), et le message d'échec reste
-   lisible. */
-.sous-jour { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: var(--t-sous); line-height: 1.2; color: var(--text-2); min-height: 1.2em; pointer-events: none; }
-/* Avant 4 h : en entier, avant les points et le résumé (qui se coupe) ; en grand texte, sur deux lignes au besoin. */
-.veille-jour { flex: 0 1 auto; min-width: 0; color: var(--text-2); }
-/* Les zones des émotions du jour (v9 ; leurs familles en v7 et v8) : un point par zone présente, à sa couleur (.zone-*) :
-   celle des bulles, avec un liseré à l'accent (comme .g-emo, plus haut). */
+/* La ligne sous le titre (v12.1, spec §2 point 2) : elle n'existe que pour « Encore jeudi jusqu'à 4 h. » avant 4 h, ou
+   pour le message d'échec d'écriture, qui prend sa place, en --text ; sur deux lignes et plus au besoin (grand texte).
+   Elle n'a que du texte : elle laisse passer les touchers (v11, contrôle des 44 pt). « Enregistré » n'est plus qu'annoncé
+   (entete-jour.js, .visuellement-cache). Elle n'a pas de place gardée : quand le message paraît ou repart, la page défile
+   de sa hauteur (entete-jour.js), et rien ne bouge sous le doigt. */
+.sous-jour { margin-top: 4px; font-size: var(--t-sous); line-height: 1.2; color: var(--text-2); pointer-events: none; }
+.sous-jour.echec { color: var(--text); }
+/* Les zones des émotions d'un jour (v9 ; leurs familles en v7 et v8), dans l'Historique et l'Après coup : un point par zone
+   présente, à sa couleur (.zone-*) : celle des bulles, avec un liseré à l'accent (comme .g-emo, plus haut). */
 .zones-jour { flex: none; display: inline-flex; align-items: center; gap: 3px; }
 .zones-jour i { width: 8px; height: 8px; border-radius: 4px; background: var(--c-fill); box-shadow: inset 0 0 0 1px var(--c); }
-.sous-jour .zones-jour { gap: 4px; }
-.sous-jour .zones-jour i { width: 10px; height: 10px; border-radius: 5px; }
-.resume-jour { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.indicateur { flex: none; margin-left: auto; color: var(--text); font-weight: 600; }
-.sous-jour.echec .indicateur { flex: 1; white-space: normal; font-weight: 400; }
 .revenir { align-self: flex-start; margin: -8px 0 -6px; }
 
-/* Rubriques du soir (v12, spec §5.4) : une carte --surface, rayon 16 ; en tête, l'icône de 20 en --text-2, sans carré (les
-   rubriques n'ont plus de couleur), et le titre en --text 17/600 ; puis les choix, en grille de 3 et de 44 de haut. Les
-   cartes sont resserrées (12 px en haut et en bas, 14 sur les côtés, 8 entre deux blocs) : la page du soir ne grandit pas
-   de plus de 120 px depuis la v11 (spec §5.4, v12-design.spec.js). */
+/* Rubriques du soir (v12, spec §5.4) : en tête, l'icône de 20 en --text-2, sans carré (les rubriques n'ont plus de
+   couleur), et le titre en --text 17 ; puis les choix, en grille de 3 et de 44 de haut, 8 entre deux blocs. v12.1 (spec
+   §3.1, formes 3a) : plus de carte, les rubriques sont à plat sur le fond (ni fond ni rayon), 14 au-dessus, 8 dessous,
+   rien sur les côtés (la paire Contact · Sport et les détails aussi), séparées d'un filet --line de 1 au-dessus, sans
+   hauteur (box-shadow) ; la première sous le bandeau n'a pas de filet (6 au-dessus). Le titre de rubrique en 700. La page
+   du soir ne grandit pas de plus de 120 px depuis la v11 (spec v12 §5.4, v12-design.spec.js). */
 .champ-jour { display: flex; flex-direction: column; gap: 4px; }
-.carte-champ { background: var(--surface); border-radius: var(--r-carte); padding: 12px 14px; gap: 8px; container: carte / inline-size; }
+.carte-champ { background: none; border-radius: 0; padding: 14px 0 8px; box-shadow: 0 -1px 0 var(--line); gap: 8px; container: carte / inline-size; }
+.entete-jour + .carte-champ { box-shadow: none; padding-top: 6px; }
 /* --h-ligne : la hauteur d'une ligne du titre ; l'icône se centre sur la première, en grand texte aussi. */
 .tete-rubrique { --h-ligne: var(--l-bloc); display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .tete-rubrique > svg { flex: none; width: 20px; height: 20px; margin-top: max(0px, calc((var(--h-ligne) - 20px) / 2)); color: var(--text-2); }
-/* 10 entre deux cartes, et sous l'en-tête (6 entre les autres blocs). */
+/* 10 entre deux rubriques, et sous l'en-tête (6 entre les autres blocs ; v12.1 : 8 de plus sous le bandeau, sa marge du bas). */
 .aujourdhui > :is(.entete-jour, .carte-champ, .deux-colonnes) + :is(.carte-champ, .deux-colonnes) { margin-top: 4px; }
 /* Le titre et « nuit dernière » dans un même bloc de texte, où le lien d'un détail (v8) flotte à droite de la première
    ligne : le titre passe dessous au besoin (« Contact / humain » dans une demi-carte), sans hauteur de plus. */
 .tete-textes { flex: 1 1 auto; min-width: 0; font: 600 var(--t-bloc)/var(--h-ligne) var(--police); color: var(--text); }
-.titre-rubrique { color: var(--text); }
+.titre-rubrique { color: var(--text); font-weight: 700; }
 /* « nuit dernière » en 15, comme dans la maquette v12 (13 en v11) ; d'un seul tenant, mais en bloc en ligne : la ligne peut
    se couper avant lui. En simple span, collé à « Sommeil » sans blanc entre eux, il ne passait jamais à la ligne et sortait
    de la carte et de l'écran en très grand texte (relecture de la tâche 4 ; déjà en v11 : la page défilait de côté dès
@@ -499,12 +525,14 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    une cible centrée). Au-dessus, la marge de la carte et l'écart entre cartes lui laissent la place, sans toucher les
    choix de la carte du dessus. Elle passe devant le titre : la 2e ligne d'un titre (« mouvement »), peinte après un
    flottant, ne lui prend pas le toucher (mesuré par elementFromPoint, v8-sommeil). Le chevron tourne quand le détail
-   est ouvert. */
+   est ouvert. v12.1 : la rubrique n'a plus de marge sur les côtés ; la cible s'arrête au bord droit de sa rubrique (plus
+   de marge intérieure ni de marge négative à droite, le texte reste à sa place) : celle de Contact ne mord plus sur la
+   rubrique Sport, à 8 px d'elle. */
 .lien-rubrique {
   --marge-cible: max(0px, calc((var(--cible) + 1px - var(--h-ligne)) / 2));
   --marge-haut: calc(var(--marge-cible) + 6px); --marge-bas: max(0px, calc(var(--marge-cible) - 6px));
   position: relative; z-index: 1; float: right; display: inline-flex; align-items: center; gap: 1px;
-  padding: var(--marge-haut) 10px var(--marge-bas) 8px; margin: calc(-1 * var(--marge-haut)) -10px calc(-1 * var(--marge-bas)) -2px;
+  padding: var(--marge-haut) 0 var(--marge-bas) 8px; margin: calc(-1 * var(--marge-haut)) 0 calc(-1 * var(--marge-bas)) -2px;
   border: 0; background: none; color: var(--accent-texte); font-family: var(--police); font-size: var(--t-note); font-weight: 600; line-height: var(--h-ligne); white-space: nowrap;
 }
 .lien-rubrique svg { width: 12px; height: 12px; flex: none; transition: transform var(--duree); }
@@ -518,9 +546,9 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    l'autre, en pleine largeur. 8,3 em et non plus 8,4 depuis la marge de 16 (v12, relecture de la tâche 4) : la paire
    change de disposition aux mêmes tailles de texte qu'en v11 (côte à côte à 21 px sur 390, v7-aujourdhui). */
 .aujourdhui .deux-colonnes { display: flex; flex-wrap: wrap; gap: 6px 8px; }
-/* Côte à côte, 12 sur les côtés (la maquette v12) : la roue y garde la largeur mesurée en v11 (« Ressourçant » sur une
-   ligne, 6 px au moins jusqu'au bord de la fenêtre). */
-.deux-colonnes > .carte-champ { flex: 1 1 8.3em; min-width: 0; padding-inline: 12px; }
+/* Côte à côte : rien sur les côtés depuis la v12.1, comme les autres rubriques à plat (12 en v12, dans leur carte) ; la roue
+   y est donc plus large qu'en v11 (« Ressourçant » sur une ligne, 6 px au moins jusqu'au bord de la fenêtre). */
+.deux-colonnes > .carte-champ { flex: 1 1 8.3em; min-width: 0; }
 .deux-colonnes .carte-champ > .segmente { margin-top: auto; }
 .deux-colonnes .tete-rubrique { --h-ligne: calc(var(--t-sous) * 1.15); }
 .deux-colonnes .tete-textes { font-size: var(--t-sous); }
@@ -560,12 +588,12 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 @container paire (min-width: calc(16.6em + 8px)) {
   .deux-colonnes .roue-valeur { min-height: max(var(--cible), calc(2 * 1.15em + 8px)); }
 }
-/* Le détail du Sport et du Contact (v8, Q5) : une carte de rubrique en pleine largeur, sous la paire. 12 sur les côtés,
-   comme les demi-cartes de la paire, et 11 sur les côtés des types d'activité : les 7 types tiennent sur 3 rangées, comme
-   en v11 (Marche, Vélo et Course à pied sur la 1re, à 390 au texte par défaut). Avec les 14 de la carte, « Autre » passait
-   seul sur une 4e rangée, et la page du soir, Sport en détail ouvert, grandissait de 157 px depuis la v11 (relecture
-   finale ; v12-design.spec.js). */
-.carte-detail { gap: 6px; padding-bottom: 12px; padding-inline: 12px; }
+/* Le détail du Sport et du Contact (v8, Q5) : une rubrique en pleine largeur, sous la paire, à plat comme les autres depuis
+   la v12.1 (14 / 0 / 8, .carte-champ ; en v12, une carte à 12 sur les côtés et 12 en bas), et 11 sur les côtés des types
+   d'activité : les 7 types tiennent sur 3 rangées, comme en v11 (Marche, Vélo et Course à pied sur la 1re, à 390 au texte
+   par défaut). Avec les 14 de la carte de la v12, « Autre » passait seul sur une 4e rangée, et la page du soir, Sport en
+   détail ouvert, grandissait de 157 px depuis la v11 (relecture finale ; v12-design.spec.js). */
+.carte-detail { gap: 6px; }
 .carte-detail .pastilles.souples .pastille { padding-inline: 11px; }
 
 /* Mémo vocal (neutre) et « J'ai fini pour ce soir » (couleur action, sans fond) sur une ligne. */
@@ -635,7 +663,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    0,5 en haut ; trois boutons de 48, chacun avec son icône, le même corps de texte (15/600). « Émotion », le plus large
    (flex 1,2), est le seul aplat d'accent ; « Moment difficile » (sur deux lignes, 113 de large) et « + Épisode » (flex 1)
    sont neutres : la carte et le contour. Un jour passé n'a pas d'Émotion, donc pas d'aplat. Rien de touchable ne passe
-   dessous. */
+   dessous. v12.1 (3a) : les trois boutons en pilule (plus bas, .action-bande et .fab de la bande). */
 .actions-flottantes {
   position: fixed; left: 0; right: 0; bottom: calc(var(--hauteur-onglets) + var(--zone-bas)); z-index: 9;
   height: var(--h-bande); display: flex; align-items: center; gap: var(--ecart);
@@ -716,9 +744,9 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .tableau-traitement th, .tableau-traitement td { text-align: center; padding: 6px 4px; border-top: 1px solid var(--line); }
 .tableau-traitement thead th { border-top: 0; font-size: var(--t-note); font-weight: 600; color: var(--text-2); }
 .tableau-traitement tbody th { text-align: left; font-weight: 600; padding-left: 0; }
-.nom-medicament { border: 0; background: none; padding: 0; min-height: var(--cible); font: inherit; font-weight: 600; color: var(--action); text-align: left; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
-/* Le panneau d'édition, posé dans la carte : sur le fond de l'écran (v12), et non sur --surface-2, où son lien vert
-   « Fermer » passerait sous 4,5:1 en clair (spec §5.3). */
+.nom-medicament { border: 0; background: none; padding: 0; min-height: var(--cible); font: inherit; font-weight: 600; color: var(--accent-texte); text-align: left; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+/* Le panneau d'édition, posé dans la carte : sur le fond de l'écran (v12), et non sur --surface-2, où son lien (l'accent)
+   « Fermer » passait sous 4,5:1 en clair en v12 (spec §5.3 ; 4,73:1 depuis la v12.1, la règle est gardée). */
 .edition-traitement { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: var(--r-moyen); background: var(--bg); }
 .doses-moments { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
 .doses-moments { align-items: end; }
@@ -743,7 +771,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    (son nom reste « Épisode ») : « Émotion » garde son nom en toutes lettres et reste le plus large (P5). */
 .actions-flottantes { flex-wrap: nowrap; container: bande / inline-size; font-size: 1rem; }
 .actions-flottantes .action-bande, .actions-flottantes .fab {
-  position: static; min-width: 0; height: var(--cible-grille); border-radius: var(--r-bouton);
+  position: static; min-width: 0; height: var(--cible-grille); border-radius: 999px;
   display: flex; align-items: center; text-decoration: none; white-space: nowrap;
   background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
   font-size: var(--t-sous); line-height: 1.2; font-weight: 600;
@@ -842,13 +870,14 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .lien-apres-coup .ligne-libelle { display: flex; flex-direction: column; gap: 2px; }
 .titre-apres-coup { font-weight: 600; }
 /* Carte « Après coup · TCC » des épisodes : un cadre de bouton, neutre (la carte et le contour), son texte en accent (v12,
-   spec §5.4) ; son chevron, comme tous ceux d'une rangée, en --contour (composants.css). */
-.ligne-carte.bouton-apres-coup { border: 1px solid var(--contour); border-radius: var(--r-bouton); background: var(--surface); color: var(--accent-texte); }
+   spec §5.4) ; son chevron, comme tous ceux d'une rangée, en --contour (composants.css). Une carte : le rayon des cartes, 24
+   (relecture finale de la v12.1 ; 12 avant, à côté de la carte récapitulative à 24). */
+.ligne-carte.bouton-apres-coup { border: 1px solid var(--contour); border-radius: var(--r-carte); background: var(--surface); color: var(--accent-texte); }
 .bouton-apres-coup .note-carte-interne { color: inherit; }
 /* Aujourd'hui et sa liste : une ligne ordinaire, toujours de la même forme (aucun état). */
 .ligne-apres-coup-jour {
   display: flex; align-items: center; justify-content: space-between; gap: var(--esp-2); min-height: var(--cible);
-  color: var(--action); text-decoration: none; font-size: var(--t-sous); font-weight: 600;
+  color: var(--accent-texte); text-decoration: none; font-size: var(--t-sous); font-weight: 600;
 }
 .ligne-apres-coup-jour svg { width: 16px; height: 16px; stroke-width: 2; flex: none; }
 .ligne-apres-coup { min-height: 52px; padding: 8px 10px 8px 16px; font-size: var(--t-sous); line-height: 1.3; font-variant-numeric: tabular-nums; }
@@ -856,13 +885,14 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .sous-titre-etape { font-size: var(--t-sous); font-weight: 600; color: var(--text-2); }
 /* ---------- Émotion du moment (v9, spec §4 et §5 ; visuel-hwf.md) ----------
    Comme How We Feel : plein écran, sans barre d'onglets. Mesures en pt de l'iPhone (1 px CSS = 1 pt). v11 (spec §9) : ces
-   écrans suivent le thème. En sombre, le noir de How We Feel, inchangé ; en clair, le fond d'Aujourd'hui et des cartes
-   blanches. Leurs couleurs passent par les jetons --moment-* (tokens.css), et par le CSS seul : rien n'est recalculé quand
+   écrans suivent le thème. En sombre, le fond sombre de l'app (le noir de How We Feel jusqu'à la v12, la base pétrole
+   profond depuis la v12.1) ; en clair, le fond d'Aujourd'hui et des cartes blanches. Leurs couleurs passent par les jetons --moment-* (tokens.css), et par le CSS seul : rien n'est recalculé quand
    le thème change, écran ouvert. Les bulles (fond, texte noir, halos) n'en dépendent pas. */
 .moment-plein { position: fixed; inset: 0; z-index: 40; overflow: hidden; background: var(--bg); color: var(--moment-texte); --anneau: var(--moment-focus); }
 /* Pas d'accent sur ces écrans (v12, spec §5.6) : leurs actions restent à l'encre, comme en v11. Sinon, un mot sans zone
-   peindrait ses activités choisies en vert à l'écran 3, et on lirait « zone verte » à tort. --action et --action-on sont
-   redéclarés : sur la racine, ils valent déjà le vert. Leurs choix et leurs champs gardent un fond plein, sans contour.
+   peindrait ses activités choisies à l'accent à l'écran 3 (en v12, un vert : on lisait « zone verte » à tort ; en v12.1,
+   un bleu pétrole, voisin de la zone bleue). --action et --action-on sont redéclarés : sur la racine, ils valent déjà
+   l'accent. Leurs choix et leurs champs gardent un fond plein, sans contour.
    Dans une carte (« Pour récupérer, je… », à l'écran 3), ce fond plein est --surface-2, comme en v11 : sur --surface,
    « Arrêter », sans contour, ne serait plus qu'un mot sur la carte (relecture de la tâche 3). */
 .moment-plein {
@@ -973,21 +1003,22 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 }
 .carte-defile::-webkit-scrollbar { display: none; }
 .carte-plan { position: relative; }
-/* Une bulle : 96 pt, faite de deux moitiés à la couleur de sa case (--c). Choisie, chaque moitié devient une capsule de
-   78 × 156 (rayon 24, × 1,625), la « double capsule » de How We Feel, encoche en haut et en bas à la couleur du fond, noire
-   en sombre, gris clair en clair (visuel §2.4) ; elle garde sa forme quand la lentille suit le glissement ailleurs, à
-   l'échelle que celle-ci lui donne (spec v10 §4.1). Place et taille par transform (carte-emotions.js) ; le libellé dans la
-   moitié gauche, que la droite ne couvre pas. */
+/* Une bulle : un disque de 96 pt à la couleur de sa case (--c), son libellé noir dessus. Choisie, elle reste un disque,
+   agrandi par la lentille à 156 pt (× 1,625, carte-geometrie.js), plus gros que ses voisines (120 puis 108), à 4 pt
+   d'elles, au-dessus d'elles le temps d'une transition (v12.1, spec §2 point 3 : la « double capsule » de How We Feel,
+   deux capsules de 78 × 156 au rayon 24 × 1,625, n'existe plus) ; le même en clair et en sombre. Place et taille par
+   transform (carte-emotions.js) ; seules elles changent, jamais la forme.
+   Ce disque de 156 n'est pas propre au mot choisi : c'est le centre de la lentille, qui suit le glissement (v10, spec
+   §4.1). Le mot du milieu, choisi ou non, a 156 : à l'ouverture sans mot choisi, après un glissement, et le mot choisi
+   retouché pour l'effacer, qui reste au centre ; le mot choisi ailleurs a la taille qu'elle lui donne. Là, seule la carte
+   du bas dit le mot choisi (pas avec « Réduire les animations », où seul le mot choisi est agrandi). Réserve de la v12.1,
+   à trancher par l'utilisateur (relecture de la tâche B) : rien n'est changé sans son accord. */
 .bulle-mot {
-  position: absolute; left: 0; top: 0; width: 96px; height: 96px; padding: 0; border: 0; border-radius: 50%; background: none; color: #000;
+  position: absolute; left: 0; top: 0; width: 96px; height: 96px; padding: 0; border: 0; border-radius: 50%; background: var(--c); color: #000;
   transform-origin: 48px 48px; transition: transform .45s cubic-bezier(.2, .8, .2, 1);
   -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
 }
-.bulle-mot.choisi { z-index: 2; border-radius: 24px; }
-.bulle-mot .demi { position: absolute; top: 0; width: 48.5px; height: 96px; background: var(--c); transition: border-radius .45s cubic-bezier(.2, .8, .2, 1); }
-.bulle-mot .demi.gauche { left: 0; border-radius: 48px 0 0 48px / 48px 0 0 48px; }
-.bulle-mot .demi.droite { right: 0; border-radius: 0 48px 48px 0 / 0 48px 48px 0; }
-.bulle-mot.choisi .demi { border-radius: 24px; }
+.bulle-mot.choisi { z-index: 2; }
 /* Le libellé : 12 pt (le diamètre / 8, visuel §2.6) en police système grasse, noir, 78 pt utiles (80 %) ; un mot trop long
    réduit son corps (ui/mesures.js), plusieurs mots passent à la ligne. Choisi, il passe à 18 pt (× 1,625 × 0,923). */
 .etiquette-mot {
@@ -1003,7 +1034,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
     rgba(var(--moment-voile), .28) 64.6%, rgba(var(--moment-voile), .12) 77.7%, rgba(var(--moment-voile), .04) 90.8%, rgba(var(--moment-voile), 0) 100%);
 }
 /* La carte du bas (visuel §2.8) : une capsule de 365 × 100 au moins, à 12,7 des bords et 8 au-dessus de la zone du bas,
-   en #2c2c2e (blanche en clair) ; le texte à 40 du bord, le rond blanc de 76 à droite (foncé en clair). Elle grandit avec le
+   en --moment-carte-bas (#2c2c2e jusqu'à la v12, #19353f en v12.1 ; blanche en clair) ; le texte à 40 du bord, le rond blanc de 76 à droite (foncé en clair). Elle grandit avec le
    texte (grand texte compris). */
 .carte-du-bas-zone {
   position: absolute; z-index: 3; left: calc(12.7px + var(--zone-gauche)); right: calc(12.7px + var(--zone-droite));
@@ -1030,10 +1061,11 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    blanc en clair), sous la flèche de l'écran 2 (la garde de 350 ms l'y protège d'un second toucher). Tout est centré, comme
    l'écran 1 : le mot en rappel, en police système grasse, dans la couleur de sa case (--c-mot, posé par moment.js, éclaircie
    comme dans la carte du bas), ou de sa zone pour un mot à soi mis de côté (-fill), en blanc sans zone (en clair : la
-   capsule, plus bas) ; « Aucun mot » en gris ; « Ce que je faisais » en titre gras, ses pastilles sur #2c2c2e (la surface
-   de la carte du bas ; blanches en clair), un choix fait à la couleur de la case du mot (--c-fill, posé aussi par
+   capsule, plus bas) ; « Aucun mot » en gris ; « Ce que je faisais » en titre gras, ses pastilles sur --moment-choix (la surface
+   de la carte du bas ; #2c2c2e jusqu'à la v12 ; teintées en clair), un choix fait à la couleur de la case du mot (--c-fill, posé aussi par
    moment.js : la même que le mot en rappel), sinon de sa zone (.zone-* : -fill), le texte en -on de la zone (les mêmes
-   dans les deux thèmes), à la couleur action sans zone. Le texte secondaire en #909090 (--text-2 en clair). */
+   dans les deux thèmes), à la couleur action sans zone. Le texte secondaire en --moment-gris (#9fb7bf en sombre depuis la
+   v12.1, #909090 avant ; --text-2 en clair). */
 .ecran-faisais {
   position: absolute; inset: 0; display: flex; flex-direction: column; --fond-choix: var(--moment-choix); --c-mot: var(--c-fill, var(--moment-texte));
   animation: apparition-carte var(--duree-anim) ease-out;
@@ -1122,8 +1154,8 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .amorce-clavier { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; font-size: 16px; pointer-events: none; }
 
 /* Le mot à soi (v9, spec §4.5) : comme l'écran 3, ← en haut, le corps qui défile, et en bas, une fois le mot créé, le
-   rond blanc à la flèche de la carte du bas (foncé en clair). Le titre en police système grasse ; les champs sur #2c2c2e
-   (blancs en clair) ; une famille choisie à la couleur de la zone du mot (.zone-*, -fill et -on), à la couleur action avant. */
+   rond blanc à la flèche de la carte du bas (foncé en clair). Le titre en police système grasse ; les champs sur --moment-choix
+   (#2c2c2e jusqu'à la v12 ; teintés en clair) ; une famille choisie à la couleur de la zone du mot (.zone-*, -fill et -on), à la couleur action avant. */
 .ecran-mot { position: absolute; inset: 0; display: flex; flex-direction: column; --fond-choix: var(--moment-choix); animation: apparition-carte var(--duree-anim) ease-out; }
 .corps-mot {
   flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
@@ -1175,22 +1207,25 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    l'app, utile au guidage). En 4-6 le pic est à 40 % du cycle. Mouvement réduit : base.css coupe
    l'animation, et le cercle change de teinte d'un coup à chaque phase (pleine à l'inspiration, claire
    à l'expiration), en plus des mots. */
-/* En 2b (v7) : des cartes serrées ; v12 : neutres, « Commencer » seul en aplat d'accent (spec §5.4). */
+/* En 2b (v7) : des cartes serrées ; v12 : neutres, « Commencer » seul en aplat d'accent (spec §5.4). v12.1 (spec §3.1, formes
+   3a) : les exercices courts en pilules, la respiration dans un bandeau bord à bord, « Commencer » sur toute la largeur,
+   « Une chose à la fois » et « Mon plan » au contour, sans fond. */
 .moment-difficile { gap: 10px; padding-top: 8px; }
-/* Les quatre exercices courts (v10) : 2 × 2, de même taille, neutres (v12 : surface, contour, texte en 600), en tête de l'écran. En très
+/* Les quatre exercices courts (v10) : 2 × 2, de même taille, neutres (v12 : surface, contour, texte en 600 ; v12.1 : en
+   pilules teintées), en tête de l'écran. En très
    grand texte, ils passent l'un sous l'autre quand « Panique », le mot le plus long d'un seul tenant, ne tient plus dans sa
    colonne : aucun mot n'est coupé, sauf « Trop-plein » à son trait d'union. 4,55 rem et non plus 4,6 depuis la marge de 16
    (v12, relecture de la tâche 4) : la grille passe à une colonne aux mêmes tailles qu'en v11 (entre 38 et 39 px à 390),
    « Panique » gardant 8 px de jeu dans sa colonne à 38 px. */
 .exercices-courts { display: grid; grid-template-columns: repeat(auto-fit, minmax(max(calc(50% - 5px), 4.55rem), 1fr)); grid-auto-rows: 1fr; gap: 10px; }
 .exercice-court {
-  min-width: 0; min-height: 64px; padding: 8px 10px; border: 0; border-radius: var(--r-carte); background: var(--surface); color: var(--text);
+  min-width: 0; min-height: 64px; padding: 8px 10px; border: 0; border-radius: 999px; background: var(--surface); color: var(--text);
   box-shadow: inset 0 0 0 1px var(--contour);
   font: 600 1.059rem/1.25 var(--police); text-wrap: balance;
 }
 .respiration { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 8px; }
 .cercle-respiration { width: min(200px, 52vw); aspect-ratio: 1; display: grid; place-items: center; }
-/* Le cercle de la respiration est neutre (v12, spec §5.3) : jamais un disque vert. Dans les écrans de l'émotion, où --contour
+/* Le cercle de la respiration est neutre (v12, spec §5.3) : jamais un disque d'accent. Dans les écrans de l'émotion, où --contour
    est transparent, il reste cerclé à l'encre, comme en v11 (relecture de la tâche 3 : sinon, un rond pâle sur la carte). */
 .cercle-respiration span { width: 100%; height: 100%; border-radius: 50%; background: var(--surface-2); border: 2px solid var(--contour); transform: scale(.55); }
 .moment-plein .cercle-respiration span { border-color: var(--moment-plein); }
@@ -1212,14 +1247,16 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .moment-difficile .respiration { gap: 12px; }
 .moment-difficile .phase-respiration { font-size: 1.176rem; min-height: 1.3em; margin-top: 2px; }
 /* « Commencer » : 30 de marge à côté du mot en texte normal ; elle fond avec le très grand texte. Le mot se borne à 44 px :
-   « Recommencer », le même bouton une fois la respiration finie, ne dépasse ainsi de la carte à aucune taille. */
-.moment-difficile .respiration .btn { min-height: 54px; padding: 0 max(6px, calc(47px - 1rem)); font-size: min(1.059rem, 44px); margin-top: 4px; }
+   « Recommencer », le même bouton une fois la respiration finie, ne dépasse ainsi de la carte à aucune taille. v12.1 (3a) :
+   une pilule sur toute la largeur du bandeau. */
+.moment-difficile .respiration .btn { min-height: 54px; padding: 0 max(6px, calc(47px - 1rem)); font-size: min(1.059rem, 44px); margin-top: 4px; align-self: stretch; }
 .puces-respiration { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-/* La puce se borne à sa rangée : en très grand texte, sa valeur se coupe avant le chevron, qui reste dans la carte. */
+/* La puce se borne à sa rangée : en très grand texte, sa valeur se coupe avant le chevron, qui reste dans la carte. En
+   pilule (v12.1). */
 .puce-reglage { position: relative; display: inline-flex; align-items: center; min-width: 0; max-width: 100%; }
 .puce-reglage select {
   -webkit-appearance: none; appearance: none; min-height: var(--cible); max-width: 100%; padding: 0 36px 0 16px; margin: 0;
-  border: 0; border-radius: var(--r-bouton); background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
+  border: 0; border-radius: 999px; background: var(--fond-choix); color: var(--text); box-shadow: inset 0 0 0 1px var(--contour);
   font-size: max(16px, var(--t-corps)); font-weight: 500; font-variant-numeric: tabular-nums; text-overflow: ellipsis;
 }
 .puce-reglage svg { position: absolute; right: 12px; width: 16px; height: 16px; color: var(--text-2); pointer-events: none; }
@@ -1247,6 +1284,8 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .icone-plan { flex: none; width: 24px; height: 24px; color: var(--text-2); display: grid; place-items: center; }
 .icone-plan svg { width: 22px; height: 22px; }
 .modifier-plan { flex: none; min-width: var(--cible); justify-content: flex-end; font-weight: 600; }
+/* Moment difficile (v12.1, 3a) : « Une chose à la fois » et « Mon plan » sans fond, un contour --line de 1, rayon 24. */
+.moment-difficile .une-chose-acces, .moment-difficile .plan-moment { background: none; border-radius: 24px; box-shadow: inset 0 0 0 1px var(--line); }
 /* « Une chose à la fois » (v6) : une ligne du plan par écran, en très grand texte. La carte défile si le
    texte est long, les boutons restent à l'écran. Aucun repère de position : rien n'est compté. */
 .une-chose { height: 100%; display: flex; flex-direction: column; }
@@ -1263,12 +1302,14 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    entrée, sans carré), le libellé en 17, le chevron ; v12 (la maquette) : le libellé en 400, comme les listes d'iOS. */
 .entrees .ligne-carte { min-height: 60px; padding-block: 8px; font-size: var(--t-bloc); }
 .entrees .ligne-libelle { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.carte-respiration { padding: 18px 16px 16px; }
-.carte-respiration .respiration { padding-top: 0; }
-/* Dans une carte (Moment difficile), comme dans le rendu 2b : un cercle de 152, cerclé de 2 px, et dedans le disque qui
-   respire ; neutres (v12, spec §5.3 : le vert n'est jamais un disque), « Commencer » seul en aplat d'accent. Sans mouvement,
+/* La respiration de Moment difficile (v12.1, 3a) : un bandeau --surface bord à bord (marges latérales négatives de
+   --marge), rayon 34, marges 18 × 32, 10 entre ses éléments. */
+.carte-respiration { margin: 0 calc(-1 * var(--marge)); border-radius: 34px; padding: 18px 32px; }
+.carte-respiration .respiration { padding-top: 0; gap: 10px; }
+/* Dans son bandeau, comme dans le rendu 2b : un cercle de 176 (v12.1 ; 152 en v12), cerclé de 2 px, et dedans le disque qui
+   respire ; neutres (v12, spec §5.3 : l'accent n'est jamais un disque), « Commencer » seul en aplat d'accent. Sans mouvement,
    le disque reste figé et, à l'inspiration, se remplit. */
-.carte-respiration .cercle-respiration { width: 152px; border-radius: 50%; background: var(--surface-2); border: 2px solid var(--contour); }
+.carte-respiration .cercle-respiration { width: 176px; border-radius: 50%; background: var(--surface-2); border: 2px solid var(--contour); }
 .carte-respiration .cercle-respiration span { background: var(--surface); border: 0; }
 @media (prefers-reduced-motion: reduce) {
   .carte-respiration .cercle-respiration.phase-inspire span { background: var(--text-2); }
@@ -1300,7 +1341,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .bouton-lecture.petit svg { width: 26px; height: 26px; }
 /* L'écran Programme (v8) : la présentation en 15 --text-2, une carte par étape (son titre 17/600 en tête, puis ses
    séances en rangées de liste 2b, chevron), la ligne fixe en bas. Une séance faite : une coche à l'encre (v12, spec §5.3 :
-   jamais un « fait » vert) et « Faite le 12/10 » en 14 --text-2, sous sa durée ; pas faite : rien. L'épingle (v10) à côté
+   jamais un « fait » d'accent) et « Faite le 12/10 » en 14 --text-2, sous sa durée ; pas faite : rien. L'épingle (v10) à côté
    du lien, le dessin à la marge du titre ; en très grand texte, le lien prend la ligne et l'épingle passe dessous, à droite. */
 .programme { gap: 12px; }
 .presentation-programme { display: flex; flex-direction: column; gap: 6px; font-size: var(--t-sous); line-height: 1.4; color: var(--text-2); text-wrap: pretty; }
@@ -1355,10 +1396,12 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    (très grand texte, plus de 40 px), l'une sous l'autre, le mot entier. Touchée, l'une brille 600 ms : son fond change et, sauf
    avec « Réduire les animations », un halo s'étend et s'efface. Rien d'autre ne bouge. Transparentes, elles ont le contour d'un
    bouton non rempli (v12, spec §5.2 : --contour, 3:1 sur le fond ; --line, un filet, ne s'y voyait pas), en bordure et non en
-   box-shadow, que le halo anime déjà. */
+   box-shadow, que le halo anime déjà. En pilule (relecture finale de la v12.1, 3a : tout ce qui se touche), au rayon de la
+   moitié de leur hauteur minimale (30) : plus hautes en très grand texte, elles deviennent des rectangles arrondis, qui
+   gardent leur mot dedans. La planche ne les nomme pas parmi les pilules de rayon 999 : elles gardent ce rayon. */
 .etiquettes-noting { display: grid; grid-template-columns: repeat(auto-fit, minmax(max(calc(50% - 5px), 4.2rem), 1fr)); gap: 10px; }
 .etiquette-noting {
-  min-width: 0; min-height: 60px; padding: 8px; border: 1px solid var(--contour); border-radius: var(--r-moyen); background: var(--fond-choix);
+  min-width: 0; min-height: 60px; padding: 8px; border: 1px solid var(--contour); border-radius: 30px; background: var(--fond-choix);
   color: var(--text); font: 600 var(--t-corps)/1.25 var(--police); overflow-wrap: anywhere;
 }
 .etiquette-noting.brille { background: var(--c-tint-2, var(--surface-2)); }
@@ -1366,7 +1409,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
   .etiquette-noting.brille { animation: etiquette-brille 600ms ease-out; }
 }
 @keyframes etiquette-brille { from { box-shadow: 0 0 0 0 var(--c, var(--contour)); } to { box-shadow: 0 0 0 10px transparent; } }
-/* L'anneau : la piste en --line (un filet), le temps passé en --text-2 (3:1 sur le fond ; v12, spec §5.3 : jamais vert, pas plus
+/* L'anneau : la piste en --line (un filet), le temps passé en --text-2 (3:1 sur le fond ; v12, spec §5.3 : jamais à l'accent, pas plus
    que le disque) ; dedans, le disque du souffle (neutre, --surface-2 cerclé de 2 px en --contour, comme le cercle de la
    respiration) et le bouton. La nuit (.parcours.ecran-noir) les éteint encore (--c, --c-tint-2). */
 .lecteur-anneau { position: relative; width: min(232px, 60vw); aspect-ratio: 1; display: grid; place-items: center; }
@@ -1403,7 +1446,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 }
 /* « Réveil la nuit » (v10, spec §5.2) : le fond noir (.ecran-noir, tokens.css), dans les deux thèmes, qu'avaient aussi les écrans
    de l'émotion jusqu'à la v10 (ils suivent le thème depuis la v11), mais rien n'y éclaire la chambre : texte gris (4,5:1 au
-   moins), teinte éteinte, et sans accent (v12 : un gris, ni vert ni blanc). Le contour (champs, interrupteur éteint) reste à
+   moins), teinte éteinte, et sans accent (v12 : un gris, ni l'accent ni blanc). Le contour (champs, interrupteur éteint) reste à
    3:1 sur la carte et --surface-2 (spec §5.2 ; 3,47:1 et 3,21:1), plus sombre que le texte : la nuit n'éclaire pas. */
 .parcours.ecran-noir {
   color: var(--text);
@@ -1501,7 +1544,8 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .g-changement-num { font-size: 11px; font-weight: 600; fill: var(--text-2); } /* TAILLE_REPERE, geometrie.js */
 .legende-reperes { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-size: var(--t-note); line-height: 1.4; color: var(--text-2); overflow-wrap: anywhere; }
 /* Le détail d'une colonne ou d'une barre touchée, dans la carte du graphique : sur le fond de l'écran (v12), et non sur
-   --surface-2, où ses liens verts (« Voir ce jour », les dates) passeraient sous 4,5:1 en clair (spec §5.3). */
+   --surface-2, où ses liens (« Voir ce jour », les dates, à l'accent) passaient sous 4,5:1 en clair en v12 (spec §5.3 ;
+   4,73:1 depuis la v12.1, la règle est gardée). */
 .detail-colonne { font-size: var(--t-sous); line-height: 1.45; text-wrap: pretty; padding: 8px 10px; border-radius: var(--r-moyen); background: var(--bg); }
 .liste-barres { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .ligne-barre { display: grid; grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr); gap: 2px 10px; align-items: center; }
