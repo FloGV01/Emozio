@@ -407,7 +407,7 @@ test('la section v12.1 de integration.md, du journal de version et de la recette
   for (const r of [recette, cochee, suivie]) assert.equal((sectionV121(r).match(/^- \[[ xX]\] /gm) || []).length, 7);
 });
 
-test('la version 12.1.0 : package.json et js/version.js (écrit par npm run precache)', () => {
-  assert.equal(JSON.parse(doc('package.json')).version, '12.1.0');
-  assert.match(doc('public', 'js', 'version.js'), /^export const VERSION_APP = '12\.1\.0';$/m);
+test('la version 12.1.1 : package.json et js/version.js (écrit par npm run precache)', () => {
+  assert.equal(JSON.parse(doc('package.json')).version, '12.1.1');
+  assert.match(doc('public', 'js', 'version.js'), /^export const VERSION_APP = '12\.1\.1';$/m);
 });

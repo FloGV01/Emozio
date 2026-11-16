@@ -995,3 +995,52 @@ test('v12 (5/9) · les étiquettes du noting ont le contour d\'un bouton non rem
     for (const c of m.voisins) expect(c, schema).toBe(contourDe(t));
   }
 });
+
+// v12.1.1 (demande de l'utilisateur, 16/11) : dans les grilles de parcours, le libellé est centré dans sa bulle : « Ce qui a
+// pesé » et « Ce qui a rechargé » (Aujourd'hui), le déclencheur et ce qui est dessous (épisode). Non choisi, le libellé seul ;
+// choisi, la coche et le libellé ensemble. Un libellé sur deux lignes est centré aussi. Le choix ne décale rien en hauteur
+// ni en largeur de la bulle. Clair et sombre.
+const ecartsDuCentre = (loc) => loc.evaluate(async (g) => {
+  await Promise.all(g.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => {})));
+  return [...g.querySelectorAll('button.pastille:not(.pastille-ajout)')].filter((b) => b.lastElementChild).map((b) => {
+    const p = b.getBoundingClientRect();
+    const l = b.lastElementChild.getBoundingClientRect();
+    const c = b.querySelector(':scope > .coche');
+    const gauche = c && getComputedStyle(c).display !== 'none' ? c.getBoundingClientRect().left : l.left;
+    return { nom: b.textContent.trim().slice(0, 24), ecart: Math.abs((gauche + l.right) / 2 - (p.left + p.right) / 2), aligne: getComputedStyle(b).textAlign, taille: [p.width, p.height] };
+  });
+});
+
+test('v12.1.1 : le libellé est centré dans les bulles de « Ce qui a pesé / rechargé » et de l\'épisode, choisies ou non', async ({ page }) => {
+  for (const schema of ['light', 'dark']) {
+    await page.emulateMedia({ colorScheme: schema });
+    await aller(page, '#/aujourdhui');
+    const repli = page.getByRole('button', { name: /^Ce qui a pesé/ });
+    if ((await repli.getAttribute('aria-expanded')) !== 'true') await repli.click();
+    for (const nom of ['Ce qui a pesé', 'Ce qui a rechargé']) {
+      const g = page.getByRole('group', { name: nom, exact: true });
+      await expect(g).toBeVisible();
+      const avant = await ecartsDuCentre(g);
+      expect(avant.length, `${schema} · ${nom}`).toBeGreaterThan(4);
+      for (const e of avant) { expect(e.ecart, `${schema} · ${nom} · ${e.nom}`).toBeLessThanOrEqual(1); expect(e.aligne).toBe('center'); }
+      await g.getByRole('button').first().click();
+      const apres = await ecartsDuCentre(g);
+      for (const [i, e] of apres.entries()) {
+        expect(e.ecart, `${schema} · ${nom} · ${e.nom} (après un choix)`).toBeLessThanOrEqual(1);
+        expect(e.taille, `${schema} · ${nom} · ${e.nom} : rien ne change de taille`).toEqual(avant[i].taille);
+      }
+      await g.getByRole('button').first().click();
+    }
+    await aller(page, '#/episode/nouveau');
+    const fiche = page.getByRole('dialog', { name: 'Épisode' });
+    const grille = fiche.locator('.pastilles.grille-choix').first();
+    await expect(grille).toBeVisible();
+    const avant = await ecartsDuCentre(grille);
+    expect(avant.length, `${schema} · épisode`).toBeGreaterThan(4);
+    for (const e of avant) { expect(e.ecart, `${schema} · épisode · ${e.nom}`).toBeLessThanOrEqual(1); expect(e.aligne).toBe('center'); }
+    await grille.getByRole('button').nth(1).click();
+    const apres = await ecartsDuCentre(grille);
+    for (const [i, e] of apres.entries()) expect(e.ecart, `${schema} · épisode · ${e.nom} (après un choix)`).toBeLessThanOrEqual(1);
+    expect(apres[1].taille).toEqual(avant[1].taille);
+  }
+});

@@ -685,6 +685,7 @@ Version 12.1.0, construite le 14/11 en 3 tâches sur la branche `dev`, sur la v1
 - l'en-tête d'Aujourd'hui en bandeau teinté jusqu'en haut de l'écran, un grand titre plus gros, les rubriques du soir à plat séparées d'un filet, des pilules pour tout ce qui se touche ;
 - sous « Aujourd'hui », plus de ligne du jour (ni points des zones, ni résumé, ni « Enregistré » à l'écran ; « Enregistré » reste annoncé à VoiceOver) ;
 - sur la carte des émotions, le mot choisi reste un disque agrandi, sans la double capsule ;
+- v12.1.1 (16/11) : le libellé des bulles des grilles de parcours (« Ce qui a pesé / rechargé », l'épisode) est centré ;
 - ni la base (`DB_VERSION` 6) ni la sauvegarde (format 9) ne changent.
 
 Le détail, les écarts au retour de Claude Design et ce qui attend l'utilisateur sont dans `docs/decisions.md`, à l'entrée du 14/11.

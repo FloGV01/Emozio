@@ -283,9 +283,15 @@ input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 1; }
 .pastille[aria-pressed="true"] { background: var(--c-fill, var(--action)); color: var(--c-on, var(--action-on)); box-shadow: none; font-weight: 600; }
 .pastille[aria-pressed="true"] small { color: inherit; }
 .pastilles.chiffres .pastille[aria-pressed="true"] { font-weight: 700; }
-/* Grilles des parcours : alignées à gauche. */
-.pastilles.grille-choix .pastille { min-height: 52px; justify-content: flex-start; text-align: left; gap: 8px; padding: 8px 12px; }
-.pastilles.grille-choix.chiffres .pastille { justify-content: center; }
+/* Grilles des parcours (épisode, après coup, « Ce qui a pesé / rechargé ») : le libellé est centré dans la bulle
+   (v12.1.1, demande de l'utilisateur du 16/11 ; il était aligné à gauche). Non choisi, le libellé garde la place de la
+   coche dans ses marges, comme les pastilles souples : le choix fait ne le décale pas. La liste des morceaux Spotify
+   (Réglages › Mes refuges) reste alignée à gauche, c'est une liste et non des choix. */
+.pastilles.grille-choix .pastille { min-height: 52px; justify-content: center; text-align: center; gap: 8px; padding: 8px 12px; }
+.pastilles.grille-choix .pastille { --demi-coche: 12px; } /* (coche 16 + écart 8) / 2 */
+.pastilles.grille-choix:not(.chiffres) .pastille:not([aria-pressed="true"]) > .coche + * { margin-inline: var(--demi-coche); }
+.pastilles.grille-choix.liste-spotify .pastille { justify-content: flex-start; text-align: left; }
+.pastilles.grille-choix.liste-spotify .pastille:not([aria-pressed="true"]) > .coche + * { margin-inline: 0; }
 /* « + Ajouter » à la suite des choix : une action (couleur action, 600), sans fond ni tirets (2b). */
 .pastille-ajout { color: var(--accent-texte); background: none; border: 0; box-shadow: none; font-weight: 600; }
 .ajout-pastille { grid-column: 1 / -1; display: flex; gap: var(--esp-2); }
