@@ -1044,3 +1044,87 @@ test('v12.1.1 : le libellé est centré dans les bulles de « Ce qui a pesé / r
     expect(apres[1].taille).toEqual(avant[1].taille);
   }
 });
+
+// v12.1.2 (demande de l'utilisateur, 16/11) : « Ce qui a pesé » et « Ce qui a rechargé » n'étaient pas en gras (.etiquette, en
+// 400), les titres des replis en 500. Tout ce qui nomme (un groupe de choix, un champ, un repli) a la graisse des titres de
+// rubrique d'Aujourd'hui, lue sur « Lieu » (700). Ce qui ne nomme pas reste en 400 : « la veille », le résumé d'un repli et
+// les choix non faits. La graisse ne dépend pas du thème : une passe suffit.
+test('v12.1.2 : sur Aujourd\'hui, « Ce qui a pesé », « Ce qui a rechargé », les étiquettes de la nuit et les titres des replis ont la graisse des titres de rubrique', async ({ page }) => {
+  await page.evaluate(() => window.__carnet.repo.journal.patch('2026-10-15', { heureCoucher: '23:20', heureLever: '07:10' }));
+  await page.reload();
+  await aller(page, '#/aujourdhui');
+  const graisse = (loc) => loc.evaluate((e) => getComputedStyle(e).fontWeight);
+  const lieu = page.locator('.titre-rubrique', { hasText: /^Lieu$/ });
+  await expect(lieu).toBeVisible();
+  const reference = await graisse(lieu);
+  expect(reference).toBe('700');
+  for (const [repli, etiquettes] of [[/^Ce qui a pesé/, ['Ce qui a pesé', 'Ce qui a rechargé']], [/^Nuit en détail/, ['Coucher', 'Lever', 'Réveils']]]) {
+    const bouton = page.getByRole('button', { name: repli });
+    if ((await bouton.getAttribute('aria-expanded')) !== 'true') await bouton.click();
+    const corps = page.locator('.repli', { has: bouton }).locator('.repli-corps');
+    for (const nom of etiquettes) {
+      const e = corps.locator('.etiquette', { hasText: new RegExp(`^${nom}`) });
+      await expect(e, nom).toBeVisible();
+      expect(await graisse(e), nom).toBe(reference);
+    }
+  }
+  expect(await graisse(page.locator('.etiquette .facultatif', { hasText: 'la veille' })), '« la veille »').toBe('400');
+  for (const nom of ['Ce qui a pesé', 'Ce qui a rechargé']) {
+    const g = page.getByRole('group', { name: nom, exact: true });
+    expect(await g.locator('button.pastille[aria-pressed="false"]').first().evaluate((b) => getComputedStyle(b).fontWeight), `${nom} : un choix non fait`).toBe('400');
+  }
+  const replis = await page.locator('.replis > .repli').evaluateAll((l) => l.map((r) => {
+    const resume = r.querySelector('.repli-resume');
+    return { titre: r.querySelector('.repli-titre').textContent, graisse: getComputedStyle(r.querySelector('.repli-titre')).fontWeight, resume: resume && getComputedStyle(resume).fontWeight };
+  }));
+  expect(replis.map((r) => r.titre)).toEqual(['Nuit en détail', 'Ce qui a pesé · ce qui a rechargé', 'Notes libres']);
+  for (const r of replis) {
+    expect(r.graisse, r.titre).toBe(reference);
+    if (r.resume) expect(r.resume, `${r.titre} : son résumé`).toBe('400');
+  }
+});
+
+// v12.1.2 : les règles partagées des titres, vues à l'écran. Un titre d'onglet, un libellé de section, le nom d'un parcours,
+// la question d'une étape et le titre en grand du lecteur ont la graisse de « Lieu » (700) ; Moment difficile, Une chose à la
+// fois et « Réveil la nuit » gardent leur typographie (600), jusque dans les règles qu'ils partagent avec les autres écrans.
+test('v12.1.2 : les titres partagés à la graisse des titres de rubrique (Réglages, Épisode, le lecteur de Bien-être) ; Moment difficile, Une chose à la fois et « Réveil la nuit » gardent leur 600', async ({ page }) => {
+  await installerParole(page);
+  await verserControle(page);
+  await page.reload();
+  await aller(page, '#/aujourdhui');
+  const graisses = (loc) => loc.evaluateAll((l) => l.map((e) => getComputedStyle(e).fontWeight));
+  await expect(page.locator('.titre-rubrique').first()).toBeVisible();
+  const reference = (await graisses(page.locator('.titre-rubrique')))[0];
+  expect(reference).toBe('700');
+  await aller(page, '#/reglages');
+  await expect(page.locator('.titre-onglet')).toHaveText('Réglages');
+  expect(await graisses(page.locator('.titre-onglet, .libelle-section'))).toEqual(Array(1 + await page.locator('.libelle-section').count()).fill(reference));
+  await aller(page, '#/aujourdhui');
+  await aller(page, '#/episode/nouveau');
+  const episode = page.getByRole('dialog', { name: 'Épisode' });
+  await expect(episode.locator('.titre-question')).toBeVisible();
+  expect(await graisses(episode.locator('.parcours-tete .nom, .titre-question')), 'Épisode').toEqual([reference, reference]);
+  await episode.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await aller(page, '#/aujourdhui');
+  await aller(page, '#/exercice/expiration-longue');
+  await expect(page.locator('.titre-parcours')).toBeVisible();
+  expect(await graisses(page.locator('.titre-parcours')), 'le lecteur, avant').toEqual([reference]);
+  await aller(page, '#/aujourdhui');
+  await aller(page, '#/moment-difficile');
+  const md = page.getByRole('dialog', { name: 'Moment difficile' });
+  await expect(md.locator('.plan-moment .libelle-section').first()).toBeVisible();
+  expect(new Set(await graisses(md.locator('.parcours-tete .nom, .libelle-section'))), 'Moment difficile').toEqual(new Set(['600']));
+  await md.getByRole('button', { name: 'Une chose à la fois' }).click();
+  const uneChose = page.getByRole('dialog', { name: 'Une chose à la fois' });
+  await expect(uneChose.locator('.parcours-tete .nom')).toBeVisible();
+  expect(await graisses(uneChose.locator('.parcours-tete .nom')), 'Une chose à la fois').toEqual(['600']);
+  await uneChose.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await aller(page, '#/aujourdhui');
+  await aller(page, '#/exercice/reveil-nuit');
+  const nuit = page.locator('.parcours.ecran-noir');
+  await expect(nuit.getByRole('button', { name: 'Commencer' })).toBeVisible();
+  expect(await graisses(nuit.locator('.titre-parcours')), '« Réveil la nuit », avant').toEqual(['600']);
+  await nuit.getByRole('button', { name: 'Commencer' }).click();
+  await expect(nuit.locator('.parcours-tete .nom')).toBeVisible();
+  expect(await graisses(nuit.locator('.parcours-tete .nom')), '« Réveil la nuit », en cours').toEqual(['600']);
+});

@@ -686,6 +686,7 @@ Version 12.1.0, construite le 14/11 en 3 tâches sur la branche `dev`, sur la v1
 - sous « Aujourd'hui », plus de ligne du jour (ni points des zones, ni résumé, ni « Enregistré » à l'écran ; « Enregistré » reste annoncé à VoiceOver) ;
 - sur la carte des émotions, le mot choisi reste un disque agrandi, sans la double capsule ;
 - v12.1.1 (16/11) : le libellé des bulles des grilles de parcours (« Ce qui a pesé / rechargé », l'épisode) est centré ;
+- v12.1.2 (16/11) : tout ce qui nomme (un écran, une carte, une section, un repli, un champ, un groupe de choix) est en gras, à la graisse des titres de rubrique d'Aujourd'hui (700) : « Ce qui a pesé » et « Ce qui a rechargé » étaient en 400, les titres des replis en 500, les titres d'écran, de carte et de section en 600 ;
 - ni la base (`DB_VERSION` 6) ni la sauvegarde (format 9) ne changent.
 
 Le détail, les écarts au retour de Claude Design et ce qui attend l'utilisateur sont dans `docs/decisions.md`, à l'entrée du 14/11.

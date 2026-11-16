@@ -746,13 +746,15 @@ test('le contrôle du mouvement voit ce qui a déjà fini de bouger : une animat
 // 40, Réglages › Rappels plus du tout (tâche 8), et Réglages (avec le bandeau ou la confirmation « Revenir ») qu'à 53 px, contre 40 :
 // la version et son empreinte y passent à la ligne. Sans cela, la taille où Réglages débordait dépendait des lettres de l'empreinte,
 // donc de chaque version. La liste est exacte : un écran qui se met à déborder, ou plus tôt, échoue ; un écran hérité qui déborde
-// plus tard, ou plus du tout, doit y être mis à jour. Le soir entier à 33 px a aussi son test, plus bas.
+// plus tard, ou plus du tout, doit y être mis à jour. Le soir entier à 33 px a aussi son test, plus bas. v12.1.2 : les étiquettes
+// passent en 700 ; « (facultatif) » passe alors sous son nom quand la ligne est pleine (.etiquette-icone), au lieu d'en sortir :
+// Traitement (« Changement / ajustement (facultatif) », dès 47 px) et Réglages › Émotions, Mes mots (« Définition (facultatif) »,
+// à 53 px) ne débordent plus du tout, et quittent la liste.
 const HERITES = {
   'Aujourd\'hui': 47, 'Aujourd\'hui, Sport en détail': 47, 'Épisode, étape 1': 33, 'Épisode rouvert': 33, 'Historique': 53, 'Historique, filtres': 53,
   'Le soir, trois roues vides': 47, 'Le soir, trois roues notées': 47, 'Le soir, Sport et Contact en détail': 47, 'Le soir, Mes gratitudes': 47,
   'Épisode rouvert, Ce que j\'en retiens': 33, 'Confirmation « Revenir »': 53, 'Soins, Rendez-vous': 47, 'Soins, Traitement': 40, 'Rendez-vous': 47,
-  'Confirmation': 47, 'En consultation': 40, 'Traitement': 47, 'Vue soignants': 47, 'Réglages': 53, 'Réglages › Émotions, Mes mots': 53,
-  'Bandeau de mise à jour': 53,
+  'Confirmation': 47, 'En consultation': 40, 'Vue soignants': 47, 'Réglages': 53, 'Bandeau de mise à jour': 53,
 };
 for (const schema of ['light', 'dark']) {
   test(`à 390 px ${schema === 'light' ? 'en clair' : 'en sombre'}, au texte par défaut, en grand texte (23 px) et en très grand texte (33 à 53), rien ne sort de l'écran de côté, hors des écrans hérités, à partir de leur taille de la v11`, async ({ page }) => {
@@ -1061,7 +1063,8 @@ test('Historique 2b : « Semaine du… » en libellé de section, puces neutres 
     await aller(page, '#/historique');
     const semaine = page.locator('.titre-semaine').first();
     await expect(semaine).toBeVisible();
-    expect(await semaine.evaluate((e) => { const s = getComputedStyle(e); return [s.textTransform, s.fontWeight, s.color]; })).toEqual(['uppercase', '600', rgb(t['text-2'])]);
+    // En 700 depuis la v12.1.2, comme tout ce qui nomme (600 avant).
+    expect(await semaine.evaluate((e) => { const s = getComputedStyle(e); return [s.textTransform, s.fontWeight, s.color]; })).toEqual(['uppercase', '700', rgb(t['text-2'])]);
     const puces = await page.locator('.puce').evaluateAll((l) => l.map((p) => ({
       texte: p.textContent, fond: getComputedStyle(p).backgroundColor, couleur: getComputedStyle(p).color,
       icone: p.querySelector('svg') && getComputedStyle(p.querySelector('svg')).color,

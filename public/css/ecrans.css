@@ -41,10 +41,10 @@
 .resume-filtres { font-size: var(--t-note); color: var(--text-2); margin-top: 2px; }
 .filtres { display: flex; flex-direction: column; gap: 12px; margin-top: var(--esp-2); padding: 12px; border-radius: var(--r-carte); background: var(--surface); }
 .groupe-filtre { display: flex; flex-direction: column; gap: 6px; }
-.titre-filtre { font-size: var(--t-note); color: var(--text-2); }
+.titre-filtre { font-size: var(--t-note); font-weight: 700; color: var(--text-2); }
 .semaine { display: flex; flex-direction: column; gap: 6px; margin-top: var(--esp-3); }
 /* « Semaine du 12 octobre » : un libellé de section 2b (12,5 en capitales). */
-.titre-semaine { font-size: var(--t-section); font-weight: 600; letter-spacing: var(--ls-section); text-transform: uppercase; color: var(--text-2); padding-top: 10px; }
+.titre-semaine { font-size: var(--t-section); font-weight: 700; letter-spacing: var(--ls-section); text-transform: uppercase; color: var(--text-2); padding-top: 10px; }
 .ligne-hist { min-height: 56px; padding: 10px 10px 10px 16px; align-items: center; }
 .hist-corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .hist-date { font-size: var(--t-sous); font-weight: 600; display: flex; align-items: center; gap: 6px; }
@@ -150,7 +150,7 @@
 .question-modifiable.abordee .texte-question { color: var(--text-2); }
 .question-ligne textarea.zone-question { --lignes: 1; flex: 1; min-width: 0; margin: 2px 0 2px -8px; padding-left: 8px; overflow-wrap: anywhere; }
 .sujets-rdv { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
-.libelle-sujets { margin: 0; font-size: var(--t-sous); color: var(--text-2); }
+.libelle-sujets { margin: 0; font-size: var(--t-sous); font-weight: 700; color: var(--text-2); }
 
 /* « La dernière fois » (v6) : le compte rendu et la prochaine étape tels qu'écrits, « Reprendre » à côté de chaque question. */
 .bloc-lecture { display: flex; flex-direction: column; gap: 2px; }
@@ -164,7 +164,7 @@
 .quand-lecture { margin: 0; color: var(--text-2); font-size: var(--t-sous); font-variant-numeric: tabular-nums; }
 .recap-lecture { margin: 0; display: flex; flex-direction: column; }
 .ligne-lecture { display: flex; gap: var(--esp-3); padding: 10px 0; border-top: 1px solid var(--line); line-height: 1.35; }
-.ligne-lecture dt { width: 6.4em; flex: none; color: var(--text-2); font-size: var(--t-sous); }
+.ligne-lecture dt { width: 6.4em; flex: none; color: var(--text-2); font-size: var(--t-sous); font-weight: 700; }
 .ligne-lecture dd { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .ligne-lecture.texte { flex-direction: column; gap: 2px; }
 .ligne-lecture.texte dt { width: auto; }
@@ -178,7 +178,7 @@
 .fiche { gap: 16px; padding-bottom: calc(100px + var(--zone-bas)); }
 .fiche > .entete-pousse { margin-bottom: 0; }
 .indicateur-fiche { font-size: var(--t-note); font-weight: 600; color: var(--text); min-width: 5em; text-align: right; }
-.libelle-champ { display: flex; align-items: center; gap: 6px; font-size: var(--t-sous); color: var(--text); }
+.libelle-champ { display: flex; align-items: center; gap: 6px; font-size: var(--t-sous); font-weight: 700; color: var(--text); }
 .libelle-champ svg { width: 18px; height: 18px; color: var(--text-2); flex: none; }
 .champ-fiche { display: flex; flex-direction: column; gap: 6px; }
 .ligne-date-heure { display: flex; gap: var(--esp-2); }
@@ -196,10 +196,10 @@
 /* En consultation */
 .consultation { padding: 4px 20px 28px; display: flex; flex-direction: column; gap: 24px; }
 .identite { display: flex; flex-direction: column; gap: 4px; }
-.titre-consultation { font: 600 var(--t-ecran)/var(--l-ecran) var(--police); }
+.titre-consultation { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); }
 .quand-consultation { font-size: var(--t-corps); color: var(--text-2); font-variant-numeric: tabular-nums; }
 .chiffres-consultation { display: flex; flex-direction: column; gap: 10px; }
-.legende-chiffres { font-size: var(--t-note); color: var(--text-2); }
+.legende-chiffres { font-size: var(--t-note); font-weight: 700; color: var(--text-2); }
 .grille-chiffres { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
 .emotions-consultation { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
 .cellule-chiffre { display: flex; flex-direction: column; gap: 4px; }
@@ -250,6 +250,9 @@
 .tuiles-semaine .tuile { background: var(--surface-2); min-height: 0; padding: 12px 12px 14px; gap: 8px; }
 .tuiles-semaine .tuile-valeur { font-size: var(--t-tuile); color: var(--text); }
 .tuile-emotions { grid-column: 1 / -1; }
+/* « Tes émotions » nomme le groupe des barres des familles : en 700 (v12.1.2). Les autres tuiles, le libellé d'un seul
+   chiffre, gardent leur graisse. */
+.tuile-emotions .tuile-titre { font-weight: 700; }
 /* Ses barres, à la couleur de leur famille (--c), sur --surface-2 : en clair, Joie (2,95:1) et Sérénité (3,00:1) y passaient
    sous le 3:1 d'un graphique depuis les jetons 3a (relecture finale de la v12.1). Un liseré de 1 px au -text de la famille
    (5,32:1 et 5,43:1) porte le 3:1, comme celui des marques de zone ; en sombre, il se fond dans la barre. Il ne grossit pas
@@ -323,13 +326,13 @@ rect:is(.g-sommeil-1, .g-energie-1) { stroke: var(--donnee-2); stroke-width: 1; 
 .tableau-lignes td { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .tableau-lignes td:first-child { color: var(--text-2); }
 .section-analyse { display: flex; flex-direction: column; gap: 12px; padding-top: 8px; }
-.titre-section { font: 600 1.294rem/1.25 var(--police); text-wrap: pretty; }
+.titre-section { font: 700 1.294rem/1.25 var(--police); text-wrap: pretty; }
 /* « Avec qui, comment c'était · Mouvement » (v6.1) : deux lignes égales, aucune ne commence par « · ». */
 .titre-section.equilibre { text-wrap: balance; }
 .section-analyse .phrase { font-size: 0.941rem; line-height: 1.45; text-wrap: pretty; }
 .pied-section { font-size: var(--t-note); color: var(--text-2); line-height: 1.4; }
 .classements .ligne-classement { padding: 10px 16px; display: flex; flex-direction: column; gap: 2px; font-size: var(--t-sous); line-height: 1.35; text-wrap: pretty; }
-.nom-classement { font-size: var(--t-note); color: var(--text-2); }
+.nom-classement { font-size: var(--t-note); font-weight: 700; color: var(--text-2); }
 .analyse .selon-periode > .repli { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 /* En très grand texte, « Tes points positifs » passe à la ligne : sa flèche reste dans l'écran ; le tableau de « Tous les chiffres »,
    à 53 px, défile dans son repli plutôt que de faire défiler la page de côté. */
@@ -615,7 +618,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .replis > .repli + .repli::before { content: ""; position: absolute; top: 0; left: 52px; right: 0; height: .5px; background: var(--line); }
 .replis > .repli .repli-tete { min-height: 58px; gap: 12px; padding: 7px 0; flex-wrap: nowrap; }
 .repli-textes { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.replis > .repli .repli-titre { font-size: var(--t-corps); font-weight: 500; line-height: 1.25; }
+.replis > .repli .repli-titre { font-size: var(--t-corps); line-height: 1.25; }
 .replis > .repli .repli-resume { display: block; margin: 0; font-size: var(--t-petit); line-height: 1.3; }
 .replis > .repli .repli-fleche { flex: none; margin-left: auto; }
 .replis > .repli .repli-corps { padding: 2px 0 14px; }
@@ -627,7 +630,8 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    carré neutre en --text-2 (v12). Toutes les lignes, relevés compris (v9, spec §13.1), sont des liens, avec leur
    chevron. */
 .evenements-jour { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
-.libelle-section { font-size: var(--t-section); font-weight: 600; letter-spacing: var(--ls-section); text-transform: uppercase; color: var(--text-2); padding-bottom: 4px; }
+/* Le libellé d'une section, en 700 depuis la v12.1.2 (600 avant), sauf dans Moment difficile, qui garde sa typographie. */
+.libelle-section { font-size: var(--t-section); font-weight: 700; letter-spacing: var(--ls-section); text-transform: uppercase; color: var(--text-2); padding-bottom: 4px; }
 /* Le titre de section vaut aussi pour l'Analyse (spec §5.2 : 22/28 en 700). En très grand texte, un mot qui ne tient plus
    sur la ligne passe à la ligne au lieu de sortir de l'écran (v12, contrôle global : « Mouvement », à 53 px). */
 .titre-section { font: 700 var(--t-titre-section)/var(--l-titre-section) var(--police); letter-spacing: .01em; color: var(--text); padding: 0 4px; overflow-wrap: anywhere; }
@@ -707,7 +711,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .ligne-interrupteur { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px; }
 /* Le libellé prend la place : l'interrupteur va à droite, comme dans Réglages › Le soir (v6.1). */
 .ligne-interrupteur .ligne-libelle { flex: 1; }
-.libelle-carte { font-size: var(--t-sous); }
+.libelle-carte { font-size: var(--t-sous); font-weight: 700; }
 /* v12 (9/9), contrôle global : en très grand texte, chaque valeur reste à 8 px au moins de son libellé (« Stockage protégé » et
    « non » se touchaient dès 40 px). */
 .a-propos .ligne-info { font-size: var(--t-sous); min-height: var(--cible); gap: 8px; }
@@ -751,6 +755,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .doses-moments { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
 .doses-moments { align-items: end; }
 .dose-moment { display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; font-size: var(--t-legende); line-height: 1.15; color: var(--text-2); }
+.dose-moment > span { font-weight: 700; }
 .dose-moment input { padding: 0 4px; text-align: center; min-width: 0; }
 .actions-ligne { display: flex; justify-content: space-between; align-items: center; }
 .ajout-medicament { align-self: flex-start; font-size: var(--t-corps); }
@@ -882,7 +887,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .ligne-apres-coup-jour svg { width: 16px; height: 16px; stroke-width: 2; flex: none; }
 .ligne-apres-coup { min-height: 52px; padding: 8px 10px 8px 16px; font-size: var(--t-sous); line-height: 1.3; font-variant-numeric: tabular-nums; }
 .bloc-etape { display: flex; flex-direction: column; gap: 8px; }
-.sous-titre-etape { font-size: var(--t-sous); font-weight: 600; color: var(--text-2); }
+.sous-titre-etape { font-size: var(--t-sous); font-weight: 700; color: var(--text-2); }
 /* ---------- Émotion du moment (v9, spec §4 et §5 ; visuel-hwf.md) ----------
    Comme How We Feel : plein écran, sans barre d'onglets. Mesures en pt de l'iPhone (1 px CSS = 1 pt). v11 (spec §9) : ces
    écrans suivent le thème. En sombre, le fond sombre de l'app (le noir de How We Feel jusqu'à la v12, la base pétrole
@@ -1094,9 +1099,10 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .choix-faisais .pastilles { justify-content: center; }
 /* « Pour ce moment : » (v10, spec §8), après « Ce que je faisais », dans le corps qui défile : une ligne en gris, puis deux ou
    trois boutons d'exercice, au corps et à la couleur de texte des activités, avec un contour et sans fond (rien n'invite, rien
-   n'insiste), les mêmes pour toutes les zones. En très grand texte, ils passent à la ligne, et leur texte aussi. */
+   n'insiste), les mêmes pour toutes les zones. En très grand texte, ils passent à la ligne, et leur texte aussi. La ligne nomme
+   le groupe des exercices : en 700 depuis la v12.1.2 (400 avant), toujours en gris et en 15. */
 .pour-ce-moment { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.titre-pour-ce-moment { max-width: 358px; text-align: center; color: var(--moment-gris); font: 400 var(--t-sous)/1.35 var(--police); }
+.titre-pour-ce-moment { max-width: 358px; text-align: center; color: var(--moment-gris); font: 700 var(--t-sous)/1.35 var(--police); }
 .propositions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; max-width: 358px; }
 .proposition {
   max-width: 100%; min-height: var(--cible); padding: 4px 14px; border: 1px solid var(--moment-contour); border-radius: 22px;
@@ -1278,6 +1284,8 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .plan-moment { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 16px; }
 .plan-moment .rubrique-plan p, .plan-moment .liste-si-alors { font-size: 1.12rem; line-height: 1.45; }
 .plan-moment .libelle-section { padding-bottom: 2px; }
+/* Moment difficile garde sa typographie : ses rubriques et le nom de la playlist suivie restent en 600 (v12.1.2). */
+.moment-difficile .libelle-section { font-weight: 600; }
 .plan-moment > .btn-lien { align-self: flex-start; }
 .plan-moment-tete { display: flex; align-items: center; justify-content: space-between; gap: var(--esp-2); }
 .titre-plan-moment { display: flex; align-items: center; gap: 12px; min-width: 0; font: 600 1.235rem/1.3 var(--police); color: var(--text); }
@@ -1316,10 +1324,10 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 }
 /* La carte « Reprendre » (v10) : à gauche, un lien vers l'écran de départ (le titre de la carte, puis celui de l'élément) ; à
    droite, le bouton lecture rond, qui le relance. En très grand texte, le bouton passe sous le lien. v12 (la maquette) : le titre
-   de la carte en sur-titre (13/600, capitales, --text-2), celui de l'élément en 20/600 ; le bouton de 52, le seul aplat
+   de la carte en sur-titre (13/600, capitales, --text-2 ; 13/700 depuis la v12.1.2), celui de l'élément en 20/600 ; le bouton de 52, le seul aplat
    d'accent de Bien-être (spec §5.4). */
 .carte-reprendre { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; column-gap: 12px; padding: 0 14px 0 0; }
-.carte-reprendre .titre-carte { font: 600 var(--t-note)/1.25 var(--police); letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
+.carte-reprendre .titre-carte { font: 700 var(--t-note)/1.25 var(--police); letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
 .carte-reprendre .exercice-titre { font: 600 1.176rem/1.25 var(--police); letter-spacing: -0.01em; color: var(--text); }
 .lien-reprendre {
   flex: 1 1 11rem; display: flex; flex-direction: column; gap: 4px; min-width: 0; min-height: var(--cible); padding: 14px 0 14px 16px;
@@ -1469,6 +1477,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
    centre du bouton, qui va de 14 px du bord gauche à 14 px du bord droit. */
 .segmente.choix-son { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); }
 .reglage-volume { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: var(--t-sous); color: var(--text-2); }
+.reglage-volume > span { font-weight: 700; }
 .reglage-volume input { --part: .5; flex: 1 1 10rem; min-width: 0; min-height: var(--cible); margin: 0; background: none; -webkit-appearance: none; appearance: none; }
 .reglage-volume input::-webkit-slider-runnable-track {
   height: 4px; border-radius: 2px;
@@ -1499,7 +1508,7 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .sans-famille .point-famille { background: none; border: 1.5px solid var(--text-2); }
 /* v9 : « Mes mots », les mots à soi, après « Sans famille » : une rangée par mot, au point de sa zone (creux sans zone),
    sa couleur et sa famille, puis sa définition ; touchée, elle devient son formulaire, et ce qu'on peut en faire. */
-.sous-titre-mes-mots { padding: 6px 0 0; font-size: var(--t-note); font-weight: 600; color: var(--text-2); }
+.sous-titre-mes-mots { padding: 6px 0 0; font-size: var(--t-note); font-weight: 700; color: var(--text-2); }
 .mot-perso-ligne { display: flex; align-items: center; gap: 8px; }
 .editeur-mot { display: flex; flex-direction: column; gap: 14px; padding: 14px 16px; }
 .actions-mot { display: flex; flex-wrap: wrap; gap: 4px 16px; }
@@ -1508,7 +1517,6 @@ html:has(main.aujourdhui) { scroll-padding-bottom: calc(var(--hauteur-onglets) +
 .mot-definitions { font-weight: 600; }
 .texte-definitions { font-size: var(--t-sous); line-height: 1.35; color: var(--text-2); text-wrap: pretty; }
 .champ-definition { padding: 10px 16px; }
-.champ-definition .etiquette { font-weight: 600; }
 .ligne-definition > .revenir-carnet { margin: -6px 16px 4px; font-size: var(--t-sous); font-weight: 600; }
 /* « J'ai fini pour ce soir » (v5) */
 .fini-soir { display: flex; flex-direction: column; gap: 10px; padding: 16px; }

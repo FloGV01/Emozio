@@ -27,7 +27,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
 input, textarea, select { font-size: max(16px, 1em); }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--action); outline-offset: 2px; }
-.chargement { padding: calc(32px + var(--zone-haut)) var(--marge); font: 600 var(--t-ecran)/var(--l-ecran) var(--police); color: var(--text); }
+.chargement { padding: calc(32px + var(--zone-haut)) var(--marge); font: 700 var(--t-ecran)/var(--l-ecran) var(--police); color: var(--text); }
 .visuellement-cache {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
@@ -38,11 +38,13 @@ p { margin: 0; }
    d'un choix fait ou d'une action reste --action, l'accent). */
 a { color: var(--accent-texte); }
 
-/* Titres (2b) : police système, 600. Titre d'écran et question d'un parcours 30/38, titre de bloc 17/22. */
-.titre-onglet { font: 600 var(--t-ecran)/var(--l-ecran) var(--police); margin: 4px 0 0; color: var(--text); }
-.titre-ecran { font: 600 var(--t-ecran)/var(--l-ecran) var(--police); margin: 0; color: var(--text); overflow-wrap: anywhere; }
-.titre-question { font: 600 var(--t-ecran)/var(--l-ecran) var(--police); text-wrap: pretty; color: var(--text); }
-.titre-carte { font: 600 var(--t-bloc)/var(--l-bloc) var(--police); color: var(--text); }
+/* Titres (2b) : police système. Titre d'écran et question d'un parcours 30/38, titre de bloc 17/22. En 700 depuis la v12.1.2 (600
+   avant) : tout ce qui nomme (un écran, une carte, une section, un champ, un repli) a la graisse des titres de rubrique
+   d'Aujourd'hui (.titre-rubrique, ecrans.css). */
+.titre-onglet { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); margin: 4px 0 0; color: var(--text); }
+.titre-ecran { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); margin: 0; color: var(--text); overflow-wrap: anywhere; }
+.titre-question { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); text-wrap: pretty; color: var(--text); }
+.titre-carte { font: 700 var(--t-bloc)/var(--l-bloc) var(--police); color: var(--text); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }

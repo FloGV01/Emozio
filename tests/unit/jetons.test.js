@@ -619,3 +619,47 @@ test('aucune règle pour une classe retirée de l\'app : .rubrique, .rubrique-ic
   }
   assert.deepEqual(fautes, []);
 });
+
+// v12.1.2 (demande de l'utilisateur, 16/11) : tout ce qui nomme (un écran, une carte, une section, un repli, un champ, un groupe
+// de choix) a la graisse des titres de rubrique d'Aujourd'hui (.titre-rubrique), lue dans la feuille. « Ce qui a pesé » et
+// « Ce qui a rechargé » (.etiquette) étaient en 400, les titres des replis en 500, les titres d'écran, de carte et de section en
+// 600. Ce qui suit un nom sans en être un (« (facultatif) », « la veille ») reste en 400. Moment difficile, Une chose à la fois
+// et « Réveil la nuit » gardent leur typographie (600) : seules leurs règles à eux disent une autre graisse.
+const graisseDe = (d) => { const m = d.match(/(?:^|; )font-weight: (\d{3});/) || d.match(/(?:^|; )font: (\d{3}) /); return m ? m[1] : null; };
+const decoupe = (sel) => sel.split(/,(?![^(]*\))/).map((x) => x.trim());
+const NOMMENT = ['etiquette', 'repli-titre', 'libelle-champ', 'libelle-carte', 'libelle-sujets', 'titre-filtre', 'nom-classement', 'legende-chiffres',
+  'recap-nom', 'titre-pour-ce-moment', 'titre-onglet', 'titre-ecran', 'titre-question', 'titre-carte', 'titre-consultation', 'titre-parcours',
+  'libelle-section', 'titre-semaine', 'sous-titre-etape', 'sous-titre-mes-mots', 'titre-section', 'titre-rubrique'];
+const NOMMENT_EN_CONTEXTE = ['.ligne-lecture dt', '.dose-moment > span', '.reglage-volume > span', '.tuile-emotions .tuile-titre', '.parcours-tete .nom',
+  '.section > h2', '.carte-reprendre .titre-carte'];
+const TYPO_A_ELLES = /\.moment-difficile|\.ecran-noir/;
+
+test('v12.1.2 · les titres en gras : chaque règle partagée de ce qui nomme a la graisse des titres de rubrique d\'Aujourd\'hui (700), et aucune autre règle ne la leur reprend', () => {
+  const reference = REGLES.filter(([s]) => decoupe(s).includes('.titre-rubrique')).map(([, d]) => graisseDe(d)).filter(Boolean);
+  assert.deepEqual(reference, ['700'], '.titre-rubrique');
+  const fautes = [];
+  for (const sel of [...NOMMENT.map((c) => `.${c}`), ...NOMMENT_EN_CONTEXTE]) {
+    const g = REGLES.filter(([s]) => decoupe(s).includes(sel)).map(([, d]) => graisseDe(d)).filter(Boolean);
+    if (g.length === 0 || g.some((x) => x !== reference[0])) fautes.push(`${sel} : ${g.join(', ') || 'aucune graisse'}`);
+  }
+  // Une règle dont le sujet (le dernier composé d'un de ses sélecteurs) est l'une de ces classes ne dit pas une autre graisse,
+  // sauf celles des écrans qui gardent leur typographie.
+  const sujet = (x) => x.split(/\s*[\s>+~]\s*/).pop();
+  for (const [s, d, f] of REGLES) {
+    const g = graisseDe(d);
+    if (!g || g === reference[0] || TYPO_A_ELLES.test(s)) continue;
+    const vise = NOMMENT.find((c) => decoupe(s).some((x) => new RegExp(`\\.${c}(?![\\w-])`).test(sujet(x))));
+    if (vise) fautes.push(`${f} : ${s} { ${g} }`);
+  }
+  assert.deepEqual(fautes, []);
+  // Ce qui suit un nom sans en être un reste en 400.
+  for (const sel of ['.facultatif', '.etiquette .discret']) {
+    assert.deepEqual(REGLES.filter(([s]) => decoupe(s).includes(sel)).map(([, d]) => graisseDe(d)).filter(Boolean), ['400'], sel);
+  }
+  // Moment difficile, Une chose à la fois et « Réveil la nuit » : leurs titres restent en 600.
+  const aElles = REGLES.filter(([s]) => TYPO_A_ELLES.test(s) && NOMMENT_EN_CONTEXTE.concat(NOMMENT.map((c) => `.${c}`)).some((n) => s.includes(n.split(' ').pop())))
+    .map(([s, d]) => [s, graisseDe(d)]).filter(([, g]) => g);
+  assert.deepEqual(aElles.map(([, g]) => g), ['600', '600']);
+  assert.ok(aElles.some(([s]) => s === '.moment-difficile .libelle-section'), 'Moment difficile : .libelle-section en 600');
+  assert.ok(aElles.some(([s]) => s.includes('.ecran-noir') && s.includes('.une-chose') && s.includes('.titre-parcours')), '« Réveil la nuit », Une chose à la fois : le nom et le titre en 600');
+});
