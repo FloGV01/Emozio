@@ -518,7 +518,8 @@ test('replis en liste groupée 2b : une carte, des rangées de 58 au moins, une 
       expect(r.hauteur, quoi(i)).toBeGreaterThanOrEqual(58);
       expect(r.taille, quoi(i)).toBe(28);
       expect(r.gauche, quoi(i)).toBe(12);
-      expect(r.graisse, quoi(i)).toBe('500');
+      // v12.1.2 : le titre d'un repli le nomme, en 700, la graisse des titres de rubrique (500 avant).
+      expect(r.graisse, quoi(i)).toBe('700');
       expect(r.chevron, quoi(i)).toBe(true);
       // La première rangée n'a pas de filet ; les suivantes, un filet de 0,5 qui commence après l'icône (12 + 28 + 12) et va
       // jusqu'au bord droit de la carte.
