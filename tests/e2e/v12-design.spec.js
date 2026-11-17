@@ -1087,7 +1087,9 @@ test('v12.1.2 : sur Aujourd\'hui, « Ce qui a pesé », « Ce qui a rechargé »
 // v12.1.2 : les règles partagées des titres, vues à l'écran. Un titre d'onglet, un libellé de section, le nom d'un parcours,
 // la question d'une étape et le titre en grand du lecteur ont la graisse de « Lieu » (700) ; Moment difficile, Une chose à la
 // fois et « Réveil la nuit » gardent leur typographie (600), jusque dans les règles qu'ils partagent avec les autres écrans.
-test('v12.1.2 : les titres partagés à la graisse des titres de rubrique (Réglages, Épisode, le lecteur de Bien-être) ; Moment difficile, Une chose à la fois et « Réveil la nuit » gardent leur 600', async ({ page }) => {
+// Contre-relecture : les exercices courts de Moment difficile (Panique, Colère, Trop-plein, dans le lecteur en mode crise)
+// passaient en 700, comme le lecteur de Bien-être ; ils gardent aussi leur 600, avant de commencer et en cours.
+test('v12.1.2 : les titres partagés à la graisse des titres de rubrique (Réglages, Épisode, le lecteur de Bien-être) ; Moment difficile, ses exercices courts, Une chose à la fois et « Réveil la nuit » gardent leur 600', async ({ page }) => {
   await installerParole(page);
   await verserControle(page);
   await page.reload();
@@ -1127,4 +1129,125 @@ test('v12.1.2 : les titres partagés à la graisse des titres de rubrique (Régl
   await nuit.getByRole('button', { name: 'Commencer' }).click();
   await expect(nuit.locator('.parcours-tete .nom')).toBeVisible();
   expect(await graisses(nuit.locator('.parcours-tete .nom')), '« Réveil la nuit », en cours').toEqual(['600']);
+  // Les quatre exercices courts, ouverts par leur adresse : ils attendent « Commencer », le titre en grand, puis le nom en cours.
+  for (const [id, titre] of [['panique', 'Panique'], ['colere', 'Colère'], ['trop-plein', 'Trop-plein'], ['reveil-nuit', 'Réveil la nuit']]) {
+    await aller(page, '#/aujourdhui');
+    await aller(page, `#/crise/${id}`);
+    const crise = page.locator('.parcours.lecteur-crise');
+    await expect(crise.getByRole('button', { name: 'Commencer' })).toBeVisible();
+    await expect(crise.locator('.titre-parcours')).toHaveText(titre);
+    expect(await graisses(crise.locator('.titre-parcours')), `${titre}, avant`).toEqual(['600']);
+    await crise.getByRole('button', { name: 'Commencer' }).click();
+    await expect(crise.locator('.parcours-tete .nom')).toHaveText(titre);
+    expect(await graisses(crise.locator('.parcours-tete .nom')), `${titre}, en cours`).toEqual(['600']);
+  }
+  // Le même lecteur, hors de Moment difficile : le titre en grand et le nom en cours en 700.
+  await aller(page, '#/aujourdhui');
+  await aller(page, '#/exercice/expiration-longue');
+  await page.getByRole('button', { name: 'Commencer' }).click();
+  await expect(page.locator('.parcours-tete .nom')).toBeVisible();
+  expect(await page.locator('.parcours.lecteur-crise').count(), 'le lecteur de Bien-être').toBe(0);
+  expect(await graisses(page.locator('.parcours-tete .nom')), 'le lecteur, en cours').toEqual([reference]);
+});
+
+// v12.1.2 (contre-relecture) : en gras, un nom est plus large. En très grand texte, la question d'une étape (« Ça ressemblait
+// plutôt à… », « Maintenant, en y repensant… », « Intensité »…) et le titre d'un repli (« La dernière fois · 30 sept. »)
+// sortaient de l'écran au bord droit, là où les parcours et En consultation ne défilent pas de côté : la fin du mot était
+// perdue. Le contrôle global (v7-controle.spec.js) ne voit que l'étape 1 de l'Épisode, et aucun « La dernière fois ». Ici,
+// chaque étape de l'Épisode, du Symptôme et de l'Après coup, leur récapitulatif, Soins › Rendez-vous et En consultation avec
+// « La dernière fois », à 390 et à 375, du texte par défaut à 53 px : aucun nom (ni sa boîte, ni une ligne de son texte) ne
+// sort de l'écran. Ce qui n'est pas un nom (les choix, les champs, les valeurs) reste au contrôle global et à HERITES.
+const NOMS = ['.parcours-tete .nom', '.titre-question', '.sous-titre-etape', '.etiquette', '.recap-nom', '.repli-titre', '.titre-ecran',
+  '.titre-onglet', '.titre-consultation', '.titre-carte', '.libelle-section', '.libelle-champ', '.libelle-sujets', '.ligne-lecture dt',
+  '.legende-chiffres'].join(', ');
+const nomsHorsEcran = (page) => page.evaluate((sel) => {
+  const fautes = new Set();
+  const dedans = (r) => r.left >= -0.5 && r.right <= innerWidth + 0.5;
+  const plage = document.createRange();
+  for (const nom of document.querySelectorAll(sel)) {
+    if (nom.closest('.visuellement-cache') || getComputedStyle(nom).visibility === 'hidden') continue;
+    const r = nom.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    const texte = nom.textContent.trim().slice(0, 40);
+    if (!dedans(r)) fautes.add(`« ${texte} » : ${Math.round(r.left)} → ${Math.round(r.right)}`);
+    const textes = document.createTreeWalker(nom, NodeFilter.SHOW_TEXT);
+    for (let n = textes.nextNode(); n; n = textes.nextNode()) {
+      if (!n.data.trim()) continue;
+      plage.selectNodeContents(n);
+      const hors = [...plage.getClientRects()].filter((q) => q.width > 0 && !dedans(q));
+      if (hors.length) fautes.add(`texte de « ${texte} » : jusqu'à ${Math.round(Math.max(...hors.map((q) => q.right)))}`);
+    }
+  }
+  return [...fautes];
+}, NOMS);
+
+test('v12.1.2 : en très grand texte, à 390 et à 375, aucun nom ne sort de l\'écran : les étapes et le récapitulatif de l\'Épisode, du Symptôme et de l\'Après coup, Soins › Rendez-vous et En consultation avec « La dernière fois »', async ({ page }) => {
+  test.setTimeout(600000);
+  const ids = await verserControle(page);
+  // Un rendez-vous passé chez le même soignant : « La dernière fois · … » au prochain rendez-vous. Un symptôme à rouvrir :
+  // le récapitulatif d'une fiche neuve passée sans rien choisir ne vient pas (« Passer » la ferme), celui d'une fiche rouverte, si.
+  const symptome = await page.evaluate(async () => {
+    const r = window.__carnet.repo;
+    await r.rdv.creer({ date: '2026-09-30', heure: '09:00', professionnel: 'professionnel:psychiatre', compteRendu: 'Ajuster le soir.',
+      prochaineEtape: 'Revoir dans trois semaines.' });
+    return (await r.symptomes.creer({ date: '2026-10-14', symptome: 'symptome:ruminations', intensite: 4, duree: 'duree:moins_une_heure' })).id;
+  });
+  await page.reload();
+  await appPrete(page);
+  const fautes = {};
+  const mesurer = async (ou) => {
+    for (const taille of [null, 23, 33, 40, 47, 53]) {
+      await page.evaluate((t) => { document.documentElement.style.fontSize = t ? `${t}px` : ''; }, taille);
+      await stabiliser(page);
+      const f = await nomsHorsEcran(page);
+      if (f.length) fautes[`${ou}, ${taille ? `${taille} px` : 'défaut'}`] = f;
+    }
+    await page.evaluate(() => { document.documentElement.style.fontSize = ''; });
+  };
+  const vues = [];
+  for (const [largeur, hauteur] of [[390, 844], [375, 812]]) {
+    await page.setViewportSize({ width: largeur, height: hauteur });
+    for (const [route, nom, rouvrir] of [['#/episode/nouveau', 'Épisode', `#/episode/${ids.ep}`], ['#/symptome/nouveau', 'Symptôme', `#/symptome/${symptome}`],
+      [`#/apres-coup/${ids.ep}`, 'Après coup', null]]) {
+      await aller(page, '#/aujourdhui');
+      await aller(page, route);
+      const vue = page.getByRole('dialog', { name: nom });
+      const reperes = vue.locator('.reperes');
+      for (let etape = 1; ; etape += 1) {
+        await expect(vue.locator('.titre-question')).toBeVisible();
+        const ou = await reperes.getAttribute('aria-label');
+        await mesurer(`${largeur} · ${nom}, ${ou} (${await vue.locator('.titre-question').textContent()})`);
+        vues.push(`${largeur} · ${nom}, ${ou}`);
+        if (ou === 'Récapitulatif') break;
+        expect(etape, `${nom} : jusqu'au récapitulatif`).toBeLessThan(12);
+        await vue.getByRole('button', { name: /^(Passer|Suivant)$/ }).click();
+        await expect.poll(async () => (await vue.count()) === 0 || (await reperes.getAttribute('aria-label')) !== ou).toBe(true);
+        if (await vue.count() === 0) break;
+      }
+      if (!rouvrir) continue;
+      await aller(page, '#/aujourdhui');
+      await aller(page, rouvrir);
+      await expect(reperes).toHaveAttribute('aria-label', 'Récapitulatif');
+      await mesurer(`${largeur} · ${nom} rouvert, Récapitulatif`);
+      vues.push(`${largeur} · ${nom}, Récapitulatif`);
+    }
+    await aller(page, '#/soins');
+    await page.getByRole('button', { name: 'Soins : Rendez-vous', exact: true }).click();
+    for (const [ou, aller_] of [['Soins › Rendez-vous', null], ['En consultation', () => aller(page, `#/consultation/${ids.rdv}`)]]) {
+      if (aller_) await aller_();
+      await expect(page.locator('.repli-titre', { hasText: /^La dernière fois · / })).toBeVisible();
+      await mesurer(`${largeur} · ${ou}`);
+      vues.push(`${largeur} · ${ou}`);
+    }
+  }
+  // Le parcours est entier : les cinq étapes de l'Épisode, les trois du Symptôme, les huit de l'Après coup, et leurs récapitulatifs.
+  const etapes = (nom, n) => new Set([...Array.from({ length: n }, (_, i) => `${nom}, Étape ${i + 1} sur ${n}`), `${nom}, Récapitulatif`]);
+  for (const largeur of [390, 375]) {
+    const vu = (nom) => new Set(vues.filter((v) => v.startsWith(`${largeur} · ${nom},`)).map((v) => v.slice(`${largeur} · `.length)));
+    expect(vu('Épisode'), `${largeur} · Épisode`).toEqual(etapes('Épisode', 5));
+    expect(vu('Symptôme'), `${largeur} · Symptôme`).toEqual(etapes('Symptôme', 3));
+    expect(vu('Après coup'), `${largeur} · Après coup`).toEqual(etapes('Après coup', 8));
+    expect(vues, `${largeur} · « La dernière fois »`).toEqual(expect.arrayContaining([`${largeur} · Soins › Rendez-vous`, `${largeur} · En consultation`]));
+  }
+  expect(fautes).toEqual({});
 });

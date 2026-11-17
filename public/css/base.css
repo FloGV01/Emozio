@@ -40,10 +40,11 @@ a { color: var(--accent-texte); }
 
 /* Titres (2b) : police système. Titre d'écran et question d'un parcours 30/38, titre de bloc 17/22. En 700 depuis la v12.1.2 (600
    avant) : tout ce qui nomme (un écran, une carte, une section, un champ, un repli) a la graisse des titres de rubrique
-   d'Aujourd'hui (.titre-rubrique, ecrans.css). */
+   d'Aujourd'hui (.titre-rubrique, ecrans.css). En très grand texte, un mot plus large que l'écran passe à la ligne au lieu
+   d'en sortir (la question d'une étape aussi depuis la v12.1.2 : en gras, « Ça ressemblait plutôt à… » sortait dès 40 px). */
 .titre-onglet { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); margin: 4px 0 0; color: var(--text); }
 .titre-ecran { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); margin: 0; color: var(--text); overflow-wrap: anywhere; }
-.titre-question { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); text-wrap: pretty; color: var(--text); }
+.titre-question { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); text-wrap: pretty; color: var(--text); overflow-wrap: anywhere; }
 .titre-carte { font: 700 var(--t-bloc)/var(--l-bloc) var(--police); color: var(--text); }
 
 @media (prefers-reduced-motion: reduce) {

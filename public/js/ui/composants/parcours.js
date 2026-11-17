@@ -25,12 +25,14 @@ export function usePleinEcran() {
 // `relecture` (v11, spec §11) : un écran où l'on relit (le récapitulatif d'un épisode ou d'un symptôme rouvert, celui de
 // l'Après coup). Le doigt qui glisse vers la droite y fait comme « Fermer » (geste-retour.js), et la classe .relecture le
 // laisse passer (glissement.js, ecrans.css). Partout ailleurs (une saisie, un exercice, un minuteur), aucun geste.
-export function CadreParcours({ titre, etape, nbEtapes = 0, surFermer, sousTitre, pied, icone, noir = false, relecture = false, children }) {
+// `crise` (v12.1.2) : un exercice court de Moment difficile, dans le lecteur en mode crise (.lecteur-crise). Comme Moment
+// difficile, il garde sa typographie : son nom et son titre en grand restent en 600 (composants.css).
+export function CadreParcours({ titre, etape, nbEtapes = 0, surFermer, sousTitre, pied, icone, noir = false, relecture = false, crise = false, children }) {
   usePleinEcran();
   useGesteRetour(relecture ? surFermer : null);
   const recap = etape === 'recap';
   const etatRepere = (i) => (recap || i < etape ? 'fait' : i === etape ? 'en-cours' : null);
-  return html`<div class=${`parcours${noir ? ' ecran-noir' : ''}${relecture ? ' relecture' : ''}`} role="dialog" aria-modal="true" aria-label=${titre}>
+  return html`<div class=${`parcours${noir ? ' ecran-noir' : ''}${relecture ? ' relecture' : ''}${crise ? ' lecteur-crise' : ''}`} role="dialog" aria-modal="true" aria-label=${titre}>
     <header class="parcours-tete">
       <button type="button" class="fermer" onClick=${surFermer}>${Icones.fermer({ trait: 2 })}Fermer</button>
       ${!icone && html`<span class="nom" aria-hidden="true">${titre}</span>`}

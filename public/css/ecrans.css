@@ -196,7 +196,8 @@
 /* En consultation */
 .consultation { padding: 4px 20px 28px; display: flex; flex-direction: column; gap: 24px; }
 .identite { display: flex; flex-direction: column; gap: 4px; }
-.titre-consultation { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); }
+/* Comme le titre d'un écran, un mot plus large que l'écran passe à la ligne (« Psychiatre », dès 47 px ; v12.1.2). */
+.titre-consultation { font: 700 var(--t-ecran)/var(--l-ecran) var(--police); overflow-wrap: anywhere; }
 .quand-consultation { font-size: var(--t-corps); color: var(--text-2); font-variant-numeric: tabular-nums; }
 .chiffres-consultation { display: flex; flex-direction: column; gap: 10px; }
 .legende-chiffres { font-size: var(--t-note); font-weight: 700; color: var(--text-2); }
@@ -207,7 +208,7 @@
 .valeur-chiffre.vide-chiffre { color: var(--text-2); }
 .libelle-chiffre { font-size: var(--t-legende); line-height: 1.25; color: var(--text-2); }
 .bloc-consultation { display: flex; flex-direction: column; gap: 6px; }
-.bloc-consultation .titre-carte { font-size: 1.412rem; }
+.bloc-consultation .titre-carte { font-size: 1.412rem; overflow-wrap: anywhere; }
 
 /* Analyse (v7 en 2b) : les portes en haut (Historique et Épisodes, puis les trois de Comprendre), Ma semaine en tuiles, le
    sélecteur de période qui ne colle que sur les sections qu'il règle (son bloc, .selon-periode). */
@@ -334,9 +335,8 @@ rect:is(.g-sommeil-1, .g-energie-1) { stroke: var(--donnee-2); stroke-width: 1; 
 .classements .ligne-classement { padding: 10px 16px; display: flex; flex-direction: column; gap: 2px; font-size: var(--t-sous); line-height: 1.35; text-wrap: pretty; }
 .nom-classement { font-size: var(--t-note); font-weight: 700; color: var(--text-2); }
 .analyse .selon-periode > .repli { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-/* En très grand texte, « Tes points positifs » passe à la ligne : sa flèche reste dans l'écran ; le tableau de « Tous les chiffres »,
-   à 53 px, défile dans son repli plutôt que de faire défiler la page de côté. */
-.analyse .repli-titre { flex: 0 1 auto; min-width: 0; }
+/* En très grand texte, « Tes points positifs » passe à la ligne, sa flèche dans l'écran (la règle de .repli-titre, partagée depuis
+   la v12.1.2) ; le tableau de « Tous les chiffres », à 53 px, défile dans son repli plutôt que de faire défiler la page de côté. */
 .analyse .repli-corps:has(> .chiffres-base) { overflow-x: auto; }
 .chiffres-base { margin-top: 4px; }
 .apercu-export { max-height: 330px; overflow: auto; -webkit-overflow-scrolling: touch; white-space: pre-wrap; word-break: break-word; margin: 0;

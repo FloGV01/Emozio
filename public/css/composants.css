@@ -389,8 +389,10 @@ button.effacer svg { width: 18px; height: 18px; }
 .repli-fleche { display: inline-flex; color: var(--text-2); transition: transform var(--duree); }
 .repli-fleche svg { width: 16px; height: 16px; stroke-width: 2; }
 .repli-tete[aria-expanded="true"] .repli-fleche { transform: rotate(90deg); }
-/* Le titre d'un repli le nomme : en 700 (v12.1.2 ; 500 dans les replis en carte et ceux d'Aujourd'hui, 400 ailleurs, avant). */
-.repli-titre { font-size: var(--t-corps); font-weight: 700; flex: none; }
+/* Le titre d'un repli le nomme : en 700 (v12.1.2 ; 500 dans les replis en carte et ceux d'Aujourd'hui, 400 ailleurs, avant). En
+   très grand texte, il rétrécit et passe à la ligne au lieu de sortir de l'écran, sa flèche dans l'écran : en gras,
+   « La dernière fois · … » sortait dès 33 px à 375 (v12.1.2 ; seuls les replis de l'Analyse le faisaient jusque-là). */
+.repli-titre { font-size: var(--t-corps); font-weight: 700; flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .repli-resume { margin-left: auto; color: var(--text-2); font-size: var(--t-sous); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-variant-numeric: tabular-nums; }
 /* Titre long : le résumé a sa propre ligne, sous le titre, à l'aplomb de son texte (retrait compris dans sa largeur, il se coupe par une ellipse). */
 .repli.resume-sous .repli-tete { flex-wrap: wrap; align-content: center; gap: 0 var(--esp-2); padding: 6px 0; }
@@ -472,9 +474,9 @@ button.effacer svg { width: 18px; height: 18px; }
 .parcours-tete .fermer { display: inline-flex; align-items: center; gap: 6px; padding: 0 6px; min-height: var(--cible); border: 0; background: none; color: var(--accent-texte); font-size: var(--t-corps); font-weight: 600; }
 .parcours-tete .fermer svg { width: 20px; height: 20px; }
 .parcours-tete .nom { min-width: 0; margin-left: 10px; font-weight: 700; font-size: var(--t-corps); color: var(--text); }
-/* Moment difficile, Une chose à la fois et « Réveil la nuit » gardent leur typographie (600) : le nom et le titre en grand
-   n'y passent pas en 700 (v12.1.2). */
-.parcours:is(.ecran-noir, :has(> .parcours-corps > :is(.moment-difficile, .une-chose))) :is(.parcours-tete .nom, .titre-parcours) { font-weight: 600; }
+/* Moment difficile, Une chose à la fois, ses exercices courts (Panique, Colère, Trop-plein, dans le lecteur en mode crise) et
+   « Réveil la nuit » gardent leur typographie (600) : le nom et le titre en grand n'y passent pas en 700 (v12.1.2). */
+.parcours:is(.ecran-noir, .lecteur-crise, :has(> .parcours-corps > :is(.moment-difficile, .une-chose))) :is(.parcours-tete .nom, .titre-parcours) { font-weight: 600; }
 .reperes { margin-left: auto; flex: none; display: flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 10px 0 8px; }
 /* À venir (v8, Q29) : un contour de 1,5 en --text-2, sans fond (README 2b : « contour (2a) »), au moins 3:1 sur le fond
    (5,6:1 en clair, 7,3:1 en sombre) ; --surface-2 ne se voyait pas sur le fond clair (1:1), et --line restait sous 3:1

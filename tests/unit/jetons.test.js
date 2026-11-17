@@ -624,7 +624,8 @@ test('aucune règle pour une classe retirée de l\'app : .rubrique, .rubrique-ic
 // de choix) a la graisse des titres de rubrique d'Aujourd'hui (.titre-rubrique), lue dans la feuille. « Ce qui a pesé » et
 // « Ce qui a rechargé » (.etiquette) étaient en 400, les titres des replis en 500, les titres d'écran, de carte et de section en
 // 600. Ce qui suit un nom sans en être un (« (facultatif) », « la veille ») reste en 400. Moment difficile, Une chose à la fois
-// et « Réveil la nuit » gardent leur typographie (600) : seules leurs règles à eux disent une autre graisse.
+// et « Réveil la nuit » gardent leur typographie (600) : seules leurs règles à eux disent une autre graisse. Contre-relecture :
+// les exercices courts de Moment difficile (le lecteur en mode crise, .lecteur-crise) aussi.
 const graisseDe = (d) => { const m = d.match(/(?:^|; )font-weight: (\d{3});/) || d.match(/(?:^|; )font: (\d{3}) /); return m ? m[1] : null; };
 const decoupe = (sel) => sel.split(/,(?![^(]*\))/).map((x) => x.trim());
 const NOMMENT = ['etiquette', 'repli-titre', 'libelle-champ', 'libelle-carte', 'libelle-sujets', 'titre-filtre', 'nom-classement', 'legende-chiffres',
@@ -662,4 +663,5 @@ test('v12.1.2 · les titres en gras : chaque règle partagée de ce qui nomme a 
   assert.deepEqual(aElles.map(([, g]) => g), ['600', '600']);
   assert.ok(aElles.some(([s]) => s === '.moment-difficile .libelle-section'), 'Moment difficile : .libelle-section en 600');
   assert.ok(aElles.some(([s]) => s.includes('.ecran-noir') && s.includes('.une-chose') && s.includes('.titre-parcours')), '« Réveil la nuit », Une chose à la fois : le nom et le titre en 600');
+  assert.ok(aElles.some(([s]) => s.includes('.lecteur-crise') && s.includes('.parcours-tete .nom') && s.includes('.titre-parcours')), 'les exercices courts : le nom et le titre en 600');
 });
